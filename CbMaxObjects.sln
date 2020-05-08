@@ -1,0 +1,49 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30011.22
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CbMaxClrAdapter", "CbMaxClrAdapter\CbMaxClrAdapter.csproj", "{38033B7C-CAF9-4A1A-8E4F-4750D59A79FA}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cb_clrobject", "cb_clrobject\cb_clrobject.vcxproj", "{949F0919-AEF5-48B9-B9EE-29745F1EE91C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CbChannelStrip", "CbChannelStrip\CbChannelStrip.csproj", "{8A0B4958-1C8B-4E6D-99EB-9DDB27D88BB6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CbChannelStripTest", "CbChannelStripTest\CbChannelStripTest.csproj", "{4D5B3C47-7AD0-4D63-B2C2-4E241D166E4C}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CbMaxClrAdapterStaticDll", "CbMaxClrAdapterStaticDll\CbMaxClrAdapterStaticDll.vcxproj", "{58A91A95-FA85-4EEF-AD56-0DBE96B1618E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{38033B7C-CAF9-4A1A-8E4F-4750D59A79FA}.Debug|x64.ActiveCfg = Debug|x64
+		{38033B7C-CAF9-4A1A-8E4F-4750D59A79FA}.Debug|x64.Build.0 = Debug|x64
+		{38033B7C-CAF9-4A1A-8E4F-4750D59A79FA}.Release|x64.ActiveCfg = Release|x64
+		{38033B7C-CAF9-4A1A-8E4F-4750D59A79FA}.Release|x64.Build.0 = Release|x64
+		{949F0919-AEF5-48B9-B9EE-29745F1EE91C}.Debug|x64.ActiveCfg = Debug|x64
+		{949F0919-AEF5-48B9-B9EE-29745F1EE91C}.Debug|x64.Build.0 = Debug|x64
+		{949F0919-AEF5-48B9-B9EE-29745F1EE91C}.Release|x64.ActiveCfg = Release|x64
+		{949F0919-AEF5-48B9-B9EE-29745F1EE91C}.Release|x64.Build.0 = Release|x64
+		{8A0B4958-1C8B-4E6D-99EB-9DDB27D88BB6}.Debug|x64.ActiveCfg = Debug|x64
+		{8A0B4958-1C8B-4E6D-99EB-9DDB27D88BB6}.Debug|x64.Build.0 = Debug|x64
+		{8A0B4958-1C8B-4E6D-99EB-9DDB27D88BB6}.Release|x64.ActiveCfg = Release|x64
+		{8A0B4958-1C8B-4E6D-99EB-9DDB27D88BB6}.Release|x64.Build.0 = Release|x64
+		{4D5B3C47-7AD0-4D63-B2C2-4E241D166E4C}.Debug|x64.ActiveCfg = Debug|x64
+		{4D5B3C47-7AD0-4D63-B2C2-4E241D166E4C}.Debug|x64.Build.0 = Debug|x64
+		{4D5B3C47-7AD0-4D63-B2C2-4E241D166E4C}.Release|x64.ActiveCfg = Release|x64
+		{4D5B3C47-7AD0-4D63-B2C2-4E241D166E4C}.Release|x64.Build.0 = Release|x64
+		{58A91A95-FA85-4EEF-AD56-0DBE96B1618E}.Debug|x64.ActiveCfg = Debug|x64
+		{58A91A95-FA85-4EEF-AD56-0DBE96B1618E}.Debug|x64.Build.0 = Debug|x64
+		{58A91A95-FA85-4EEF-AD56-0DBE96B1618E}.Release|x64.ActiveCfg = Release|x64
+		{58A91A95-FA85-4EEF-AD56-0DBE96B1618E}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {30DE8445-DFC6-452A-B450-47B237553231}
+	EndGlobalSection
+EndGlobal
