@@ -42,9 +42,9 @@ namespace CbMaxClrAdapter
         private const CharSet mCharset = CharSet.Ansi;
         private const string mDllName = "cb_clrobject.mxe64";
 
-        public delegate void CObjectFreeFunc();
+        public delegate void CObjectDeleteFunc();
         [DllImport(mDllName)]
-        public static extern void Object_Delete_Func_Set(IntPtr aSCbClrObjectPtr, CObjectFreeFunc aFunc);
+        public static extern void Object_Delete_Func_Set(IntPtr aSCbClrObjectPtr, CObjectDeleteFunc aFunc);
 
         [DllImport(mDllName)]
         public static extern IntPtr Object_In_Add(IntPtr aSCbClrObjectPtr, Int32 aType, Int32 aPos);
@@ -132,9 +132,9 @@ namespace CbMaxClrAdapter
         [DllImport(mDllName, CharSet= mCharset)]
         public static extern void Max_Log_Write(IntPtr aSCbClrObjectPtr, string aMessage, Int32 aError);
 
-        public delegate void CObject_In_Receive(Int32 aInletIdx, Int32 aDataTypeEnum);
+        public delegate void CObject_In_Receive_Func(Int32 aInletIdx, Int32 aDataTypeEnum);
         [DllImport(mDllName)]
-        public static extern void Object_In_Receive_Func_Set(IntPtr aSCbClrObjectPtr, CObject_In_Receive aFunc);
+        public static extern void Object_In_Receive_Func_Set(IntPtr aSCbClrObjectPtr, CObject_In_Receive_Func aFunc);
 
         public delegate void CObject_In_List_ClearFunc(Int32 aInletIdx);
         [DllImport(mDllName)]
@@ -163,9 +163,6 @@ namespace CbMaxClrAdapter
 
         [DllImport(mDllName, CharSet = mCharset)]
         public static extern void Object_In_Matrix_Receive(IntPtr aSCbClrObjectPtr, Int32 aInletIdx, string aObjectName);
-
-
-
     }
 
 
@@ -224,9 +221,7 @@ namespace CbMaxClrAdapter
         {
             try
             {
-                //CLog.Write("Object_New");
                 var aAssemblyName = GetAssemblyName(aArgs.mAssemblyName);
-                //Log(aAssemblyName);
                 var aAssembly =  Assembly.LoadFrom(aAssemblyName);
                 var aType = aAssembly.GetType(aArgs.mTypeName);
                 var aObject = Activator.CreateInstance(aType);

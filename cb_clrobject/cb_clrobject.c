@@ -43,6 +43,16 @@ typedef struct _SCbClrObject
 
 static t_class* gCbClrObjectClassPtr = 0;
 
+#define StringHack(x) (x)
+//char* StringHack(char* aSource)
+//{ // TODO
+//   return aSource;
+//   int aLen = strlen(aSource);
+//   char* aCopy = malloc(sizeof(char) * aLen);
+//   strcpy(aCopy, aSource);
+//   return aCopy;
+//}
+
 void __stdcall Object_Delete_Func_Set(SCbClrObject* aSCbClrObjectPtr, CObject_DeleteFunc* aFuncPtr)
 {
    aSCbClrObjectPtr->mObjectDeleteFuncPtr = aFuncPtr;
@@ -249,7 +259,7 @@ void cb_clrobject_in_symbol(SCbClrObject* aObjectPtr, t_symbol* aSymbolPtr)
       if (aObjectPtr->mInSymbolFuncPtr
       && aSymbolPtr)
       {
-         aObjectPtr->mInSymbolFuncPtr(aInletNr - 1, aSymbolPtr->s_name);
+         aObjectPtr->mInSymbolFuncPtr(aInletNr - 1, StringHack(aSymbolPtr->s_name));
       }
    }
 }
@@ -341,7 +351,7 @@ void __stdcall Object_Out_Symbol_Send(SCbClrObject* aSCbClrObjectPtr, void* aOut
    if (aOutletPtr
    && aSymbolName)
    {
-      t_symbol* aSymbolPtr = gensym(aSymbolName);
+      t_symbol* aSymbolPtr = gensym(StringHack(aSymbolName));
       outlet_anything(aOutletPtr, aSymbolPtr, 0, 0);
    }
 }
@@ -381,22 +391,22 @@ void __stdcall Max_Log_Write(SCbClrObject* aObjectPtr, const TCHAR* aMessagePtr,
    {
       if (aObjectPtr)
       {
-         object_error(&aObjectPtr->mObject, aMessagePtr ? aMessagePtr : "");
+         object_error(&aObjectPtr->mObject, aMessagePtr ? StringHack(aMessagePtr) : "");
       }
       else
       {
-         error(aMessagePtr ? aMessagePtr : "");
+         error(aMessagePtr ? StringHack(aMessagePtr) : "");
       }	
    }
    else
    {
       if (aObjectPtr)
       {
-         object_post(&aObjectPtr->mObject, aMessagePtr ? aMessagePtr : "");
+         object_post(&aObjectPtr->mObject, aMessagePtr ? StringHack(aMessagePtr) : "");
       }
       else
       {
-         post(aMessagePtr ? aMessagePtr : "");
+         post(aMessagePtr ? StringHack(aMessagePtr) : "");
       }
    }
 }
@@ -566,13 +576,14 @@ void __stdcall Object_In_Matrix_Receive_Func_Set(SCbClrObject* aSCbClrObjectPtr,
 void __stdcall Object_Out_Matrix_Send(SCbClrObject* aSCbClrObjectPtr, 
                                       void* aOutletPtr, 
                                       long aSize, 
-                                      const TCHAR* aCellTypePtr, 
+                                      const TCHAR* aCellTypePtrArg,
                                       long aDimensionCount, 
                                       long* aDimensionSizesI32s, 
                                       long* aDimensionStridesI32s, 
                                       long aPlaneCount, 
                                       void* aDataPtr)
 {
+   const TCHAR* aCellTypePtr = StringHack(aCellTypePtrArg);
    if(aSCbClrObjectPtr)
    {
       void* aMatrixPtr = jit_object_new(gensym("jit_matrix"));
@@ -600,7 +611,7 @@ void __stdcall Object_Out_Matrix_Send(SCbClrObject* aSCbClrObjectPtr,
             while (0);
          }
 
-         void* aMatrixDataPtr = sysmem_newptr(aSize);
+         void* aMatrixDataPtr = malloc(aSize); // sysmem_newptr(aSize);
          {
             const TCHAR* aMethodName = "data";
             t_symbol* aMethodSymbolPtr = gensym(aMethodName);
@@ -622,23 +633,30 @@ void __stdcall Object_Out_Matrix_Send(SCbClrObject* aSCbClrObjectPtr,
             t_symbol* aMatrixClassSymbolPtr = gensym("jit_matrix");
             atom_setsym(aAtomPtr, aMatrixObjectSymbolPtr);
             outlet_anything(aOutletPtr, aMatrixClassSymbolPtr, 1, aAtomPtr);
+            sysmem_freeptr(aAtomPtr);
          }
 
          // TODO: Unregister Matrix ?!
+        
+         {
+            const TCHAR* aMethodName = "data";
+            t_symbol* aMethodSymbolPtr = gensym(aMethodName);
+            method aMethod = jit_object_getmethod(aMatrixPtr, aMethodSymbolPtr);
+            t_jit_err aErr = (t_jit_err)aMethod(aMatrixPtr, 0);
+            while (0);
+         }
 
-         // TODO. Why crashes on big pictures?
-         //jit_object_free(aMatrixPtr);
-         //sysmem_freeptr(aAtomPtr);
-         // sysmem_freeptr(aMatrixDataPtr); 
-         
-         // TODO: delete aAtomPtr
-         // TODO: delete aMatrixDataPtr
+         //sysmem_freeptr(aMatrixDataPtr);
+         free(aMatrixDataPtr);
+         jit_object_free(aMatrixPtr);
+         sysmem_freeptr(aAtomPtr);
       }	
    }
 }
 
-void __stdcall Object_In_Matrix_Receive(SCbClrObject* aSCbClrObjectPtr, long aInletIdx, const TCHAR* aMatrixObjectName)
+void __stdcall Object_In_Matrix_Receive(SCbClrObject* aSCbClrObjectPtr, long aInletIdx, const TCHAR* aMatrixObjectNameArg)
 {
+   const TCHAR* aMatrixObjectName = StringHack(aMatrixObjectNameArg);
    if (aSCbClrObjectPtr)
    {
       t_symbol* aMatrixObjectSymbol = gensym(aMatrixObjectName);
@@ -663,7 +681,7 @@ void __stdcall Object_In_Matrix_Receive(SCbClrObject* aSCbClrObjectPtr, long aIn
       {
          aSCbClrObjectPtr->mObjectInMatrixReceiveFuncPtr(aInletIdx, 
                                              aMatrixInfo.size,
-                                             aMatrixInfo.type->s_name,
+                                             StringHack(aMatrixInfo.type->s_name),
                                              aMatrixInfo.dimcount,
                                              aMatrixInfo.dim,
                                              aMatrixInfo.dimstride,
@@ -671,6 +689,8 @@ void __stdcall Object_In_Matrix_Receive(SCbClrObject* aSCbClrObjectPtr, long aIn
                                              aDataPtr
                                              );
       }
+
+      sysmem_freeptr(aDataPtr); // TODO
    }
 }
  
@@ -689,3 +709,4 @@ void ext_main(void* r)
    class_register(CLASS_BOX, aClassPtr);
    gCbClrObjectClassPtr = aClassPtr;
 }
+
