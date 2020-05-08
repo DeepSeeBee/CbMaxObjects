@@ -115,12 +115,10 @@ namespace CbMaxClrAdapter
          });
       }
 
-      private void OnInInt(IntPtr aInletIdxI64, IntPtr aValueI64) // TODO
+      private void OnInInt(Int32 aInletIdx, Int32 aValue)
       {
          this.WithCatch(delegate ()
          {
-            var aInletIdx = (int)Marshal.ReadInt64(aInletIdxI64);
-            var aValue = Marshal.ReadInt64(aValueI64);
             var aInlet = this.MaxObject.Inlets[aInletIdx];
             var aMessage = aInlet.GetMessage<CInt>();
             aMessage.Set(aValue);
@@ -128,7 +126,7 @@ namespace CbMaxClrAdapter
          });
       }
 
-      private void OnInSymbol(IntPtr aInletIdx, string aSymbolName)
+      private void OnInSymbol(Int32 aInletIdx, string aSymbolName)
       {
          var aInlet = this.MaxObject.Inlets[(int)aInletIdx];
          var aMessage = aInlet.GetMessage<CSymbol>();
@@ -136,7 +134,7 @@ namespace CbMaxClrAdapter
          aInlet.Receive(CMessageTypeEnum.Symbol);
       }
 
-      private void In_Receive(Int64 aInletIdx, Int64 aDataTypeI64)
+      private void In_Receive(Int32 aInletIdx, Int32 aDataTypeI64)
       {
          this.WithCatch(delegate ()
          {
@@ -145,7 +143,7 @@ namespace CbMaxClrAdapter
          });
       }
 
-      private void In_List_Clear(Int64 aInletIdx)
+      private void In_List_Clear(Int32 aInletIdx)
       {
          this.WithCatch(delegate ()
          {
@@ -202,7 +200,7 @@ namespace CbMaxClrAdapter
          }
       }
 
-      private void In_List_AddFloat(Int64 aInletIdx, double aFloat)
+      private void In_List_AddFloat(Int32 aInletIdx, double aFloat)
       {
          this.WithCatch(delegate ()
          {
@@ -222,14 +220,14 @@ namespace CbMaxClrAdapter
          }
       }
 
-      private void In_List_AddInt(Int64 aInletIdx, Int64 aInt)
+      private void In_List_AddInt(Int32 aInletIdx, Int32 aInt)
       {
          this.WithCatch(delegate ()
          {
             this.MaxObject.Inlets[(int)aInletIdx].GetMessage<CList>().Value.Editable.AddInternal(aInt);
          });
       }
-      private void In_List_AddSymbol(Int64 aInletIdx, IntPtr aSymbol)
+      private void In_List_AddSymbol(Int32 aInletIdx, IntPtr aSymbol)
       {
          this.WithCatch(delegate ()
          {
@@ -264,7 +262,7 @@ namespace CbMaxClrAdapter
       }
 
       internal void Delete(CInlet aInlet) => DllImports.In_Delete(aInlet.Ptr);
-      private IntPtr Object_Out_List_Symbol_Get(Int64 aOutletIdx)
+      private IntPtr Object_Out_List_Symbol_Get(Int32 aOutletIdx)
       {
          return this.WithCatch(() =>
          {
@@ -275,7 +273,7 @@ namespace CbMaxClrAdapter
          });
       }
 
-      private Int64 Object_Out_List_Element_Count_Get(Int64 aOutletIdx)
+      private Int32 Object_Out_List_Element_Count_Get(Int32 aOutletIdx)
       {
          return this.WithCatch(() =>
          {
@@ -286,7 +284,7 @@ namespace CbMaxClrAdapter
          });
       }
 
-      private long Object_Out_List_Element_Type_Get(Int64 aOutletIdx, long aElementIdx)
+      private Int32 Object_Out_List_Element_Type_Get(Int32 aOutletIdx, Int32 aElementIdx)
       {
          return this.WithCatch(() =>
          {
@@ -294,9 +292,9 @@ namespace CbMaxClrAdapter
             var aElements = aListData.WithoutSymbol;
             var aElement = aElements.ElementAt((int)aElementIdx);
             var aElementType = GetDataType(aElement);
-            return Convert.ToInt64(aElementType);
+            return Convert.ToInt32(aElementType);
          },
-         () => Convert.ToInt64(CMessageTypeEnum.Null)
+         () => Convert.ToInt32(CMessageTypeEnum.Null)
          );
       }
 
@@ -308,13 +306,13 @@ namespace CbMaxClrAdapter
             return CMessageTypeEnum.Symbol;
          else if (aElement is double)
             return CMessageTypeEnum.Float;
-         else if (aElement is Int64)
+         else if (aElement is Int32)
             return CMessageTypeEnum.Int;
          else
             return CMessageTypeEnum.Null;
       }
 
-      private double Object_Out_List_Element_Float_Get(Int64 aOutletIdx, long aElementIdx)
+      private double Object_Out_List_Element_Float_Get(Int32 aOutletIdx, Int32 aElementIdx)
       {
          return this.WithCatch(() =>
          {
@@ -326,21 +324,21 @@ namespace CbMaxClrAdapter
          });
       }
 
-      private long Object_Out_List_Element_Int_Get(Int64 aOutletIdx, long aElementIdx)
+      private Int32 Object_Out_List_Element_Int_Get(Int32 aOutletIdx, Int32 aElementIdx)
       {
          return this.WithCatch(() =>
          {
             var aListData = this.MaxObject.Outlets[(int)aOutletIdx].GetMessage<CList>().Value;
             var aElements = aListData.WithoutSymbol;
             var aElement = aElements.ElementAt((int)aElementIdx);
-            var aInt = Convert.ToInt64(aElement);
+            var aInt = Convert.ToInt32(aElement);
             return aInt;
          });
       }
 
       internal void Delete(COutlet aOutlet) => DllImports.Out_Delete(aOutlet.Ptr);
 
-      private IntPtr Object_Out_List_Element_Symbol_Get(Int64 aOutletIdx, long aElementIdx)
+      private IntPtr Object_Out_List_Element_Symbol_Get(Int32 aOutletIdx, Int32 aElementIdx)
       {
          return this.WithCatch(() =>
          {
@@ -353,35 +351,35 @@ namespace CbMaxClrAdapter
          });
       }
 
-      private int[] GetI64s(IntPtr aPtr, int aSize)
+      private int[] GetI32s(IntPtr aPtr, int aSize)
       {
          var aIntArray = new int[aSize];
          for (var aIdx = 0; aIdx < aSize; ++aIdx)
          {
-            aIntArray[aIdx] = (int)(Marshal.ReadInt64(aPtr, aIdx * 4));
+            aIntArray[aIdx] = (int)(Marshal.ReadInt32(aPtr, aIdx * 4));
          }
          return aIntArray;
       }
 
       internal void Send(CBangOutlet aBangOutlet) => DllImports.Object_Out_Bang_Send(aBangOutlet.MaxObject.Ptr, aBangOutlet.Ptr);
 
-      private Int64 Object_In_Matrix_Receive(Int32 aInletIdx, Int32 aSize, string aCellType, Int32 aDimensionCount, IntPtr aDimensionSizesI64Ptr, IntPtr aDimensionStridesI64Ptr, Int32 aPlaneCount, IntPtr aMatrixDataU8Ptr)
+      private Int32 Object_In_Matrix_Receive(Int32 aInletIdx, Int32 aSize, string aCellType, Int32 aDimensionCount, IntPtr aDimensionSizesI64Ptr, IntPtr aDimensionStridesI64Ptr, Int32 aPlaneCount, IntPtr aMatrixDataU8Ptr)
       {
          return this.WithCatch(() =>
          {
             var aInlet = this.MaxObject.Inlets[(int)aInletIdx];
             var aMatrix = aInlet.GetMessage<CMatrix>();
             var aMatrixData = aMatrix.Value;
-            var aDimensionSizes = this.GetI64s(aDimensionSizesI64Ptr, (int)aDimensionCount);
-            var aDimensionStrides = this.GetI64s(aDimensionStridesI64Ptr, (int)aDimensionCount);
+            var aDimensionSizes = this.GetI32s(aDimensionSizesI64Ptr, (int)aDimensionCount);
+            var aDimensionStrides = this.GetI32s(aDimensionStridesI64Ptr, (int)aDimensionCount);
             var aCellTypeEnum = (CMatrixData.CCellTypeEnum)Enum.Parse(typeof(CMatrixData.CCellTypeEnum), aCellType, true);
             aMatrixData.ReallocateInternal((int)aSize,
-                                              aCellTypeEnum,
-                                              (int)aDimensionCount,
-                                              aDimensionSizes,
-                                              aDimensionStrides,
-                                              (int)aPlaneCount
-                                              );
+                                           aCellTypeEnum,
+                                           (int)aDimensionCount,
+                                           aDimensionSizes,
+                                           aDimensionStrides,
+                                           (int)aPlaneCount
+                                           );
             Marshal.Copy(aMatrixDataU8Ptr, aMatrixData.Buffer, (int)0, (int)aSize);
             aInlet.Receive(CMessageTypeEnum.Matrix);
             return 0;
@@ -393,7 +391,7 @@ namespace CbMaxClrAdapter
       internal void Send(CSymbolOutlet aSymbolOutlet) => DllImports.Object_Out_Symbol_Send(aSymbolOutlet.MaxObject.Ptr, aSymbolOutlet.Ptr, aSymbolOutlet.Message.Value);
       internal void Send(CFloatOutlet aFloatOutlet) => DllImports.Object_Out_Float_Send(this.MaxObject.Ptr, aFloatOutlet.Ptr, aFloatOutlet.Message.Value);
       internal void Send(CIntOutlet aIntOutlet) => DllImports.Object_Out_Int_Send(this.MaxObject.Ptr, aIntOutlet.Ptr, aIntOutlet.Message.Value);
-      internal void Object_In_Matrix_Receive(Int64 aInletIdx, string aObjectName) => DllImports.Object_In_Matrix_Receive(this.MaxObject.NewArgs.mObjectPtr, aInletIdx, aObjectName);
+      internal void Object_In_Matrix_Receive(Int32 aInletIdx, string aObjectName) => DllImports.Object_In_Matrix_Receive(this.MaxObject.NewArgs.mObjectPtr, aInletIdx, aObjectName);
       internal void Send(CListOutlet aListOutlet) => DllImports.Object_Out_List_Send(this.MaxObject.Ptr, aListOutlet.Ptr, aListOutlet.Index);
       internal IntPtr AddOutlet(COutlet aOutlet, CMessageTypeEnum aDataTypeEnum) => DllImports.Object_Out_Add(this.MaxObject.NewArgs.mObjectPtr, (int)aDataTypeEnum, aOutlet.Index);
       internal void Max_Log_Write(string aMsg, bool aIsError) => DllImports.Max_Log_Write(this.MaxObject.NewArgs.mObjectPtr, aMsg, aIsError ? 1 : 0);

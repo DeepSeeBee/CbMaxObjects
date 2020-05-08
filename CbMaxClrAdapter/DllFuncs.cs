@@ -47,30 +47,30 @@ namespace CbMaxClrAdapter
         public static extern void Object_Delete_Func_Set(IntPtr aSCbClrObjectPtr, CObjectFreeFunc aFunc);
 
         [DllImport(mDllName)]
-        public static extern IntPtr Object_In_Add(IntPtr aSCbClrObjectPtr, int aType, int aPos);
+        public static extern IntPtr Object_In_Add(IntPtr aSCbClrObjectPtr, Int32 aType, Int32 aPos);
 
         [DllImport(mDllName)]
         public static extern IntPtr In_Delete(IntPtr aInletPtr);
 
         [DllImport(mDllName)]
-        public static extern IntPtr Object_Out_Add(IntPtr aSCbClrObjectPtr, int aType, int aPos);
+        public static extern IntPtr Object_Out_Add(IntPtr aSCbClrObjectPtr, Int32 aType, Int32 aPos);
 
         [DllImport(mDllName)]
         public static extern IntPtr Out_Delete(IntPtr aOutletPtr);
 
-        public delegate void CObject_In_Bang_Func(int aInletNr);
+        public delegate void CObject_In_Bang_Func(Int32 aInletIdx);
         [DllImport(mDllName)]
         public static extern void Object_In_Bang_Func_Set(IntPtr aSCbClrObjectPtr, CObject_In_Bang_Func aFunc);
 
-        public delegate void CObject_In_Float_Func(int aInletNr, double aValue);
+        public delegate void CObject_In_Float_Func(Int32 aInletIdx, double aValue);
         [DllImport(mDllName)]
         public static extern void Object_In_Float_Func_Set(IntPtr aSCbClrObjectPtr, CObject_In_Float_Func aFunc);
 
-        public delegate void CObject_In_Int_Func(IntPtr aInletNrI64, IntPtr aValueI64);
+        public delegate void CObject_In_Int_Func(Int32 aInletIdx, Int32 aValue);
         [DllImport(mDllName)]
         public static extern IntPtr Object_In_Int_Func_Set(IntPtr aSCbClrObjectPtr, CObject_In_Int_Func aFunc);
 
-        public delegate void CObject_In_Symbol_Func(IntPtr aInletNrI64, string aSymbolName);
+        public delegate void CObject_In_Symbol_Func(Int32 aInletIdx, string aSymbolName);
         [DllImport(mDllName)]
         public static extern IntPtr Object_In_Symbol_Func_Set(IntPtr aSCbClrObjectPtr, CObject_In_Symbol_Func aFunc);
 
@@ -81,35 +81,35 @@ namespace CbMaxClrAdapter
         public static extern void Object_Out_Float_Send(IntPtr aSCbClrObjectPtr, IntPtr aOutletPtr, double aValue);
 
         [DllImport(mDllName)]
-        public static extern void Object_Out_Int_Send(IntPtr aSCbClrObjectPtr, IntPtr aOutletPtr, long aValue);
+        public static extern void Object_Out_Int_Send(IntPtr aSCbClrObjectPtr, IntPtr aOutletPtr, Int32 aValue);
 
         [DllImport(mDllName, CharSet = mCharset)]
         public static extern void Object_Out_Symbol_Send(IntPtr aSCbClrObjectPtr, IntPtr aOutletPtr, string aSymbol);
 
         [DllImport(mDllName)]
-        public static extern void Object_Out_List_Send(IntPtr aSCbClrObjectPtr, IntPtr aOutletPtr, long aOutletIdx);
+        public static extern void Object_Out_List_Send(IntPtr aSCbClrObjectPtr, IntPtr aOutletPtr, Int32 aOutletIdx);
 
-        public delegate IntPtr CObject_Out_List_Symbol_Get_Func(Int64 aOutletIdx);
+        public delegate IntPtr CObject_Out_List_Symbol_Get_Func(Int32 aOutletIdx);
         [DllImport(mDllName)]
         public static extern void Object_Out_List_Symbol_Get_Func_Set(IntPtr aSCbClrObjectPtr, CObject_Out_List_Symbol_Get_Func aFunc);
 
-        public delegate Int64 CObject_Out_List_Element_Count_Get_Func(Int64 aOutletIdx);
+        public delegate Int32 CObject_Out_List_Element_Count_Get_Func(Int32 aOutletIdx);
         [DllImport(mDllName)]
         public static extern void Object_Out_List_Element_Count_Get_Func_Set(IntPtr aSCbClrObjectPtr, CObject_Out_List_Element_Count_Get_Func aFunc);
 
-        public delegate Int64 CObject_Out_List_Element_Type_Get_Func(Int64 aOutletIdx, Int64 aElementIdx);
+        public delegate Int32 CObject_Out_List_Element_Type_Get_Func(Int32 aOutletIdx, Int32 aElementIdx);
         [DllImport(mDllName)]
         public static extern void Object_Out_List_Element_Type_Get_Func_Set(IntPtr aSCbClrObjectPtr, CObject_Out_List_Element_Type_Get_Func aFunc);
 
-        public delegate double CObject_Out_List_Element_Float_Get_Func(Int64 aOutletIdx, Int64 aElementIdx);
+        public delegate double CObject_Out_List_Element_Float_Get_Func(Int32 aOutletIdx, Int32 aElementIdx);
         [DllImport(mDllName)]
         public static extern void Object_Out_List_Element_Float_Get_Func_Set(IntPtr aSCbClrObjectPtr, CObject_Out_List_Element_Float_Get_Func aFunc);
 
-        public delegate Int64 CObject_Out_List_Element_Int_Get_Func(Int64 aOutletIdx, Int64 aElementIdx);
+        public delegate Int32 CObject_Out_List_Element_Int_Get_Func(Int32 aOutletIdx, Int32 aElementIdx);
         [DllImport(mDllName)]
         public static extern void Object_Out_List_Element_Int_Get_Func_Set(IntPtr aSCbClrObjectPtr, CObject_Out_List_Element_Int_Get_Func aFunc);
 
-        public delegate IntPtr CObject_Out_List_Element_Symbol_Get_Func(Int64 aOutletIdx, Int64 aElementIdx);
+        public delegate IntPtr CObject_Out_List_Element_Symbol_Get_Func(Int32 aOutletIdx, Int32 aElementIdx);
         [DllImport(mDllName)]
         public static extern void Object_Out_List_Element_Symbol_Get_Func_Set(IntPtr aSCbClrObjectPtr, CObject_Out_List_Element_Symbol_Get_Func aFunc);
 
@@ -124,49 +124,45 @@ namespace CbMaxClrAdapter
         [DllImport(mDllName)]
         public static extern void Memory_Delete_Func_Set(IntPtr aSCbClrObjectPtr, CMemory_Delete_Func aDeleteFunc);
 
-        public delegate IntPtr CObject_Assist_GetString_Func(IntPtr aSCbClrObjectPtr, int aStringProvider, int aIndex);
+        public delegate IntPtr CObject_Assist_GetString_Func(IntPtr aSCbClrObjectPtr, Int32 aStringProvider, Int32 aIndex);
 
         [DllImport(mDllName)]
         public static extern void Object_Assist_GetString_Func_Set(IntPtr aSCbClrObjectPtr, CObject_Assist_GetString_Func aGetAssistStringFunc);
 
         [DllImport(mDllName, CharSet= mCharset)]
-        public static extern void Max_Log_Write(IntPtr aSCbClrObjectPtr, string aMessage, int aError);
+        public static extern void Max_Log_Write(IntPtr aSCbClrObjectPtr, string aMessage, Int32 aError);
 
-        public delegate void CObject_In_Receive(Int64 aInletIdx, Int64 aDataTypeEnum);
+        public delegate void CObject_In_Receive(Int32 aInletIdx, Int32 aDataTypeEnum);
         [DllImport(mDllName)]
         public static extern void Object_In_Receive_Func_Set(IntPtr aSCbClrObjectPtr, CObject_In_Receive aFunc);
 
-        public delegate void CObject_In_List_ClearFunc(Int64 aInletIdx);
+        public delegate void CObject_In_List_ClearFunc(Int32 aInletIdx);
         [DllImport(mDllName)]
         public static extern void Object_In_List_Clear_Func_Set(IntPtr aSCbClrObjectPtr, CObject_In_List_ClearFunc aFunc);
 
-        public delegate void CObject_In_List_Add_Float_Func(Int64 aInletIdx, double aFloat);
+        public delegate void CObject_In_List_Add_Float_Func(Int32 aInletIdx, double aFloat);
         [DllImport(mDllName)]
         public static extern void Object_In_List_Add_Float_Func_Set(IntPtr aSCbClrObjectPtr, CObject_In_List_Add_Float_Func aFunc);
 
-        public delegate void CObject_In_List_Add_Int_Func(Int64 aInletIdx, long aInt);
+        public delegate void CObject_In_List_Add_Int_Func(Int32 aInletIdx, Int32 aInt);
         [DllImport(mDllName)]
         public static extern void Object_In_List_Add_Int_Func_Set(IntPtr aSCbClrObjectPtr, CObject_In_List_Add_Int_Func aFunc);
 
 
-        public delegate void CObject_In_List_Add_Symbol_Func(Int64 aInletIdx, IntPtr aSymbol);
+        public delegate void CObject_In_List_Add_Symbol_Func(Int32 aInletIdx, IntPtr aSymbol);
         [DllImport(mDllName)]
         public static extern void Object_In_List_Add_Symbol_Func_Set(IntPtr aSCbClrObjectPtr, CObject_In_List_Add_Symbol_Func aFunc);
 
 
-        public delegate Int64 CObject_In_Matrix_Receive_Func(Int32 aInletIdx, Int32 aSize, string aCellType, Int32 aDimensionCount, IntPtr aDimensionSizesI64Ptr, IntPtr aDimensionStridesI64Ptr, Int32 aPlaneCount, IntPtr aMatrixDataU8Ptr);
+        public delegate Int32 CObject_In_Matrix_Receive_Func(Int32 aInletIdx, Int32 aSize, string aCellType, Int32 aDimensionCount, IntPtr aDimensionSizesI64Ptr, IntPtr aDimensionStridesI64Ptr, Int32 aPlaneCount, IntPtr aMatrixDataU8Ptr);
         [DllImport(mDllName)]
         public static extern void Object_In_Matrix_Receive_Func_Set(IntPtr aSCbClrObjectPtr, CObject_In_Matrix_Receive_Func aFunc);
-
-        //public delegate Int64 CObject_Out_Matrix_Info_Get_Func(Byte aInletOrOutlet, Int64 aInletIdxOrOutletIdx, IntPtr aSizeI64, IntPtr aDimensionCountI64Ptr, IntPtr aDimesionsSizesI64PtrPtr, IntPtr aDimesionStridesI64PtrPtr, IntPtr aPlaneCountI64Ptr);
-        //[DllImport(mDllName)]
-        //public static extern void Object_Out_Matrix_Info_Get_Func_Set(IntPtr aSCbClrObjectPtr, CObject_Out_Matrix_Info_Get_Func aFunc);
 
         [DllImport(mDllName, CharSet = mCharset)]
         public static extern void Object_Out_Matrix_Send(IntPtr aSCbClrObjectPtr, IntPtr aOutletPtr, Int32 aSize, string aCellType, Int32 aDimensionCount, IntPtr aDimensionSizesI32s, IntPtr aDimensionStridesI32s, Int32 aPlaneCount, IntPtr aMatrixDataPtr);
 
         [DllImport(mDllName, CharSet = mCharset)]
-        public static extern void Object_In_Matrix_Receive(IntPtr aSCbClrObjectPtr, Int64 aInletIdx, string aObjectName);
+        public static extern void Object_In_Matrix_Receive(IntPtr aSCbClrObjectPtr, Int32 aInletIdx, string aObjectName);
 
 
 

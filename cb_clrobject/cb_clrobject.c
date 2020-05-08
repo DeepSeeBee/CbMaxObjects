@@ -498,7 +498,7 @@ void __stdcall Object_Out_List_Send(SCbClrObject* aSCbClrObjectPtr, void* aOutle
               
             }
          }
-         sysmem_freeptr(aAtomsPtr);
+         //sysmem_freeptr(aAtomsPtr);
       }
       if (aSymbolNamePtr)
       {

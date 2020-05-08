@@ -127,9 +127,9 @@ namespace CbMaxClrAdapter
    }
 
    [CDataTypeAttribute(CMessageTypeEnum.Int)]
-   public sealed class CInt : CValMessage<Int64>
+   public sealed class CInt : CValMessage<Int32>
    {
-      public CInt(Int64 aValue = 0)
+      public CInt(Int32 aValue = 0)
       {
          this.Value = aValue;
       }
