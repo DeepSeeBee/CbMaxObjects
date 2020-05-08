@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 42.0, 85.0, 1483.0, 929.0 ],
+		"rect" : [ 26.0, 85.0, 1852.0, 929.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -38,6 +38,161 @@
 		"style" : "",
 		"subpatcher_template" : "",
 		"boxes" : [ 			{
+				"box" : 				{
+					"id" : "obj-27",
+					"maxclass" : "newobj",
+					"numinlets" : 2,
+					"numoutlets" : 3,
+					"outlettype" : [ "bang", "bang", "int" ],
+					"patching_rect" : [ 924.0, 699.0, 40.0, 22.0 ],
+					"text" : "Uzi"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-26",
+					"maxclass" : "button",
+					"numinlets" : 1,
+					"numoutlets" : 1,
+					"outlettype" : [ "bang" ],
+					"parameter_enable" : 0,
+					"patching_rect" : [ 919.0, 632.0, 24.0, 24.0 ]
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-23",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 973.5, 632.0, 29.5, 22.0 ],
+					"text" : "50"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-22",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 77.0, 862.0, 724.0, 22.0 ],
+					"text" : "load_image \"C:/Program Files/Cycling '74/Max 8/packages/max-sdk-8.0.3/source/charly_beck/CbChannelStrip/m4l/Test/hade-592.png\""
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-20",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 77.0, 828.0, 724.0, 22.0 ],
+					"text" : "load_image \"C:/Program Files/Cycling '74/Max 8/packages/max-sdk-8.0.3/source/charly_beck/CbChannelStrip/m4l/Test/hade-296.png\""
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-18",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 77.0, 782.0, 749.0, 22.0 ],
+					"text" : "load_image \"C:/Program Files/Cycling '74/Max 8/packages/max-sdk-8.0.3/source/charly_beck/CbChannelStrip/m4l/Test/hade-tiny-even.jpg\""
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-17",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 77.0, 746.0, 753.0, 22.0 ],
+					"text" : "load_image \"C:/Program Files/Cycling '74/Max 8/packages/max-sdk-8.0.3/source/charly_beck/CbChannelStrip/m4l/Test/hade-tiny-even.png\""
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-16",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 77.0, 717.0, 700.0, 22.0 ],
+					"text" : "load_image \"C:/Program Files/Cycling '74/Max 8/packages/max-sdk-8.0.3/source/charly_beck/CbChannelStrip/m4l/Test/test3.png\""
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-13",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 77.0, 687.0, 700.0, 22.0 ],
+					"text" : "load_image \"C:/Program Files/Cycling '74/Max 8/packages/max-sdk-8.0.3/source/charly_beck/CbChannelStrip/m4l/Test/test2.png\""
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-8",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 77.0, 938.0, 762.0, 22.0 ],
+					"text" : "load_image \"C:/Program Files/Cycling '74/Max 8/packages/max-sdk-8.0.3/source/charly_beck/CbChannelStrip/m4l/Test/hade-small-even.png\""
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-14",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 77.0, 657.0, 693.0, 22.0 ],
+					"text" : "load_image \"C:/Program Files/Cycling '74/Max 8/packages/max-sdk-8.0.3/source/charly_beck/CbChannelStrip/m4l/Test/test.png\""
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-6",
+					"maxclass" : "message",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "" ],
+					"patching_rect" : [ 320.0, 332.5, 35.0, 22.0 ],
+					"text" : "a b c"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-4",
+					"maxclass" : "jit.pwindow",
+					"numinlets" : 1,
+					"numoutlets" : 2,
+					"outlettype" : [ "jit_matrix", "" ],
+					"patching_rect" : [ 313.499999999999886, 542.0, 100.0, 100.0 ]
+				}
+
+			}
+, 			{
 				"box" : 				{
 					"bubble" : 1,
 					"fontname" : "Arial",
@@ -378,7 +533,7 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "jit_matrix", "" ],
-					"patching_rect" : [ 380.183670000000006, 534.0, 100.0, 100.0 ]
+					"patching_rect" : [ 1016.183669999999893, 209.0, 353.0, 300.0 ]
 				}
 
 			}
@@ -509,13 +664,12 @@
 , 			{
 				"box" : 				{
 					"id" : "obj-7",
-					"linecount" : 4,
 					"maxclass" : "message",
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 102.0, 449.0, 50.0, 64.0 ],
-					"text" : "jit_matrix u268000319"
+					"patching_rect" : [ 102.0, 449.0, 50.0, 22.0 ],
+					"text" : "a b c"
 				}
 
 			}
@@ -557,8 +711,43 @@
 			}
 , 			{
 				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"source" : [ "obj-13", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"source" : [ "obj-14", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
 					"destination" : [ "obj-5", 0 ],
 					"source" : [ "obj-15", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"source" : [ "obj-16", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"source" : [ "obj-17", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"source" : [ "obj-18", 0 ]
 				}
 
 			}
@@ -578,6 +767,13 @@
 			}
 , 			{
 				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"source" : [ "obj-20", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
 					"destination" : [ "obj-15", 2 ],
 					"source" : [ "obj-21", 0 ]
 				}
@@ -585,8 +781,29 @@
 			}
 , 			{
 				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"source" : [ "obj-22", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-27", 1 ],
+					"source" : [ "obj-23", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
 					"destination" : [ "obj-11", 5 ],
 					"source" : [ "obj-24", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-27", 0 ],
+					"source" : [ "obj-26", 0 ]
 				}
 
 			}
@@ -670,7 +887,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 3 ],
-					"order" : 2,
+					"order" : 1,
 					"source" : [ "obj-5", 0 ]
 				}
 
@@ -684,17 +901,16 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-35", 0 ],
-					"order" : 1,
+					"destination" : [ "obj-61", 0 ],
+					"order" : 0,
 					"source" : [ "obj-5", 0 ]
 				}
 
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-61", 0 ],
-					"order" : 0,
-					"source" : [ "obj-5", 0 ]
+					"destination" : [ "obj-1", 2 ],
+					"source" : [ "obj-6", 0 ]
 				}
 
 			}
@@ -714,8 +930,29 @@
 			}
 , 			{
 				"patchline" : 				{
+					"destination" : [ "obj-1", 0 ],
+					"source" : [ "obj-8", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
 					"destination" : [ "obj-11", 2 ],
 					"source" : [ "obj-9", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "", 3 ],
+					"source" : [ "obj-1", 2 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-17", 0 ],
+					"source" : [ "obj-27", 0 ]
 				}
 
 			}

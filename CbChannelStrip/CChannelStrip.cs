@@ -6,78 +6,80 @@ using System.Threading.Tasks;
 
 namespace CbChannelStrip
 {
-    using System.Drawing;
-    using System.IO;
-    using CbMaxClrAdapter;
-    using CbMaxClrAdapter.Jitter;
+   using System.Drawing;
+   using System.IO;
+   using CbMaxClrAdapter;
+   using CbMaxClrAdapter.Jitter;
 
-    public sealed class CChannelStrip : CMaxObject
-    {
-        public CChannelStrip()
-        {
-            this.IntInlet = new CIntInlet(this)
-            {
-                Action = this.OnIntInlet
-            };
-            this.IntOutlet = new CIntOutlet(this);
+   public sealed class CChannelStrip : CMaxObject
+   {
+      public CChannelStrip()
+      {
+         this.IntInlet = new CIntInlet(this)
+         {
+            Action = this.OnIntInlet
+         };
+         this.IntOutlet = new CIntOutlet(this);
 
-            this.ListInlet = new CListInlet(this)
-            {
-                Action = this.OnListInlet
-            };
-            this.ListOutlet = new CListOutlet(this);
+         this.ListInlet = new CListInlet(this)
+         {
+            Action = this.OnListInlet
+         };
+         this.ListOutlet = new CListOutlet(this);
 
-            this.MatrixInlet = new CMatrixInlet(this)
-            {
-                Action = this.OnMatrixInlet
-            };
-            this.MatrixOutlet = new CMatrixOutlet(this);
+         this.MatrixInlet = new CMatrixInlet(this)
+         {
+            Action = this.OnMatrixInlet
+         };
+         this.MatrixOutlet = new CMatrixOutlet(this);
 
-            /// this.LeftInlet.SingleItemListEnabled = true; TODO-TestMe
-            this.LeftInlet.Support(CMessageTypeEnum.Symbol);    
-            this.LeftInlet.SetSymbolAction("ClearMatrix", this.OnClearMatrix);
-            this.LeftInlet.Support(CMessageTypeEnum.List);
-            this.LeftInlet.SetRemainingElementsAction("LoadImage", this.OnLoadImage);            
-        }
+         /// this.LeftInlet.SingleItemListEnabled = true; TODO-TestMe
+         this.LeftInlet.Support(CMessageTypeEnum.Symbol);
+         this.LeftInlet.SetSymbolAction("clear_matrix", this.OnClearMatrix);
+         this.LeftInlet.Support(CMessageTypeEnum.List);
+         this.LeftInlet.SetRemainingElementsAction("load_image", this.OnLoadImage);
+      }
 
-        internal readonly CIntInlet IntInlet;
-        internal readonly CIntOutlet IntOutlet;
+      internal readonly CIntInlet IntInlet;
+      internal readonly CIntOutlet IntOutlet;
 
-        internal readonly CListInlet ListInlet;
-        internal readonly CListOutlet ListOutlet;
+      internal readonly CListInlet ListInlet;
+      internal readonly CListOutlet ListOutlet;
 
-        internal readonly CMatrixInlet MatrixInlet;
-        internal readonly CMatrixOutlet MatrixOutlet;
+      internal readonly CMatrixInlet MatrixInlet;
+      internal readonly CMatrixOutlet MatrixOutlet;
 
-        private void OnLoadImage(CInlet aInlet, string aSymbol, CReadonlyListData aParams)
-        {
-            var aFileInfo = new FileInfo(aParams.ElementAt(0).ToString());
-            this.MatrixOutlet.Message.Value.SetImage(Image.FromFile(aFileInfo.FullName)); // @"C:\Program Files\Cycling '74\Max 8\packages\max-sdk-8.0.3\source\charly_beck\CbChannelStrip\m4l\Test\hade.jpg"));
-            this.MatrixOutlet.Send();
-        }
+      private void OnLoadImage(CInlet aInlet, string aSymbol, CReadonlyListData aParams)
+      {
+         var aFileInfo = new FileInfo(aParams.ElementAt(0).ToString().Replace("/", "\\"));
+         //this.WriteLogInfoMessage("OnLoadImage(" + "\"" + aFileInfo.FullName + "\"");
+         this.MatrixOutlet.Message.Value.SetImage(Image.FromFile(aFileInfo.FullName)); // @"C:\Program Files\Cycling '74\Max 8\packages\max-sdk-8.0.3\source\charly_beck\CbChannelStrip\m4l\Test\hade.jpg"));
+         this.MatrixOutlet.Message.Value.PrintMatrixInfo(this, "ImageMatrix");
+         this.MatrixOutlet.Send();
+      }
+       
+      private void OnClearMatrix(CInlet aInlet, CSymbol aSymbol)
+      {
+         this.MatrixOutlet.Message.Value.Clear();
+         this.MatrixOutlet.Send();
+      }
 
-        private void OnClearMatrix(CInlet aInlet, CSymbol aSymbol)
-        {
-            this.MatrixOutlet.Message.Value.Clear();
-            this.MatrixOutlet.Send();
-        }
+      private void OnIntInlet(CInlet aInlet, CInt aInt)
+      {
+         this.IntOutlet.Message.Value = aInt.Value;
+         this.IntOutlet.Send();
+      }
 
-        private void OnIntInlet(CInlet aInlet, CInt aInt)
-        {
-            this.IntOutlet.Message.Value = aInt.Value;
-            this.IntOutlet.Send();
-        }
+      private void OnListInlet(CInlet aInlet, CList aList)
+      {
+         this.ListOutlet.Message.Value = aList.Value;
+         this.ListOutlet.Send();
+      }
 
-        private void OnListInlet(CInlet aInlet, CList aList)
-        {
-            this.ListOutlet.Message.Value = aList.Value;
-            this.ListOutlet.Send();
-        }
-
-        private void OnMatrixInlet(CInlet aInlet, CMatrix aMatrix)
-        {
-            this.MatrixOutlet.Message.Value = aMatrix.Value;
-            this.MatrixOutlet.Send();
-        }
-    }
+      private void OnMatrixInlet(CInlet aInlet, CMatrix aMatrix)
+      {
+         this.MatrixOutlet.Message.Value = aMatrix.Value;
+         this.MatrixOutlet.Send();
+      }
+   }
 }

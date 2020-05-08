@@ -154,16 +154,16 @@ namespace CbMaxClrAdapter
         public static extern void Object_In_List_Add_Symbol_Func_Set(IntPtr aSCbClrObjectPtr, CObject_In_List_Add_Symbol_Func aFunc);
 
 
-        public delegate Int64 CObject_In_Matrix_Receive_Func(Int32 aInletIdx, Int32 aSize, Int32 aDimensionCount, IntPtr aDimensionSizesI64Ptr, IntPtr aDimensionStridesI64Ptr, Int32 aPlaneCount, IntPtr aMatrixDataU8Ptr);
+        public delegate Int64 CObject_In_Matrix_Receive_Func(Int32 aInletIdx, Int32 aSize, string aCellType, Int32 aDimensionCount, IntPtr aDimensionSizesI64Ptr, IntPtr aDimensionStridesI64Ptr, Int32 aPlaneCount, IntPtr aMatrixDataU8Ptr);
         [DllImport(mDllName)]
         public static extern void Object_In_Matrix_Receive_Func_Set(IntPtr aSCbClrObjectPtr, CObject_In_Matrix_Receive_Func aFunc);
 
-        public delegate Int64 CObject_Out_Matrix_Info_Get_Func(Byte aInletOrOutlet, Int64 aInletIdxOrOutletIdx, IntPtr aSizeI64, IntPtr aDimensionCountI64Ptr, IntPtr aDimesionsSizesI64PtrPtr, IntPtr aDimesionStridesI64PtrPtr, IntPtr aPlaneCountI64Ptr);
-        [DllImport(mDllName)]
-        public static extern void Object_Out_Matrix_Info_Get_Func_Set(IntPtr aSCbClrObjectPtr, CObject_Out_Matrix_Info_Get_Func aFunc);
+        //public delegate Int64 CObject_Out_Matrix_Info_Get_Func(Byte aInletOrOutlet, Int64 aInletIdxOrOutletIdx, IntPtr aSizeI64, IntPtr aDimensionCountI64Ptr, IntPtr aDimesionsSizesI64PtrPtr, IntPtr aDimesionStridesI64PtrPtr, IntPtr aPlaneCountI64Ptr);
+        //[DllImport(mDllName)]
+        //public static extern void Object_Out_Matrix_Info_Get_Func_Set(IntPtr aSCbClrObjectPtr, CObject_Out_Matrix_Info_Get_Func aFunc);
 
-        [DllImport(mDllName)]
-        public static extern void Object_Out_Matrix_Send(IntPtr aSCbClrObjectPtr, Int64 aOutletIdx);
+        [DllImport(mDllName, CharSet = mCharset)]
+        public static extern void Object_Out_Matrix_Send(IntPtr aSCbClrObjectPtr, IntPtr aOutletPtr, Int32 aSize, string aCellType, Int32 aDimensionCount, IntPtr aDimensionSizesI32s, IntPtr aDimensionStridesI32s, Int32 aPlaneCount, IntPtr aMatrixDataPtr);
 
         [DllImport(mDllName, CharSet = mCharset)]
         public static extern void Object_In_Matrix_Receive(IntPtr aSCbClrObjectPtr, Int64 aInletIdx, string aObjectName);

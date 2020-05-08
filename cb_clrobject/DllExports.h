@@ -66,13 +66,13 @@ __declspec(dllexport) void __stdcall Object_In_List_Add_Symbol_Func_Set(void* aS
 
 __declspec(dllexport) void __stdcall Object_In_Matrix_Receive(void* aSCbClrObjectPtr, long aInletIdx, const TCHAR* aMatrixObjectName);
 
-typedef long(__stdcall CObject_In_Matrix_Receive_Func)(long aInletIdx, long aSize, long aDimensionCount, void* aDimensionSizesI32s, void* aDimensionStridesI32s, long aPlaneCount, void* aMatrixDataPtr);
+typedef long(__stdcall CObject_In_Matrix_Receive_Func)(long aInletIdx, long aSize, const TCHAR* aCellType, long aDimensionCount, void* aDimensionSizesI32s, void* aDimensionStridesI32s, long aPlaneCount, void* aMatrixDataPtr);
 __declspec(dllexport) void __stdcall Object_In_Matrix_Receive_Func_Set(void* aSCbClrObjectPtr, CObject_In_Matrix_Receive_Func* aFuncPtr);
 
-typedef long(__stdcall CObject_Out_Matrix_Info_Get_Func)(char aInletOrOutlet, long aInletIdxOrOutletIdx, long* aSizePtr, long* aDimensionCount, long** aDimesionsSizes, long** aDimesionStrides, long* aPlaneCount);
-__declspec(dllexport) void __stdcall Object_Out_Matrix_Info_Get_Func_Set(void* aSCbClrObjectPtr, CObject_Out_Matrix_Info_Get_Func* aFuncPtr);
+//typedef long(__stdcall CObject_Out_Matrix_Info_Get_Func)(char aInletOrOutlet, long aInletIdxOrOutletIdx, long* aSizePtr, long* aDimensionCount, long** aDimesionsSizes, long** aDimesionStrides, long* aPlaneCount);
+//__declspec(dllexport) void __stdcall Object_Out_Matrix_Info_Get_Func_Set(void* aSCbClrObjectPtr, CObject_Out_Matrix_Info_Get_Func* aFuncPtr);
 
-typedef long(__stdcall CObject_Matrix_Out_Get_Func)(long aOutletIdx, char** aDataPtr, long* aSizePtr);
-__declspec(dllexport) void __stdcall Object_Out_Matrix_Get_Func_Set(void* aSCbClrObjectPtr, CObject_Matrix_Out_Get_Func* aFuncPtr);
+//typedef long(__stdcall CObject_Matrix_Out_Get_Func)(long aOutletIdx, char** aDataPtr, long* aSizePtr);
+//__declspec(dllexport) void __stdcall Object_Out_Matrix_Get_Func_Set(void* aSCbClrObjectPtr, CObject_Matrix_Out_Get_Func* aFuncPtr);
 
-__declspec(dllexport) void __stdcall Object_Out_Matrix_Send(void* aSCbClrObjectPtr, long aOutletIdx);
+__declspec(dllexport) void __stdcall Object_Out_Matrix_Send(void* aSCbClrObjectPtr, void* aOutletPtr, long aSize, const TCHAR* aCellTypePtr, long aDimensionCount, void* aDimensionSizesI32s, void* aDimensionStridesI32s, long aPlaneCount, void* aMatrixDataPtr);
