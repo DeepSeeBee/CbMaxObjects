@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 namespace CbChannelStrip
 {
     using System.Drawing;
+    using System.IO;
     using CbMaxClrAdapter;
     using CbMaxClrAdapter.Jitter;
 
@@ -32,9 +33,11 @@ namespace CbChannelStrip
             };
             this.MatrixOutlet = new CMatrixOutlet(this);
 
-            this.LeftInlet.Support(CMessageTypeEnum.Symbol);
-            this.LeftInlet.SetSymbolAction("load_image", this.OnLoadImage);
-
+            /// this.LeftInlet.SingleItemListEnabled = true; TODO-TestMe
+            this.LeftInlet.Support(CMessageTypeEnum.Symbol);    
+            this.LeftInlet.SetSymbolAction("ClearMatrix", this.OnClearMatrix);
+            this.LeftInlet.Support(CMessageTypeEnum.List);
+            this.LeftInlet.SetRemainingElementsAction("LoadImage", this.OnLoadImage);            
         }
 
         internal readonly CIntInlet IntInlet;
@@ -46,9 +49,16 @@ namespace CbChannelStrip
         internal readonly CMatrixInlet MatrixInlet;
         internal readonly CMatrixOutlet MatrixOutlet;
 
-        private void OnLoadImage(CInlet aInlet, CSymbol aSymbol)
+        private void OnLoadImage(CInlet aInlet, string aSymbol, CReadonlyListData aParams)
         {
-            this.MatrixOutlet.Message.Value.SetImage(Image.FromFile(@"C:\Program Files\Cycling '74\Max 8\packages\max-sdk-8.0.3\source\charly_beck\CbChannelStrip\m4l\Test\hade.jpg"));
+            var aFileInfo = new FileInfo(aParams.ElementAt(0).ToString());
+            this.MatrixOutlet.Message.Value.SetImage(Image.FromFile(aFileInfo.FullName)); // @"C:\Program Files\Cycling '74\Max 8\packages\max-sdk-8.0.3\source\charly_beck\CbChannelStrip\m4l\Test\hade.jpg"));
+            this.MatrixOutlet.Send();
+        }
+
+        private void OnClearMatrix(CInlet aInlet, CSymbol aSymbol)
+        {
+            this.MatrixOutlet.Message.Value.Clear();
             this.MatrixOutlet.Send();
         }
 

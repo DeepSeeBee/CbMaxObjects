@@ -83,8 +83,19 @@ namespace CbMaxClrAdapter
             }
             catch (Exception aExc)
             {
-                this.MaxObject.WriteLogErrorMessage(aExc);
-                return aExcValue();
+                if(this.MaxObject is object)
+                {
+                    this.MaxObject.WriteLogErrorMessage(aExc);
+                }
+                if(aExcValue is object)
+                {
+                    return aExcValue();
+                }
+                else
+                {
+                    return default(T);
+                }
+                
             }
         }
 
@@ -303,38 +314,35 @@ namespace CbMaxClrAdapter
             var aIntArray = new int[aSize];
             for(var aIdx = 0; aIdx < aSize; ++aIdx)
             {
-                aIntArray[aIdx] = (int)Marshal.ReadInt64(aPtr, aIdx);
+                aIntArray[aIdx] = (int)(Marshal.ReadInt64(aPtr, aIdx * 4));
             }
             return aIntArray;
         }
 
         internal void Send(CBangOutlet aBangOutlet) => DllImports.Object_Out_Bang_Send(aBangOutlet.MaxObject.Ptr, aBangOutlet.Ptr);
 
-        private byte[] BufferM;
-        private byte[] Buffer
-        {
-            get
-            {
-                if(object.ReferenceEquals(null, this.BufferM))
-                {
-                    this.BufferM = new byte[1024];
-                }
-                return this.BufferM;
-            }
-        }
-
-        private Int64 Object_In_Matrix_Receive(Int64 aInletIdx, Int64 aSize, Int64 aDimensionCount, IntPtr aDimensionSizesI64Ptr, IntPtr aDimensionStridesI64Ptr, Int64 aPlaneCount, IntPtr aMatrixDataU8Ptr)
+        private Int64 Object_In_Matrix_Receive(Int32 aInletIdx, Int32 aSize, Int32 aDimensionCount, IntPtr aDimensionSizesI64Ptr, IntPtr aDimensionStridesI64Ptr, Int32 aPlaneCount, IntPtr aMatrixDataU8Ptr)
         {
             return this.WithCatch(() =>
             {
                 var aMatrix  =this.MaxObject.Inlets[(int)aInletIdx].GetMessage<CMatrix>();
                 var aMatrixData = aMatrix.Value;
+                var aDimensionSizes = this.GetI64s(aDimensionSizesI64Ptr, (int)aDimensionCount);
+                var aDimensionStrides = this.GetI64s(aDimensionStridesI64Ptr, (int)aDimensionCount);
+
+                this.MaxObject.WriteLogInfoMessage(aInletIdx.ToString()); 
+                this.MaxObject.WriteLogInfoMessage(aSize.ToString());
+                this.MaxObject.WriteLogInfoMessage(aDimensionCount.ToString());
+                this.MaxObject.WriteLogInfoMessage(aDimensionSizes[0].ToString());
+                this.MaxObject.WriteLogInfoMessage(aDimensionSizes[1].ToString());
+                this.MaxObject.WriteLogInfoMessage(aDimensionStrides[0].ToString());
+                this.MaxObject.WriteLogInfoMessage(aDimensionStrides[1].ToString());
+                this.MaxObject.WriteLogInfoMessage(aPlaneCount.ToString());
+
                 aMatrixData.ReallocateInternal((int)aSize, 
-                                               (int)aDimensionCount, 
-                                               this.GetI64s(aDimensionSizesI64Ptr, 
-                                               (int)aDimensionCount), 
-                                               this.GetI64s(aDimensionSizesI64Ptr, 
-                                               (int)aDimensionSizesI64Ptr),
+                                               (int)aDimensionCount,
+                                               aDimensionSizes,
+                                               aDimensionStrides, 
                                                (int)aPlaneCount
                                                );
                 Marshal.Copy(aMatrixDataU8Ptr, aMatrixData.Buffer, (int)0, (int)aSize);

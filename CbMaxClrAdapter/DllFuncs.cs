@@ -32,6 +32,10 @@ namespace CbMaxClrAdapter
 
     }
 
+    /// <summary>
+    /// TODO: long wird als 32 Bit wert definiert. Habe überall Int64 verwendet.
+    /// Das Marshalling gleicht das aus, aber iwann auf 32bit korrigieren.
+    /// </summary>
     public static class DllImports
     {
 
@@ -150,7 +154,7 @@ namespace CbMaxClrAdapter
         public static extern void Object_In_List_Add_Symbol_Func_Set(IntPtr aSCbClrObjectPtr, CObject_In_List_Add_Symbol_Func aFunc);
 
 
-        public delegate Int64 CObject_In_Matrix_Receive_Func(Int64 aInletIdx, Int64 aSize, Int64 aDimensionCount, IntPtr aDimensionSizesI64Ptr, IntPtr aDimensionStridesI64Ptr, Int64 aPlaneCount, IntPtr aMatrixDataU8Ptr);
+        public delegate Int64 CObject_In_Matrix_Receive_Func(Int32 aInletIdx, Int32 aSize, Int32 aDimensionCount, IntPtr aDimensionSizesI64Ptr, IntPtr aDimensionStridesI64Ptr, Int32 aPlaneCount, IntPtr aMatrixDataU8Ptr);
         [DllImport(mDllName)]
         public static extern void Object_In_Matrix_Receive_Func_Set(IntPtr aSCbClrObjectPtr, CObject_In_Matrix_Receive_Func aFunc);
 

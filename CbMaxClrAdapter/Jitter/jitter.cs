@@ -50,10 +50,6 @@ namespace CbMaxClrAdapter.Jitter
             {
                 throw new ArgumentException("Size does not match DimensionSizes/Stride");
             }
-            else if(aSize == 0)
-            {
-                this.Buffer = new byte[0];
-            }
             else
             {
                 if (aByteCount != this.ByteCount)
@@ -112,7 +108,6 @@ namespace CbMaxClrAdapter.Jitter
                 aBytePos += aDimensionStrides[1];
             }
         }
-
         public byte ReadByte(ref int aBytePos)
         {
             var aByte = this.Buffer[aBytePos];
@@ -122,7 +117,7 @@ namespace CbMaxClrAdapter.Jitter
 
         public Bitmap NewBitmap()
         {
-            if (this.DimensionCount == 2
+            if(this.DimensionCount == 2
             && this.PlaneCount == 4
             && this.DimensionStrides[0] == 4)
             {

@@ -294,6 +294,11 @@ namespace CbMaxClrAdapter
             {
                 // Message dispatched.
             }
+            else if(aMessageType == CMessageTypeEnum.List
+                && this.Dispatch(this.GetMessage<CList>()))
+            {
+                // Message dispatched.
+            }
             else
             {
                 this.Receive(this.GetMessage(aMessageType));
@@ -303,27 +308,28 @@ namespace CbMaxClrAdapter
 
         public delegate void CListAction(CInlet aInlet, CListData aListData);
 
+        #region SymbolDispatching
         public delegate void CSymbolAction(CInlet aInlet, CSymbol aMessage);
-        private readonly Dictionary<string, CSymbolAction> Actions = new Dictionary<string, CSymbolAction>();
+        private readonly Dictionary<string, CSymbolAction> SymbolActions = new Dictionary<string, CSymbolAction>();
         public void SetSymbolAction(string aSymbol, CSymbolAction aAction)
         {
             this.CheckSupport(CMessageTypeEnum.Symbol);
             if(aAction is object)
             {
-                this.Actions[aSymbol] = aAction;
+                this.SymbolActions[aSymbol] = aAction;
             }
-            else if(this.Actions.ContainsKey(aSymbol))
+            else if(this.SymbolActions.ContainsKey(aSymbol))
             {
-                this.Actions.Remove(aSymbol);
+                this.SymbolActions.Remove(aSymbol);
             }            
         }
         internal bool Dispatch(CSymbol aMessage)
         {
             var aSymbolName = aMessage.Value;
-            if (this.Actions.ContainsKey(aSymbolName))
+            if (this.SymbolActions.ContainsKey(aSymbolName))
 
             {
-                var aAction = this.Actions[aSymbolName];
+                var aAction = this.SymbolActions[aSymbolName];
                 if (aAction is object)
                 {
                     aAction(this, aMessage);
@@ -339,7 +345,41 @@ namespace CbMaxClrAdapter
                 return false;
             }
         }
+        #endregion
+        #region ListDispatching
+        public delegate void CDispatchRemainingItemsAction(CInlet aInlet, string aFirstItem, CReadonlyListData aRemainingItems);
+        private readonly Dictionary<string, CDispatchRemainingItemsAction> RemainingItemsActions = new Dictionary<string, CDispatchRemainingItemsAction>();
+        public void SetRemainingElementsAction(string aFirstListItem, CDispatchRemainingItemsAction aAction)
+        {
+            this.CheckSupport(CMessageTypeEnum.List);
+            if(aAction is object)
+            {
+                this.RemainingItemsActions[aFirstListItem] = aAction;
+            }
+            else if(this.RemainingItemsActions.ContainsKey(aFirstListItem))
+            {
+                this.RemainingItemsActions.Remove(aFirstListItem);
+            }
+        }
+        private bool Dispatch(CList aList)
+        {
+            var aListData = aList.Value;
+            if(aListData.ContainsOneOrMoreElements())
+            {
+                var aSymbol = aListData.First().ToString();
+                if(this.RemainingItemsActions.ContainsKey(aSymbol))
+                {
+                    var aRemainingItems = new CReadonlyListData(aListData.Skip(1));
+                    var aAction = this.RemainingItemsActions[aSymbol];
+                    aAction(this, aSymbol, aRemainingItems);
+                    return true;
+                }
+                return false;
+            }
+            return false;
+        }
 
+        #endregion
     }
 
     public abstract class CSingleTypeInlet<TMessage> : CInlet<TMessage> where TMessage : CMessage
@@ -545,7 +585,7 @@ namespace CbMaxClrAdapter
             return !aEnumerable.GetEnumerator().MoveNext();
         }
 
-        public static bool ContainsOneElement(this IEnumerable aEnumerable)
+        public static bool ContainsOneOrMoreElements(this IEnumerable aEnumerable)
         {
             var aEn = aEnumerable.GetEnumerator();
             return aEn.MoveNext() && !aEn.MoveNext();
@@ -791,7 +831,6 @@ namespace CbMaxClrAdapter
         #endregion
         #region Outlets
         internal readonly List<COutlet> Outlets = new List<COutlet>();
-  
         #endregion
         #region Inlets
         internal readonly List<CInlet> Inlets = new List<CInlet>();
@@ -806,12 +845,6 @@ namespace CbMaxClrAdapter
         #region NewArgs
         internal IntPtr Ptr { get => this.NewArgs.mObjectPtr; }
         internal SObject_New NewArgs { get; private set; }
-        #endregion
-        #region String
-
-        #endregion
-        #region AssistString
-
         #endregion
         #region Log
         public void WriteLogErrorMessage(CConnector aConnector, string aMsg)

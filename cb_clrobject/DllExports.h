@@ -66,7 +66,7 @@ __declspec(dllexport) void __stdcall Object_In_List_Add_Symbol_Func_Set(void* aS
 
 __declspec(dllexport) void __stdcall Object_In_Matrix_Receive(void* aSCbClrObjectPtr, long aInletIdx, const TCHAR* aMatrixObjectName);
 
-typedef long(__stdcall CObject_In_Matrix_Receive_Func)(long aInletIdx, long aSize, long aDimensionCount, const long* aDimensionSizes, const long* aDimensionStrides, long aPlaneCount, const char* aMatrixDataPtr);
+typedef long(__stdcall CObject_In_Matrix_Receive_Func)(long aInletIdx, long aSize, long aDimensionCount, void* aDimensionSizesI32s, void* aDimensionStridesI32s, long aPlaneCount, void* aMatrixDataPtr);
 __declspec(dllexport) void __stdcall Object_In_Matrix_Receive_Func_Set(void* aSCbClrObjectPtr, CObject_In_Matrix_Receive_Func* aFuncPtr);
 
 typedef long(__stdcall CObject_Out_Matrix_Info_Get_Func)(char aInletOrOutlet, long aInletIdxOrOutletIdx, long* aSizePtr, long* aDimensionCount, long** aDimesionsSizes, long** aDimesionStrides, long* aPlaneCount);
