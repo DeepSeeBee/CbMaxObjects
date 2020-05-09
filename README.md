@@ -12,4 +12,4 @@ Using this path will ensure that the project runs though there are some hardcode
 
 Look at CbChannelStrip\CChannelStrip.cs
 
-This is a sample Max Object using the C# Adapter's (base). The code should be ovious at this state.
+This is a sample Max Object called 'External' implemented using the C# Adapter's (base) classes. The code should be ovious at this state.
