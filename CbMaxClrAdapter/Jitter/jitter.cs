@@ -131,11 +131,7 @@ namespace CbMaxClrAdapter.Jitter
                this.WriteByteInternal(ref aRowBytePos, aPixel.G);
                this.WriteByteInternal(ref aRowBytePos, aPixel.B); 
             }
-            //var aScrambled = false; // TODO: Why?!
-            //if(aScrambled)
-               aBytePos += aDimensionStrides[1]; // "Test.png" gets scrambled with this
-            //else
-            //   aBytePos = aRowBytePos;           // "hade-tiny-even.png" gets scrambled with this.
+            aBytePos += aDimensionStrides[1]; 
          }
       }
       public byte ReadByte(ref int aBytePos)
@@ -146,7 +142,7 @@ namespace CbMaxClrAdapter.Jitter
       }
 
       public Bitmap NewBitmap()
-      {
+      { // TODO_OPT
          if (this.DimensionCount == 2
          && this.PlaneCount == 4
          && this.DimensionStrides[0] == 4)

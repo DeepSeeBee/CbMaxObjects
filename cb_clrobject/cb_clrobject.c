@@ -660,21 +660,21 @@ void __stdcall Object_In_Matrix_Receive(SCbClrObject* aSCbClrObjectPtr, long aIn
    if (aSCbClrObjectPtr)
    {
       t_symbol* aMatrixObjectSymbol = gensym(aMatrixObjectName);
-      t_jit_object* aMatrixObjectPtr = jit_object_findregistered(aMatrixObjectSymbol);
+      t_jit_object* aMatrixPtr = jit_object_findregistered(aMatrixObjectSymbol);
       t_jit_matrix_info aMatrixInfo;		
       {
          memset(&aMatrixInfo, 0, sizeof(aMatrixInfo));
          const TCHAR* aMethodName = "getinfo";
          t_symbol* aMethodSymbolPtr = gensym(aMethodName);
-         method aMethod = jit_object_getmethod(aMatrixObjectPtr, aMethodSymbolPtr);
-         t_jit_err aErr = (t_jit_err)aMethod(aMatrixObjectPtr, &aMatrixInfo);
+         method aMethod = jit_object_getmethod(aMatrixPtr, aMethodSymbolPtr);
+         t_jit_err aErr = (t_jit_err)aMethod(aMatrixPtr, &aMatrixInfo);
       }		 
       void* aDataPtr = 0;
       {
          const TCHAR* aMethodName = "getdata";
          t_symbol* aMethodSymbolPtr = gensym(aMethodName);
-         method aMethod = jit_object_getmethod(aMatrixObjectPtr, aMethodSymbolPtr);
-         t_jit_err aErr = (t_jit_err)aMethod(aMatrixObjectPtr, &aDataPtr);
+         method aMethod = jit_object_getmethod(aMatrixPtr, aMethodSymbolPtr);
+         t_jit_err aErr = (t_jit_err)aMethod(aMatrixPtr, &aDataPtr);
       }
 
       if (aSCbClrObjectPtr->mObjectInMatrixReceiveFuncPtr)
@@ -689,10 +689,9 @@ void __stdcall Object_In_Matrix_Receive(SCbClrObject* aSCbClrObjectPtr, long aIn
                                              aDataPtr
                                              );
       }
-
-      sysmem_freeptr(aDataPtr); // TODO
    }
 }
+
  
 void ext_main(void* r)
 {
@@ -701,10 +700,10 @@ void ext_main(void* r)
    aClassPtr = class_new("cb_clrobject", (method)cb_clrobject_new, (method)cb_clrobject_free, (long)sizeof(SCbClrObject), 0L, A_GIMME, 0);
 
    class_addmethod(aClassPtr, (method)cb_clrobject_in_anything, "anything", A_GIMME, 0);
-   class_addmethod(aClassPtr, (method)cb_clrobject_in_int, "int", A_LONG, 0);
+   class_addmethod(aClassPtr, (method)cb_clrobject_in_int, "int", A_LONG, 0); 
    class_addmethod(aClassPtr, (method)cb_clrobject_in_float, "float", A_FLOAT, 0);
    class_addmethod(aClassPtr, (method)cb_clrobject_in_bang, "bang", 0);
-   class_addmethod(aClassPtr, (method)cb_clrobject_in_symbol, "symbol", A_SYM, 0);
+   class_addmethod(aClassPtr, (method)cb_clrobject_in_symbol, "symbol", A_SYM, 0); 
 
    class_register(CLASS_BOX, aClassPtr);
    gCbClrObjectClassPtr = aClassPtr;

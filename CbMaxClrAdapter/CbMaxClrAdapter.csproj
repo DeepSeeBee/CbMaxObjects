@@ -70,6 +70,8 @@
     <Compile Include="CMaxObject.cs" />
     <Compile Include="DllFuncs.cs" />
     <Compile Include="Jitter\jitter.cs" />
+    <Compile Include="Peristency\pers.cs" />
+    <Compile Include="Reflection\rfl.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="RGiesecke.DllExport.Metadata, Version=1.0.0.0, Culture=neutral, PublicKeyToken=8f52d83c1a22df51, processorArchitecture=MSIL">
@@ -77,6 +79,14 @@
       <Private>False</Private>
     </Reference>
     <Reference Include="System.Drawing" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="CodeGenerator\Generator\" />
+    <Folder Include="CodeGenerator\Output\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="CodeGenerator\Input\Classes.txt" />
+    <Content Include="Todo.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

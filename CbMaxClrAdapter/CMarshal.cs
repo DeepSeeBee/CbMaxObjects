@@ -9,6 +9,10 @@ using System.Threading.Tasks;
 
 namespace CbMaxClrAdapter
 {
+
+   /// <summary>
+   /// Todo-This might become a blop...
+   /// </summary>
    internal sealed class CMarshal
    {
       internal CMarshal(CMaxObject aMaxObject)

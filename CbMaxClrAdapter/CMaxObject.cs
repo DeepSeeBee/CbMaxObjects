@@ -347,9 +347,9 @@ namespace CbMaxClrAdapter
       }
       #endregion
       #region ListDispatching
-      public delegate void CDispatchRemainingItemsAction(CInlet aInlet, string aFirstItem, CReadonlyListData aRemainingItems);
-      private readonly Dictionary<string, CDispatchRemainingItemsAction> RemainingItemsActions = new Dictionary<string, CDispatchRemainingItemsAction>();
-      public void SetRemainingElementsAction(string aFirstListItem, CDispatchRemainingItemsAction aAction)
+      public delegate void CPrefixedListAction(CInlet aInlet, string aFirstItem, CReadonlyListData aRemainingItems);
+      private readonly Dictionary<string, CPrefixedListAction> RemainingItemsActions = new Dictionary<string, CPrefixedListAction>();
+      public void SetPrefixedListAction(string aFirstListItem, CPrefixedListAction aAction)
       {
          this.CheckSupport(CMessageTypeEnum.List);
          if (aAction is object)
@@ -366,7 +366,7 @@ namespace CbMaxClrAdapter
          var aListData = aList.Value;
          if (!aListData.IsEmpty())
          {
-            var aSymbol = aListData.First().ToString();
+            var aSymbol = aListData.First().ToString(); // TODO-Use .Symbol here.
             if (this.RemainingItemsActions.ContainsKey(aSymbol))
             {
                var aRemainingItems = new CReadonlyListData(aListData.Skip(1));
@@ -378,7 +378,6 @@ namespace CbMaxClrAdapter
          }
          return false;
       }
-
       #endregion
    }
 
@@ -405,6 +404,7 @@ namespace CbMaxClrAdapter
       internal override void CheckSupport(CMessageTypeEnum aMessageTypeEnum)
       {
          // Do not throw any error.
+         // TODO-This overriding/behaviour deactivating method shall be obsolete.
       }
 
    }
@@ -612,7 +612,7 @@ namespace CbMaxClrAdapter
    public abstract class CListData
    :
        CSealable
-   , IEnumerable<object>
+   ,   IEnumerable<object>
    {
 
       internal abstract IEnumerable<object> Enumerable { get; }
@@ -630,7 +630,7 @@ namespace CbMaxClrAdapter
 
       /// <summary>
       /// Max has under certain circumstance a "list" symbol added in front of the list.
-      /// This collection does contains this original list received from max which may or may not contain the prefix.
+      /// This collection  contains the original list received from max which may or may not contain the prefix.
       /// </summary>
       public IEnumerable<object> MaybeWithListPrefix { get => this.Enumerable; }
 
@@ -646,6 +646,10 @@ namespace CbMaxClrAdapter
       /// </summary>
       public bool StartsWithListPrefix { get => !this.MaybeWithListPrefix.IsEmpty() && this.MaybeWithListPrefix.First().Equals(ListPrefix); }
 
+      /// <summary>
+      /// Max has under certain circumstance a "list" symbol added in front of the list.
+      /// This constant defines this symbol.
+      /// </summary>
       private const string ListPrefix = "list";
 
       /// <summary>
@@ -654,20 +658,27 @@ namespace CbMaxClrAdapter
       /// </summary>
       public bool NeedsListPrefix { get => !this.MaybeWithListPrefix.IsEmpty() && (!IsSymbol(this.MaybeWithListPrefix.First()) || this.MaybeWithListPrefix.First().ToString() == ListPrefix); }
 
+      /// <summary>
+      /// This property designates wether the given value represents a max symbol
+      /// </summary>
       private bool IsSymbol(object aElement) => aElement.GetType().Equals(typeof(string));
 
       /// <summary>
+      /// Max has under certain circumstance a "list" symbol added in front of the list.
       /// This enumerable contains the list prefix in any case.
       /// </summary>
       private IEnumerable<object> WithListPrefix { get => new object[] { ListPrefix }.Concat(this.WithoutListPrefix); }
 
       /// <summary>
+      /// Max has under certain circumstance a "list" symbol added in front of the list.
       /// This enumerable contains the list prefix if one is required.
       /// </summary>
       private IEnumerable<object> WithListPrefixIfReqired { get => this.NeedsListPrefix ? this.WithListPrefix : this.WithoutListPrefix; }
 
       /// <summary>
-      /// This contains the first item of the list as extra symbol
+      /// Max has under certain circumstance a "list" symbol added in front of the list.
+      /// This contains the first item of the list as extra symbol.
+      /// (In the max c sdk it is required to send this symbol as an aextra data field)
       /// </summary>
       public string Symbol { get => this.IsEmpty() ? ListPrefix : this.NeedsListPrefix ? ListPrefix : this.WithoutListPrefix.First().ToString(); }
 
@@ -759,7 +770,6 @@ namespace CbMaxClrAdapter
 
       public override CEditableListData Editable => throw new InvalidOperationException("This list is readonly");
    }
-
 
    public sealed class CEditableListData : CListData
    {
@@ -865,7 +875,6 @@ namespace CbMaxClrAdapter
       public void WriteLogErrorMessage(string aMsg)
       {
          this.Marshal.Max_Log_Write(aMsg, true);
-
       }
       public void WriteLogErrorMessage(Exception aExc)
       {
@@ -875,7 +884,6 @@ namespace CbMaxClrAdapter
       {
          this.Marshal.Max_Log_Write(aMsg, false);
       }
-
       internal Exception NewDoesNotUnderstandExc(CConnector aConnector, string aWhat) => new Exception(aConnector.GetType().Name + " does not understand " + aWhat);
       internal Exception NewDoesNotUnderstandExc(CConnector aConnector, CMessageTypeEnum aMessageTypeEnum) => this.NewDoesNotUnderstandExc(aConnector, aMessageTypeEnum.ToString());
       #endregion

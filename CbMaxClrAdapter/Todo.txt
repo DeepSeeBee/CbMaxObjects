@@ -1,0 +1,13 @@
+﻿- Inlet Info ("Enhancements to objects"."Hot and cold inlets")
+   class_addmethod(c, (method)myobject_inletinfo, "inletinfo", A_CANT, 0);
+
+- ResourceManagment (Dateien, Dateinamen etc)
+- Persistenz
+
+
+- MemoryLeakTests
+------------------------------
+Object.In.Matrix      ?
+Object.Out.Matrix     fail      20200509
+Object.In.List        ?
+Object.Out.List       ?

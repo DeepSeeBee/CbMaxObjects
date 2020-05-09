@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+
+
 namespace CbChannelStrip
 {
    using System.Drawing;
@@ -37,7 +39,7 @@ namespace CbChannelStrip
          this.LeftInlet.Support(CMessageTypeEnum.Symbol);
          this.LeftInlet.SetSymbolAction("clear_matrix", this.OnClearMatrix);
          this.LeftInlet.Support(CMessageTypeEnum.List);
-         this.LeftInlet.SetRemainingElementsAction("load_image", this.OnLoadImage);
+         this.LeftInlet.SetPrefixedListAction("load_image", this.OnLoadImage);
       }
 
       internal readonly CIntInlet IntInlet;
@@ -52,8 +54,7 @@ namespace CbChannelStrip
       private void OnLoadImage(CInlet aInlet, string aSymbol, CReadonlyListData aParams)
       {
          var aFileInfo = new FileInfo(aParams.ElementAt(0).ToString().Replace("/", "\\"));
-         //this.WriteLogInfoMessage("OnLoadImage(" + "\"" + aFileInfo.FullName + "\"");
-         this.MatrixOutlet.Message.Value.SetImage(Image.FromFile(aFileInfo.FullName)); // @"C:\Program Files\Cycling '74\Max 8\packages\max-sdk-8.0.3\source\charly_beck\CbChannelStrip\m4l\Test\hade.jpg"));
+         this.MatrixOutlet.Message.Value.SetImage(Image.FromFile(aFileInfo.FullName)); 
          this.MatrixOutlet.Message.Value.PrintMatrixInfo(this, "ImageMatrix");
          this.MatrixOutlet.Send();
       }
