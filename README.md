@@ -25,3 +25,11 @@ Problem 3: It happened visual studio opened the root solution when opening the p
 Look at CbChannelStrip\CChannelStrip.cs
 
 This is a sample Max Object called 'External' implemented using the C# Adapter's (base) classes. The code should be ovious at this state.
+
+## License
+
+Trust me, you don't wanna use the project in this state. It's the beta of all betas ;) When it's ready i will think of a license. In the meantime: CCC Attribution, Non commercial, no derivates, free to use for your private device testing. 
+
+## Feature requests
+Are welcome.
+
