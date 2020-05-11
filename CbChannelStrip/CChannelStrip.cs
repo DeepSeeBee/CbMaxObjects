@@ -8,31 +8,42 @@ namespace CbChannelStrip
 {
    using System.Collections;
    using System.Data;
+   using System.Data.Common;
+   using System.Diagnostics;
    using System.Drawing;
    using System.IO;
    using System.Security.AccessControl;
+   using System.Windows.Media.Imaging;
    using CbMaxClrAdapter;
    using CbMaxClrAdapter.Jitter;
 
+
+   internal sealed class CSettings
+   {
+      internal DirectoryInfo GraphWizInstallDir { get =>new DirectoryInfo(@"C:\Program Files (x86)\Graphviz2.38\"); }
+   }
+
+
    internal sealed class CFlowMatrix
    {
-      internal CFlowMatrix(Int32 aIoCount, params int[] aMatrix) : this(aIoCount, (from aItem in aMatrix select aItem != 0).ToArray())
+      internal CFlowMatrix(CSettings aSettings, Int32 aIoCount, params int[] aMatrix) : this(aSettings, aIoCount, (from aItem in aMatrix select aItem != 0).ToArray())
       {
       }
-      internal CFlowMatrix(Int32 aIoCount, params bool[] aMatrix)
+      internal CFlowMatrix(CSettings aSettings, Int32 aIoCount, params bool[] aMatrix)
       {
          if (aMatrix.Length != aIoCount * aIoCount)
             throw new ArgumentException("Can not understand this list. Length must be IoCount^2.");
+         this.Settings = aSettings;
          this.IoCount = aIoCount;
          this.Matrix = aMatrix;
       }
-      internal static CFlowMatrix New(IEnumerable<object> aSpec)
+      internal static CFlowMatrix New(CSettings aSettings, IEnumerable<object> aSpec)
       {
          try
          {
             var aIoCount = Convert.ToInt32(aSpec.ElementAt(0));
             var aMatrix = from aItem in aSpec.Skip(1) select Convert.ToInt32(aItem);
-            return new CFlowMatrix(aIoCount, aMatrix.ToArray());
+            return new CFlowMatrix(aSettings, aIoCount, aMatrix.ToArray());
          }
          catch(Exception aExc)
          {
@@ -40,8 +51,9 @@ namespace CbChannelStrip
          }
       }
 
+      internal readonly CSettings Settings;
       internal readonly Int32 IoCount;
-      private Int32 CellCount { get => this.IoCount * this.IoCount; }
+      internal Int32 CellCount { get => this.IoCount * this.IoCount; }
       internal readonly bool[] Matrix;
 
       internal int GetCellIdx(int aColumn, int aRow) => aRow * this.IoCount + aColumn;
@@ -51,15 +63,18 @@ namespace CbChannelStrip
       internal IEnumerable<int[]> GetFeedbackLoops(int aColumn, int aRow)
       {
          var aFeedbackLoops = new List<int[]>();
-         this.GetFeedbackLoops( aColumn, aRow, aColumn, new List<int>(), aFeedbackLoops);
+         foreach (var aCurrRow in Enumerable.Range(0, this.IoCount))
+         {
+            this.GetFeedbackLoops(aColumn, aRow, aCurrRow, new List<int>(), aFeedbackLoops);
+         }
          return aFeedbackLoops.ToArray();
       }
 
       private void GetFeedbackLoops(int aColumn, int aRow, int aCurrRow, List<int> aPath, List<int[]> aFeedbackLoops)
       {
-         for (var aCurrCol = 0; aCurrCol < this.IoCount; ++aCurrCol)
+         foreach(var aCurrCol in Enumerable.Range(0, this.IoCount))
          {
-            if(aCurrCol == 0)
+            if (aCurrCol == 0)
             {
                // out[0] is main out.
                // => Mapping to out[0] always possible. 
@@ -74,7 +89,7 @@ namespace CbChannelStrip
                else
                {
                   aPath.Add(aCurrCol);
-                  this.GetFeedbackLoops(aColumn, aCurrRow, aCurrCol, aPath, aFeedbackLoops);
+                  this.GetFeedbackLoops(aColumn, aRow, aCurrCol, aPath, aFeedbackLoops);
                   aPath.RemoveAt(aPath.Count - 1);
                }
             }
@@ -87,9 +102,10 @@ namespace CbChannelStrip
          for(var aColIdx = 0; aColIdx < this.IoCount; ++aColIdx)
          {
             for(var aRowIdx = 0; aRowIdx < this.IoCount; ++aRowIdx)
-            {               
-               var aEnabled  = this.GetFeedbackLoops(aColIdx, aRowIdx).IsEmpty();
+            {
                var aCellIdx = this.GetCellIdx(aColIdx, aRowIdx);
+               var aEnabled  = this.GetFeedbackLoops(aColIdx, aRowIdx).IsEmpty();
+               
                aEnables[aCellIdx] = aEnabled;
             }
          }
@@ -226,7 +242,47 @@ namespace CbChannelStrip
       }
       public static void Test(Action<string> aFailTest)
       {
-         Test("f02dd08f-8c78-4118-bf4b-680e08681ef9", new CFlowMatrix(5,
+         var aSettings = new CSettings();
+
+         Test("c6090373-ca31-409c-968b-cc954900d29f", new CFlowMatrix(aSettings, 5,
+                                                                     0, 0, 0, 0, 0,
+                                                                     0, 0, 0, 0, 0,
+                                                                     0, 0, 0, 0, 0,
+                                                                     0, 0, 0, 0, 0,
+                                                                     0, 0, 0, 0, 0)
+            .EnableInts.ToArray(), new int[] { 1, 1, 1, 1, 1,
+                                               1, 0, 1, 1, 1,
+                                               1, 1, 0, 1, 1,
+                                               1, 1, 1, 0, 1,
+                                               1, 1, 1, 1, 0 }, aFailTest);
+
+         Test("4bb437c9-db94-49e1-bf85-e285aa2dc8e2", new CFlowMatrix(aSettings, 5,
+                                                                     0, 1, 0, 0, 0,
+                                                                     0, 0, 0, 0, 0,
+                                                                     0, 0, 0, 0, 0,
+                                                                     0, 0, 0, 0, 0,
+                                                                     0, 0, 0, 0, 0)
+            .EnableInts.ToArray(), new int[] { 1, 1, 1, 1, 1,
+                                               1, 0, 1, 1, 1,
+                                               1, 1, 0, 1, 1,
+                                               1, 1, 1, 0, 1,
+                                               1, 1, 1, 1, 0 }, aFailTest);
+
+
+
+         Test("c459dacd-ce57-4490-b44e-22f59a922179", new CFlowMatrix(aSettings, 5,
+                                                                     0, 1, 0, 0, 0,
+                                                                     0, 0, 1, 0, 0,
+                                                                     0, 0, 0, 0, 0,
+                                                                     0, 0, 0, 0, 0,
+                                                                     0, 0, 0, 0, 0)
+            .EnableInts.ToArray(), new int[] { 1, 1, 1, 1, 1,
+                                               1, 0, 1, 1, 1,
+                                               1, 0, 0, 1, 1,
+                                               1, 1, 1, 0, 1,
+                                               1, 1, 1, 1, 0 }, aFailTest);
+
+         Test("f02dd08f-8c78-4118-bf4b-680e08681ef9", new CFlowMatrix(aSettings, 5,
                                                                      0, 0, 0, 0, 0, 
                                                                      0, 0, 1, 1, 1, 
                                                                      0, 0, 0, 0, 1, 
@@ -237,6 +293,8 @@ namespace CbChannelStrip
                                                1, 0, 0, 1, 1, 
                                                1, 0, 1, 0, 1, 
                                                1, 0, 0, 1, 0 }, aFailTest);
+
+
       }
       #endregion
       private CRoutings RoutingsM;
@@ -273,7 +331,16 @@ namespace CbChannelStrip
 
    internal sealed class CGraphWizDiagram : CRoutingVisitor, IEnumerable<string>
    {
-      private List<string> Rows = new List<string>();
+      internal CGraphWizDiagram(CSettings aSettings)
+      {
+         this.Settings = aSettings;
+      }
+
+      private CSettings Settings;
+
+      private readonly DirectoryInfo GraphWizInstallDir;
+
+      private readonly List<string> Rows = new List<string>();
       public IEnumerator<string> GetEnumerator() => this.Rows.GetEnumerator();
       IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 
@@ -282,7 +349,7 @@ namespace CbChannelStrip
 
       public override void Visit(CRoutings aRoutings)
       {
-         this.AddLine("diagram D");
+         this.AddLine("digraph G");
          this.AddLine("{");
          ++this.Indent;
          base.Visit(aRoutings);
@@ -300,8 +367,7 @@ namespace CbChannelStrip
          foreach(var aOutput in aRouting.Outputs)
          {
             this.AddLine(this.GetInName(aRouting) + " -> " + this.GetOutName(aOutput) + ";");
-         }
-         
+         }        
       }
 
       public override void Visit(CParalellRouting aParalellRouting)
@@ -319,15 +385,17 @@ namespace CbChannelStrip
       }
 
       #region Test
-      private static void Test(string aId, string[] aCode, Action<string> aFailAction)
+      private static void Test(string aId, CGraphWizDiagram aDiagram, Action<string> aFailAction)
       {
-         var aLinesText = aCode.JoinString(Environment.NewLine);
+         aDiagram.Bitmap.Save(@"C:\Program Files\Cycling '74\Max 8\packages\max-sdk-8.0.3\source\charly_beck\CbChannelStrip\m4l\Test\graph.png");
+         var aLinesText = aDiagram.JoinString(Environment.NewLine);
 
       }
 
       internal static void Test(Action<string> aFailAction)
       {
-         Test("", new CFlowMatrix(7,
+         var aSettings = new CSettings();
+         Test("", new CFlowMatrix(aSettings, 7,
                                   0, 1, 1, 0, 0, 0, 0,
                                   0, 0, 0, 0, 0, 0, 1,
                                   0, 0, 0, 1, 1, 0, 0,
@@ -335,46 +403,119 @@ namespace CbChannelStrip
                                   0, 0, 0, 0, 0, 1, 0,
                                   0, 0, 0, 0, 0, 0, 1,
                                   1, 0, 0, 0, 0, 0, 0                                  
-                                  ).Routings.GraphWizCode, aFailAction);
+                                  ).Routings.GraphWizDiagram, aFailAction);
       }
       #endregion
 
-   }
-
-   public static class CStringExtensions
-   {
-      public static string JoinString(this IEnumerable<string> aStrings, string aLimiter)
+      //private IDOT GraphWizDotM;
+      //private IDOT GraphWizDot
+      //{
+      //   get
+      //   {
+      //      if(!(this.GraphWizDotM is object))
+      //      {
+      //         var aType = Type.GetTypeFromProgID("WINGRAPHVIZLib.DOTClass");
+      //         var aObj = Activator.CreateInstance(aType);
+      //         //object comObj = Activator.CreateInstance(comType);
+      //         this.GraphWizDotM = new DOTClass();
+      //         // "regsvr32.exe C:\Program Files (x86)\WinGraphviz\WinGraphviz.dll
+      //      }
+      //      return this.GraphWizDotM;
+      //   }
+      //}
+      private void NewGraph(IEnumerable<string> aLines,
+                              string aGraphoutputType,
+                              Stream aStream)
       {
-         var aStringBuilder = new StringBuilder();
-         var aOpen = false;
-         foreach(var aString in aStrings)
+         var aErmGraphNodeVm = this;
+         var aDotProcess = new ProcessStartInfo();
+         var aInstallDir = this.Settings.GraphWizInstallDir;
+         var aBinDir = new DirectoryInfo(Path.Combine(aInstallDir.FullName, "bin"));
+         var aDir = aBinDir;
+         aDotProcess.FileName = Path.Combine(aDir.FullName, "dot.exe");
+         aDotProcess.Arguments = aGraphoutputType.IsEmpty() ? string.Empty : "-T" + aGraphoutputType;
+         aDotProcess.RedirectStandardInput = true;
+         aDotProcess.RedirectStandardOutput = true;
+         aDotProcess.RedirectStandardError = true;
+         aDotProcess.UseShellExecute = false;
+         aDotProcess.WindowStyle = ProcessWindowStyle.Hidden;
+         aDotProcess.CreateNoWindow = true;
+         var aText = aLines.JoinString("\n");
+         var aCompatibleText = aText;
+         var aProcess = Process.Start(aDotProcess);
+         aProcess.StandardInput.Write(aCompatibleText);
+         aProcess.StandardInput.Close();
+         var aReader = new BinaryReader(aProcess.StandardOutput.BaseStream);
+         var aBuf = new byte[1024];
+         var aByteCount = 0;
+         do
          {
-            if (aOpen)
-               aStringBuilder.Append(aLimiter);
-            aStringBuilder.Append(aString);
-            aOpen = true;
+            aByteCount = aReader.Read(aBuf, 0, aBuf.Length);
+            aStream.Write(aBuf, 0, aByteCount);
          }
-         return aStringBuilder.ToString();
+         while (aByteCount != 0);
+         var aError1 = aProcess.StandardError.ReadToEnd();
+         var aError2 = aError1 is object ? aError1.ToString() : string.Empty;
+         var aError = aError2;
+         if (aError != string.Empty)
+         {
+            var aExc = new Exception(aError);
+            throw aExc;
+         }
+      }
+
+      private Bitmap NewBitmap(IEnumerable<string> aLines)
+      {
+         var aGraphoutputType = "bmp";
+         var aImageStream = new MemoryStream();
+         try
+         {
+            this.NewGraph(aLines, aGraphoutputType, aImageStream);
+         }
+         catch (Exception aExc)
+         {
+            throw new Exception("Could not create graph. " + aExc.Message, aExc);
+         }
+         aImageStream.Seek(0, SeekOrigin.Begin);
+         var aBitmap = new Bitmap(aImageStream);
+         return aBitmap;
+      }
+
+      private Bitmap BitmapM;
+      public Bitmap Bitmap
+      {
+         get
+         {
+            if(!(this.BitmapM is object))
+            {
+               this.BitmapM = this.NewBitmap(this);
+            }
+            return this.BitmapM;
+         }
       }
    }
+
+
+
+
 
    internal sealed class CRoutings : IEnumerable<CRouting>
    {
       internal CRoutings(CFlowMatrix aFlowMatrix)
       {
          var aRoutings = new CRouting[aFlowMatrix.IoCount];
-         for(var aRow = 0; aRow < aFlowMatrix.IoCount; ++aRow)
+         for (var aRow = 0; aRow < aFlowMatrix.IoCount; ++aRow)
          {
             var aOutputs = new List<int>();
-            for(var aCol = 0; aCol <  aFlowMatrix.IoCount; ++aCol)
+            for (var aCol = 0; aCol < aFlowMatrix.IoCount; ++aCol)
             {
-               if(aFlowMatrix.Coerced[aFlowMatrix.GetCellIdx(aCol, aRow)])
+               if (aFlowMatrix.Coerced[aFlowMatrix.GetCellIdx(aCol, aRow)])
                {
                   aOutputs.Add(aCol);
                }
             }
             var aRouting = CRouting.New(this, aRow, aOutputs);
-            aRoutings[aRow] = aRouting;         
+            aRoutings[aRow] = aRouting;
          }
          this.Routings = aRoutings;
          this.FlowMatrix = aFlowMatrix;
@@ -405,21 +546,20 @@ namespace CbChannelStrip
          }
       }
 
-      private string[] GraphWizCodeM;
-      public string[] GraphWizCode 
-      { 
+      private CGraphWizDiagram GraphWizDiagramM;
+      internal CGraphWizDiagram GraphWizDiagram
+      {
          get
          {
-            if (!(this.GraphWizCodeM is object))
+            if (!(this.GraphWizDiagramM is object))
             {
-               var aGraphWizDiagram = new CGraphWizDiagram();
-               aGraphWizDiagram.Visit(this);
-               this.GraphWizCodeM = aGraphWizDiagram.ToArray();
+               var aDiagram = new CGraphWizDiagram(this.FlowMatrix.Settings);
+               aDiagram.Visit(this);
+               this.GraphWizDiagramM = aDiagram;
             }
-            return this.GraphWizCodeM;
+            return this.GraphWizDiagramM;
          }
       }
-
    }
 
    internal abstract class CRouting
@@ -500,11 +640,133 @@ namespace CbChannelStrip
 
    }
 
-
-
    public sealed class CChannelStrip : CMaxObject
    {
-      public CChannelStrip()
+      public CChannelStrip() 
+      {
+         this.LeftInlet.Support(CMessageTypeEnum.Bang);   
+         this.LeftInlet.Support(CMessageTypeEnum.List);
+         this.LeftInlet.SetPrefixedListAction("init", this.OnInit);
+         this.MatrixCtrlLeftOutIn = new CListInlet(this);
+         this.MatrixCtrlLeftOutIn.Action = this.OnMatrixCtrlLeftOutIn;
+         this.MatrixCtrlRightOutIn = new CListInlet(this);
+         this.MatrixCtrlRightOutIn.Action = this.OnMatrixCtrlRightOutIn;
+         this.MatrixCtrlLeftInOut = new CListOutlet(this);
+         this.GraphBitmapOut = new CMatrixOutlet(this);
+      }
+
+      private readonly CListInlet MatrixCtrlLeftOutIn;
+      private readonly CListInlet MatrixCtrlRightOutIn;
+
+      private readonly CListOutlet MatrixCtrlLeftInOut;
+      private readonly CMatrixOutlet GraphBitmapOut;
+
+      private Int32 IoCount;
+      private bool RequestRowsPending;
+      private Int32 RequestRowIdx;
+      private Int32[][] Rows;
+      private CFlowMatrix FlowMatrix;
+
+      private void OnInit(CInlet aInlet, string aFirstItem, CReadonlyListData aParams)
+      {
+         var aIoCount = Convert.ToInt32(aParams.ElementAt(0));         
+         var aRows = new Int32[aIoCount][];
+         for (var aIdx = 0; aIdx < aIoCount; ++aIdx)
+         {
+            aRows[aIdx] = new int[aIoCount];
+         }
+         this.Rows = aRows;
+         this.IoCount = aIoCount;
+         this.RequestRows();         
+      }
+      
+      private void RequestRows()
+      {
+         if(this.RequestRowsPending)
+         {
+            throw new InvalidOperationException();
+         }
+         else
+         {
+            this.RequestRowsPending = true;
+            try
+            {
+               for (var aRow = 0; aRow < this.IoCount; ++aRow)
+               {
+                  this.RequestRowIdx = aRow;
+                  this.MatrixCtrlLeftInOut.Message.Value.Clear();
+                  this.MatrixCtrlLeftInOut.Message.Value.Add("getrow");
+                  this.MatrixCtrlLeftInOut.Message.Value.Add(aRow);
+                  this.MatrixCtrlLeftInOut.Send();
+               }
+            }
+            finally
+            {
+               this.RequestRowsPending = false;
+            }
+            this.UpdateMatrix();
+         }
+      }
+
+      private readonly CSettings Settings = new CSettings();
+
+      private void UpdateMatrix()
+      {
+         var aMatrix = (from aRow in this.Rows from aCell in aRow select aCell).ToArray();         
+         this.FlowMatrix = new CFlowMatrix(this.Settings, this.IoCount, aMatrix);
+
+         this.WriteLogInfoMessage("Matrix", aMatrix.Cast<object>());
+         this.WriteLogInfoMessage("Enables", this.FlowMatrix.EnableInts.Cast<object>());
+
+         foreach (var aRowIdx in Enumerable.Range(0, this.FlowMatrix.IoCount))
+         {
+            foreach (var aColIdx in Enumerable.Range(0, this.FlowMatrix.IoCount))
+            {
+               var aEnabled = this.FlowMatrix.Enables[this.FlowMatrix.GetCellIdx(aColIdx, aRowIdx)];
+               this.MatrixCtrlLeftInOut.Message.Value.Clear();
+               this.MatrixCtrlLeftInOut.Message.Value.Add(aEnabled ? "enablecell" : "disablecell");               
+               this.MatrixCtrlLeftInOut.Message.Value.Add(aColIdx);
+               this.MatrixCtrlLeftInOut.Message.Value.Add(aRowIdx);
+               this.MatrixCtrlLeftInOut.Send();
+            }
+         }
+         this.GraphBitmapOut.Message.Value.SetImage(this.FlowMatrix.Routings.GraphWizDiagram.Bitmap);
+         this.GraphBitmapOut.Send();
+      }
+
+      private void OnMatrixCtrlRightOutIn(CInlet aInlet, CList aList)
+      {
+         if(this.RequestRowsPending)
+         {
+            for(var aY = 0; aY < this.IoCount; ++aY)
+            {
+               this.Rows[this.RequestRowIdx][aY] = Convert.ToInt32(aList.Value.ElementAt(aY));
+            }
+         }
+      }
+
+      private void OnMatrixCtrlLeftOutIn(CInlet aInlet, CList aList)
+      {
+         var aX = Convert.ToInt32(aList.Value.ElementAt(0));
+         var aY = Convert.ToInt32(aList.Value.ElementAt(1));
+         var aCellState = Convert.ToInt32(aList.Value.ElementAt(2));
+         this.Rows[aY][aX] = aCellState;
+         this.UpdateMatrix();
+      }
+      public static void Test(Action<string> aFailAction)
+      {
+         CFlowMatrix.Test(aFailAction);
+         CGraphWizDiagram.Test(aFailAction);
+      }
+
+   }
+
+
+
+
+   public sealed class CTestObject : CMaxObject
+   {
+      public CTestObject()
       {
          this.IntInlet = new CIntInlet(this)
          {
@@ -531,11 +793,6 @@ namespace CbChannelStrip
          this.LeftInlet.SetPrefixedListAction("load_image", this.OnLoadImage);
       }
 
-      public static void Test(Action<string> aFailAction)
-      {
-         //CFlowMatrix.Test(aFailAction);
-         CGraphWizDiagram.Test(aFailAction);
-      }
 
       internal readonly CIntInlet IntInlet;
       internal readonly CIntOutlet IntOutlet;

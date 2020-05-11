@@ -350,7 +350,7 @@ namespace CbMaxClrAdapter
 
       private CMessageTypeEnum GetDataType(object aElement)
       {
-         if (object.ReferenceEquals(null, aElement))
+         if (!(aElement is object))
             return CMessageTypeEnum.Null;
          else if (aElement is string)
             return CMessageTypeEnum.Symbol;
@@ -359,6 +359,7 @@ namespace CbMaxClrAdapter
          else if (aElement is Int32)
             return CMessageTypeEnum.Int;
          else
+            this.MaxObject.WriteLogErrorMessage("Unknown ElementType: " + aElement.GetType().Name);
             return CMessageTypeEnum.Null;
       }
 

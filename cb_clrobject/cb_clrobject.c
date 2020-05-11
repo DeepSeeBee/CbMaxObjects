@@ -75,29 +75,30 @@ void __stdcall In_Delete(void* aProxy)
 
 void* __stdcall Object_Out_Add(void* aObjectPtr, int aType, int aPos)
 {
-   switch (aType)
-   {
-   case 0: // Any
-      return outlet_new(aObjectPtr, NULL);
+   return outlet_new(aObjectPtr, NULL);
+   //switch (aType)
+   //{
+   //case 0: // Any
+   //   return outlet_new(aObjectPtr, NULL);
 
-   case 1: // Bang
-      return outlet_new(aObjectPtr, "bang");
+   //case 1: // Bang
+   //   return outlet_new(aObjectPtr, "bang");
 
-   case 2: // Float
-      return outlet_new(aObjectPtr, "f");
+   //case 2: // Float
+   //   return outlet_new(aObjectPtr, "f");
 
-   case 3: // Int
-      return outlet_new(aObjectPtr, "i");
+   //case 3: // Int
+   //   return outlet_new(aObjectPtr, NULL);
 
-   case 4: // List
-      return outlet_new(aObjectPtr, "l");
+   //case 4: // List
+   //   return outlet_new(aObjectPtr, "l");
 
-   case 6: // Matrix
-      return outlet_new(aObjectPtr, NULL);
+   //case 6: // Matrix
+   //   return outlet_new(aObjectPtr, NULL);
 
-   default:
-      return 0;
-   }
+   //default:
+   //   return 0;
+   //}
 }
 
 void __stdcall Out_Delete(void* aOutletPtr)

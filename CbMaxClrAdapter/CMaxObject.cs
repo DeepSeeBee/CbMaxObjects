@@ -786,11 +786,11 @@ namespace CbMaxClrAdapter
          this.ClearInternal();
       }
 
-      internal void AddInternal(long aLong)
+      internal void AddInternal(Int32 aLong)
       {
          this.List.Add(aLong);
       }
-      public void Add(long aLong)
+      public void Add(Int32 aLong)
       {
          this.CheckWrite();
          this.AddInternal(aLong);
@@ -872,14 +872,40 @@ namespace CbMaxClrAdapter
       }
       public void WriteLogErrorMessage(Exception aExc)
       {
-         this.WriteLogInfoMessage(aExc.ToString());
+         this.WriteLogErrorMessage(aExc.ToString());
       }
       public void WriteLogInfoMessage(string aMsg)
       {
          this.Marshal.Max_Log_Write(aMsg, false);
       }
+      public void WriteLogInfoMessage(string aVarName, string aVarValue)
+      {
+         this.WriteLogInfoMessage(aVarName + "=" + aVarValue);
+      }
+      public void WriteLogInfoMessage(string aVarName, IEnumerable<object> aVals)
+      {
+         this.WriteLogInfoMessage(aVarName, "[" + (from aVal in aVals select Convert.ToString(aVal)).JoinString(", ") + "]");
+      }
       internal Exception NewDoesNotUnderstandExc(CConnector aConnector, string aWhat) => new Exception(aConnector.GetType().Name + " does not understand " + aWhat);
       internal Exception NewDoesNotUnderstandExc(CConnector aConnector, CMessageTypeEnum aMessageTypeEnum) => this.NewDoesNotUnderstandExc(aConnector, aMessageTypeEnum.ToString());
       #endregion
+   }
+
+
+   public static class CStringExtensions
+   {
+      public static string JoinString(this IEnumerable<string> aStrings, string aLimiter)
+      {
+         var aStringBuilder = new StringBuilder();
+         var aOpen = false;
+         foreach (var aString in aStrings)
+         {
+            if (aOpen)
+               aStringBuilder.Append(aLimiter);
+            aStringBuilder.Append(aString);
+            aOpen = true;
+         }
+         return aStringBuilder.ToString();
+      }
    }
 }
