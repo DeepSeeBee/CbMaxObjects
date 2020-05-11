@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 namespace CbChannelStrip
 {
+   using System.Collections;
+   using System.Data;
    using System.Drawing;
    using System.IO;
    using System.Security.AccessControl;
@@ -42,9 +44,9 @@ namespace CbChannelStrip
       private Int32 CellCount { get => this.IoCount * this.IoCount; }
       internal readonly bool[] Matrix;
 
-      private int GetIndex(int aColumn, int aRow) => aRow * this.IoCount + aColumn;
+      internal int GetCellIdx(int aColumn, int aRow) => aRow * this.IoCount + aColumn;
 
-      public bool this[int aColumn, int aRow] { get => this.Matrix[this.GetIndex(aColumn, aRow)]; }
+      public bool this[int aColumn, int aRow] { get => this.Matrix[this.GetCellIdx(aColumn, aRow)]; }
 
       internal IEnumerable<int[]> GetFeedbackLoops(int aColumn, int aRow)
       {
@@ -55,32 +57,26 @@ namespace CbChannelStrip
 
       private void GetFeedbackLoops(int aColumn, int aRow, int aCurrRow, List<int> aPath, List<int[]> aFeedbackLoops)
       {
-         if(aPath.Contains(aCurrRow))
+         for (var aCurrCol = 0; aCurrCol < this.IoCount; ++aCurrCol)
          {
-            aFeedbackLoops.Add(aPath.ToArray());
-         }
-         else if(aRow == 0 && aColumn == 0)
-         {
-            // In=>Out
-         }
-         else
-         {
-            var aPathIdx = aPath.Count;
-            aPath.Add(aCurrRow);
-            try
+            if(aCurrCol == 0)
             {
-               for (var aCurrCol = 0; aCurrCol < this.IoCount; ++aCurrCol)
-               {
-                  if ((aRow == aCurrRow && aCurrCol == aColumn)
-                  || this[aCurrCol, aCurrRow])
-                  {
-                     this.GetFeedbackLoops(aColumn, aRow, aCurrCol, aPath, aFeedbackLoops);
-                  }
-               }
+               // out[0] is main out.
+               // => Mapping to out[0] always possible. 
             }
-            finally
+            else if ((aRow == aCurrRow && aCurrCol == aColumn)
+            || this[aCurrCol, aCurrRow])
             {
-               aPath.RemoveAt(aPathIdx);
+               if (aPath.Contains(aCurrCol))
+               {
+                  aFeedbackLoops.Add(aPath.ToArray());
+               }
+               else
+               {
+                  aPath.Add(aCurrCol);
+                  this.GetFeedbackLoops(aColumn, aCurrRow, aCurrCol, aPath, aFeedbackLoops);
+                  aPath.RemoveAt(aPath.Count - 1);
+               }
             }
          }
       }
@@ -93,7 +89,7 @@ namespace CbChannelStrip
             for(var aRowIdx = 0; aRowIdx < this.IoCount; ++aRowIdx)
             {               
                var aEnabled  = this.GetFeedbackLoops(aColIdx, aRowIdx).IsEmpty();
-               var aCellIdx = this.GetIndex(aColIdx, aRowIdx);
+               var aCellIdx = this.GetCellIdx(aColIdx, aRowIdx);
                aEnables[aCellIdx] = aEnabled;
             }
          }
@@ -151,6 +147,33 @@ namespace CbChannelStrip
 
       public bool NeedsCoerce { get => this.CoercedPair.Item1; }
       public bool[] Coerced { get => this.CoercedPair.Item2; }
+
+      private int[][] JoinsM;
+      public int[][] Joins
+      {
+         get
+         {
+            if(!(this.JoinsM is object))
+            {
+               var aJoinss = new int[this.IoCount][];
+               for(var aCol = 0; aCol < this.IoCount; ++aCol)
+               {
+                  var aJoins = new List<int>(this.IoCount);
+                  for (var aRow = 0; aRow < this.IoCount; ++aRow)
+                  {
+                     if (this[aCol, aRow])
+                     {
+                        aJoins.Add(aRow);
+                     }
+                  }
+                  aJoinss[aCol] = aJoins.ToArray();
+               }
+               this.JoinsM = aJoinss;
+            }
+            return this.JoinsM;
+         }
+      }
+
 
       #region Test
       private static bool IsEqual(int[] aLhs, int[] aRhs)
@@ -216,9 +239,267 @@ namespace CbChannelStrip
                                                1, 0, 0, 1, 0 }, aFailTest);
       }
       #endregion
+      private CRoutings RoutingsM;
+      public CRoutings Routings
+      {
+         get
+         {
+            if(!(this.RoutingsM is object))
+            {
+               this.RoutingsM = new CRoutings(this);
+            }
+            return this.RoutingsM;
+         }
+      }
+
+   }
+
+
+   internal abstract class CRoutingVisitor
+   {
+
+      public virtual void Visit(CRoutings aRoutings)
+      {
+         foreach(var aRouting in aRoutings)
+         {
+            aRouting.Accept(this);
+         }
+      }
+      public abstract void Visit(CParalellRouting aParalellRouting);
+      public abstract void Visit(CDirectRouting aDirectRouting);
+      public abstract void Visit(CNullRouting aNullRouting);
+   }
+
+
+   internal sealed class CGraphWizDiagram : CRoutingVisitor, IEnumerable<string>
+   {
+      private List<string> Rows = new List<string>();
+      public IEnumerator<string> GetEnumerator() => this.Rows.GetEnumerator();
+      IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
+
+      private int Indent;
+      private void AddLine(string aCode) => this.Rows.Add(new string(' ', this.Indent) + aCode);
+
+      public override void Visit(CRoutings aRoutings)
+      {
+         this.AddLine("diagram D");
+         this.AddLine("{");
+         ++this.Indent;
+         base.Visit(aRoutings);
+         --this.Indent;
+         this.AddLine("}");
+      }
+
+      private string GetName(CRouting aRouting) => "R" + aRouting.InputIdx;
+
+      private string GetInName(CRouting aRouting) => aRouting.InputIdx == 0 ? "in" : this.GetName(aRouting);
+      private string GetOutName(CRouting aRouting) => aRouting.InputIdx == 0 ? "out" : this.GetName(aRouting);
+
+      private void VisitNonNull(CNonNullRouting aRouting)
+      {
+         foreach(var aOutput in aRouting.Outputs)
+         {
+            this.AddLine(this.GetInName(aRouting) + " -> " + this.GetOutName(aOutput) + ";");
+         }
+         
+      }
+
+      public override void Visit(CParalellRouting aParalellRouting)
+      {
+         this.VisitNonNull(aParalellRouting);
+      }
+
+      public override void Visit(CDirectRouting aDirectRouting)
+      {
+         this.VisitNonNull(aDirectRouting);
+      }
+
+      public override void Visit(CNullRouting aNullRouting)
+      {
+      }
+
+      #region Test
+      private static void Test(string aId, string[] aCode, Action<string> aFailAction)
+      {
+         var aLinesText = aCode.JoinString(Environment.NewLine);
+
+      }
+
+      internal static void Test(Action<string> aFailAction)
+      {
+         Test("", new CFlowMatrix(7,
+                                  0, 1, 1, 0, 0, 0, 0,
+                                  0, 0, 0, 0, 0, 0, 1,
+                                  0, 0, 0, 1, 1, 0, 0,
+                                  0, 0, 0, 0, 0, 1, 0,
+                                  0, 0, 0, 0, 0, 1, 0,
+                                  0, 0, 0, 0, 0, 0, 1,
+                                  1, 0, 0, 0, 0, 0, 0                                  
+                                  ).Routings.GraphWizCode, aFailAction);
+      }
+      #endregion
+
+   }
+
+   public static class CStringExtensions
+   {
+      public static string JoinString(this IEnumerable<string> aStrings, string aLimiter)
+      {
+         var aStringBuilder = new StringBuilder();
+         var aOpen = false;
+         foreach(var aString in aStrings)
+         {
+            if (aOpen)
+               aStringBuilder.Append(aLimiter);
+            aStringBuilder.Append(aString);
+            aOpen = true;
+         }
+         return aStringBuilder.ToString();
+      }
+   }
+
+   internal sealed class CRoutings : IEnumerable<CRouting>
+   {
+      internal CRoutings(CFlowMatrix aFlowMatrix)
+      {
+         var aRoutings = new CRouting[aFlowMatrix.IoCount];
+         for(var aRow = 0; aRow < aFlowMatrix.IoCount; ++aRow)
+         {
+            var aOutputs = new List<int>();
+            for(var aCol = 0; aCol <  aFlowMatrix.IoCount; ++aCol)
+            {
+               if(aFlowMatrix.Coerced[aFlowMatrix.GetCellIdx(aCol, aRow)])
+               {
+                  aOutputs.Add(aCol);
+               }
+            }
+            var aRouting = CRouting.New(this, aRow, aOutputs);
+            aRoutings[aRow] = aRouting;         
+         }
+         this.Routings = aRoutings;
+         this.FlowMatrix = aFlowMatrix;
+      }
+
+      private readonly CFlowMatrix FlowMatrix;
+
+      private readonly CRouting[] Routings;
+
+      public IEnumerator<CRouting> GetEnumerator() => this.Routings.AsEnumerable().GetEnumerator();
+      IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
+
+      private CRouting[][] JoinsM;
+      internal CRouting[][] Joins
+      {
+         get
+         {
+            if (!(this.JoinsM is object))
+            {
+               var aJoins = new CRouting[this.FlowMatrix.IoCount][];
+               for (var aRow = 0; aRow < this.FlowMatrix.IoCount; ++aRow)
+               {
+                  aJoins[aRow] = (from aIdx in this.FlowMatrix.Joins[aRow] select this.Routings[aIdx]).ToArray();
+               }
+               this.JoinsM = aJoins;
+            }
+            return this.JoinsM;
+         }
+      }
+
+      private string[] GraphWizCodeM;
+      public string[] GraphWizCode 
+      { 
+         get
+         {
+            if (!(this.GraphWizCodeM is object))
+            {
+               var aGraphWizDiagram = new CGraphWizDiagram();
+               aGraphWizDiagram.Visit(this);
+               this.GraphWizCodeM = aGraphWizDiagram.ToArray();
+            }
+            return this.GraphWizCodeM;
+         }
+      }
+
+   }
+
+   internal abstract class CRouting
+   {
+
+      internal CRouting(CRoutings aRoutings, int aInputIdx, int[] aOutputIdxs)
+      {
+         this.Routings = aRoutings;
+         this.InputIdx = aInputIdx;
+         this.OutputIdxs = aOutputIdxs;
+      }
+      internal readonly CRoutings Routings;
+      internal readonly int InputIdx;
+      internal readonly int[] OutputIdxs;
+
+      private CRouting[] OutputsM;
+      internal CRouting[] Outputs
+      {
+         get
+         {
+            if(!(this.OutputsM is object))
+            {
+               this.OutputsM = (from aIdx in Enumerable.Range(0, this.OutputIdxs.Length) select this.Routings.ElementAt(this.OutputIdxs[aIdx])).ToArray();
+            }
+            return this.OutputsM;
+         }
+      }
+
+      internal CRouting[] Joins { get => this.Routings.Joins[this.InputIdx]; }
+
+      public abstract void Accept(CRoutingVisitor aVisitor);
+
+      internal static CRouting New(CRoutings aRoutings, int aInputIdx, IEnumerable<int> aOutputs)
+      {
+         if(aOutputs.IsEmpty())
+         {
+            return new CNullRouting(aRoutings, aInputIdx);
+         }
+         else if(aOutputs.ContainsOneElements())
+         {
+            return new CDirectRouting(aRoutings, aInputIdx, aOutputs.Single());
+         }
+         else
+         {
+            return new CParalellRouting(aRoutings, aInputIdx, aOutputs.ToArray());
+         }
+      }
+
+      
 
 
    }
+
+   internal sealed class CNullRouting : CRouting
+   {
+      internal CNullRouting(CRoutings aRoutings, int aInputIdx) : base(aRoutings, aInputIdx, new int[] { }) { }
+      public override void Accept(CRoutingVisitor aVisitor) => aVisitor.Visit(this);
+   }
+
+   internal abstract class CNonNullRouting : CRouting
+   {
+      internal CNonNullRouting(CRoutings aRoutings, int aInputIdx, int[] aOutputIdx) : base(aRoutings, aInputIdx, aOutputIdx) { }
+
+   }
+
+   internal sealed class CParalellRouting : CNonNullRouting
+   {
+      internal CParalellRouting(CRoutings aRoutings, int aInputIdx, int[] aOutputIdx) : base(aRoutings, aInputIdx, aOutputIdx) { }
+      public override void Accept(CRoutingVisitor aVisitor) => aVisitor.Visit(this);
+   }
+
+   internal sealed class CDirectRouting : CNonNullRouting
+   {
+      internal CDirectRouting(CRoutings aRoutings, int aInputIdx, int aOutputIdx):base(aRoutings, aInputIdx, new int[] { aOutputIdx }) { }
+      public override void Accept(CRoutingVisitor aVisitor) => aVisitor.Visit(this);
+
+      public CRouting Output { get => this.Outputs.Single(); }
+
+   }
+
 
 
    public sealed class CChannelStrip : CMaxObject
@@ -250,9 +531,10 @@ namespace CbChannelStrip
          this.LeftInlet.SetPrefixedListAction("load_image", this.OnLoadImage);
       }
 
-      public static void Test(Action<string> aFailTest)
+      public static void Test(Action<string> aFailAction)
       {
-         CFlowMatrix.Test(aFailTest);
+         //CFlowMatrix.Test(aFailAction);
+         CGraphWizDiagram.Test(aFailAction);
       }
 
       internal readonly CIntInlet IntInlet;

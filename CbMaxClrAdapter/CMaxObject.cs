@@ -601,12 +601,6 @@ namespace CbMaxClrAdapter
          var aEn = aEnumerable.GetEnumerator();
          return aEn.MoveNext() && !aEn.MoveNext();
       }
-
-      public static bool ContainsMoreThanOneElement(this IEnumerable aEnumerable)
-      {
-         var aEn = aEnumerable.GetEnumerator();
-         return aEn.MoveNext() && aEn.MoveNext();
-      }
    }
 
    public abstract class CListData
