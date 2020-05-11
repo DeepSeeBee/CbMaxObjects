@@ -593,9 +593,6 @@ void __stdcall Object_Out_Matrix_Send(SCbClrObject* aSCbClrObjectPtr,
          memset(&aMatrixInfo, 0, sizeof(aMatrixInfo));
          aMatrixInfo.size = aSize;
          aMatrixInfo.type = gensym(aCellTypePtr); 
-         //aMatrixInfo.flags |= JIT_MATRIX_DATA_REFERENCE; // TODO
-         //aMatrixInfo.flags |= JIT_MATRIX_DATA_PACK_TIGHT;
-         //aMatrixInfo.flags |= JIT_MATRIX_DATA_FLAGS_USE;
          aMatrixInfo.dimcount = aDimensionCount;
          for (int aIdx = 0; aIdx < aDimensionCount; ++aIdx)
             aMatrixInfo.dim[aIdx] = aDimensionSizesI32s[aIdx];
@@ -603,24 +600,11 @@ void __stdcall Object_Out_Matrix_Send(SCbClrObject* aSCbClrObjectPtr,
             aMatrixInfo.dimstride[aIdx] = aDimensionStridesI32s[aIdx];
          aMatrixInfo.planecount = aPlaneCount;
          
-         {
-            const TCHAR* aMethodName = "setinfo";
-            t_symbol* aMethodSymbolPtr = gensym(aMethodName);
-            method aMethod = jit_object_getmethod(aMatrixPtr, aMethodSymbolPtr);
-            t_jit_err aErr = (t_jit_err)aMethod(aMatrixPtr, &aMatrixInfo);
-            while (0);
-         }
-
-         void* aMatrixDataPtr = malloc(aSize); // sysmem_newptr(aSize);
-         {
-            const TCHAR* aMethodName = "data";
-            t_symbol* aMethodSymbolPtr = gensym(aMethodName);
-            method aMethod = jit_object_getmethod(aMatrixPtr, aMethodSymbolPtr);           
+         jit_object_method(aMatrixPtr, _jit_sym_setinfo, &aMatrixInfo);
+         void* aMatrixDataPtr = 0; 
+         jit_object_method(aMatrixPtr, _jit_sym_getdata, &aMatrixDataPtr);
+         if (aMatrixDataPtr)
             memcpy(aMatrixDataPtr, aDataPtr, aSize);
-            t_jit_err aErr = (t_jit_err)aMethod(aMatrixPtr, aMatrixDataPtr);
-            while (0);
-         }
-
          t_symbol* aMatrixObjectSymbolPtr = jit_symbol_unique();
          jit_object_method(aMatrixPtr, _jit_sym_register, aMatrixObjectSymbolPtr);
          t_atom* aAtomPtr = 0;
@@ -630,26 +614,15 @@ void __stdcall Object_Out_Matrix_Send(SCbClrObject* aSCbClrObjectPtr,
          if (aAllocated == 1)
          {
             assert(aCount == 1);
-            t_symbol* aMatrixClassSymbolPtr = gensym("jit_matrix");
             atom_setsym(aAtomPtr, aMatrixObjectSymbolPtr);
-            outlet_anything(aOutletPtr, aMatrixClassSymbolPtr, 1, aAtomPtr);
+            outlet_anything(aOutletPtr, _jit_sym_jit_matrix, 1, aAtomPtr);
             sysmem_freeptr(aAtomPtr);
          }
 
          // TODO: Unregister Matrix ?!
-        
-         {
-            const TCHAR* aMethodName = "data";
-            t_symbol* aMethodSymbolPtr = gensym(aMethodName);
-            method aMethod = jit_object_getmethod(aMatrixPtr, aMethodSymbolPtr);
-            t_jit_err aErr = (t_jit_err)aMethod(aMatrixPtr, 0);
-            while (0);
-         }
 
-         //sysmem_freeptr(aMatrixDataPtr);
-         free(aMatrixDataPtr);
-         jit_object_free(aMatrixPtr);
-         sysmem_freeptr(aAtomPtr);
+         if(aMatrixPtr)
+            jit_object_free(aMatrixPtr);         
       }	
    }
 }
