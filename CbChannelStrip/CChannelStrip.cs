@@ -10,6 +10,7 @@ namespace CbChannelStrip
    using System.Data;
    using System.Data.Common;
    using System.Diagnostics;
+   using System.Diagnostics.Contracts;
    using System.Drawing;
    using System.IO;
    using System.Security.AccessControl;
@@ -338,8 +339,6 @@ namespace CbChannelStrip
 
       private CSettings Settings;
 
-      private readonly DirectoryInfo GraphWizInstallDir;
-
       private readonly List<string> Rows = new List<string>();
       public IEnumerator<string> GetEnumerator() => this.Rows.GetEnumerator();
       IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
@@ -347,16 +346,40 @@ namespace CbChannelStrip
       private int Indent;
       private void AddLine(string aCode) => this.Rows.Add(new string(' ', this.Indent) + aCode);
 
+      private void AddLines(CRouting aRouting, string aName, int aLatency)
+      {
+         this.AddLine("\"" + aName + "\"" + "[" + "label" + "=" + "\"" + aName + " l=" + aLatency + "\"" + "]" + ";");
+      }
+
       public override void Visit(CRoutings aRoutings)
       {
          this.AddLine("digraph G");
          this.AddLine("{");
          ++this.Indent;
+
+         var aWithOutputs = from aTest in aRoutings
+                            where aTest.InputIdx == 0
+                               || aTest.IsLinkedToOutput 
+                            select aTest;
+
+         foreach(var aRouting in aWithOutputs)
+         {
+            if(aRouting.InputIdx == 0)
+            {
+               this.AddLines(aRouting, this.GetInName(aRouting), 0);
+               this.AddLines(aRouting, this.GetOutName(aRouting), aRouting.FinalOutputLatency);
+            }
+            else
+            {
+               this.AddLines(aRouting, this.GetInName(aRouting), aRouting.OutputLatency); 
+            }           
+         }
+
          base.Visit(aRoutings);
          --this.Indent;
          this.AddLine("}");
       }
-
+       
       private string GetName(CRouting aRouting) => "R" + aRouting.InputIdx;
 
       private string GetInName(CRouting aRouting) => aRouting.InputIdx == 0 ? "in" : this.GetName(aRouting);
@@ -364,10 +387,16 @@ namespace CbChannelStrip
 
       private void VisitNonNull(CNonNullRouting aRouting)
       {
-         foreach(var aOutput in aRouting.Outputs)
+         if(aRouting.IsLinkedToOutput)
          {
-            this.AddLine(this.GetInName(aRouting) + " -> " + this.GetOutName(aOutput) + ";");
-         }        
+            foreach (var aOutput in aRouting.Outputs)
+            {
+               if(aOutput.IsLinkedToOutput)
+               {
+                  this.AddLine(this.GetInName(aRouting) + " -> " + this.GetOutName(aOutput) + ";");
+               }
+            }
+         }
       }
 
       public override void Visit(CParalellRouting aParalellRouting)
@@ -406,23 +435,6 @@ namespace CbChannelStrip
                                   ).Routings.GraphWizDiagram, aFailAction);
       }
       #endregion
-
-      //private IDOT GraphWizDotM;
-      //private IDOT GraphWizDot
-      //{
-      //   get
-      //   {
-      //      if(!(this.GraphWizDotM is object))
-      //      {
-      //         var aType = Type.GetTypeFromProgID("WINGRAPHVIZLib.DOTClass");
-      //         var aObj = Activator.CreateInstance(aType);
-      //         //object comObj = Activator.CreateInstance(comType);
-      //         this.GraphWizDotM = new DOTClass();
-      //         // "regsvr32.exe C:\Program Files (x86)\WinGraphviz\WinGraphviz.dll
-      //      }
-      //      return this.GraphWizDotM;
-      //   }
-      //}
       private void NewGraph(IEnumerable<string> aLines,
                               string aGraphoutputType,
                               Stream aStream)
@@ -580,13 +592,64 @@ namespace CbChannelStrip
       {
          get
          {
-            if(!(this.OutputsM is object))
+            if (!(this.OutputsM is object))
             {
                this.OutputsM = (from aIdx in Enumerable.Range(0, this.OutputIdxs.Length) select this.Routings.ElementAt(this.OutputIdxs[aIdx])).ToArray();
             }
             return this.OutputsM;
          }
       }
+
+      internal int NodeLatency { get => this.InputIdx; } // TODO.
+
+      private IEnumerable<CRouting> InputsM;
+      internal IEnumerable<CRouting> Inputs
+      {
+         get
+         {
+            if (!(this.InputsM is object))
+            {
+               this.InputsM = (from aTest in this.Routings where aTest.Outputs.Contains(this) select aTest).ToArray();
+            }
+            return this.InputsM;
+         }
+      }
+
+      internal int? FinalOutputLatencyM;
+      internal int FinalOutputLatency
+      {
+         get
+         {
+            if(!this.FinalOutputLatencyM.HasValue)
+            {
+               var aLatencies = (from aInput in this.Inputs select aInput.OutputLatency);
+               var aLatency = aLatencies.IsEmpty() ? 0 : aLatencies.Max();
+               this.FinalOutputLatencyM = aLatency;
+            }
+            return this.FinalOutputLatencyM.Value;
+         }
+      }
+
+      private int? InputLatencyM;
+      internal int InputLatency 
+      {
+         get
+         {
+            if(!this.InputLatencyM.HasValue)
+            {
+               if(this.InputIdx == 0)
+               {
+                  this.InputLatencyM = 0;
+               }
+               else
+               {
+                  this.InputLatencyM = this.FinalOutputLatency;
+               }
+            }
+            return this.InputLatencyM.Value;
+         }
+      }
+      internal int OutputLatency { get => this.InputLatency + this.NodeLatency; }
 
       internal CRouting[] Joins { get => this.Routings.Joins[this.InputIdx]; }
 
@@ -608,6 +671,20 @@ namespace CbChannelStrip
          }
       }
 
+      private bool? IsLinkedToOutputM;
+      internal bool IsLinkedToOutput
+      {
+         get
+         {
+            if(!this.IsLinkedToOutputM.HasValue)
+            {
+               this.IsLinkedToOutputM = this.InputIdx == 0
+                                      ? true
+                                      : (from aOutput in this.Outputs select aOutput.IsLinkedToOutput).Contains(true);
+            }
+            return this.IsLinkedToOutputM.Value;
+         }
+      }
       
 
 
@@ -715,8 +792,8 @@ namespace CbChannelStrip
          var aMatrix = (from aRow in this.Rows from aCell in aRow select aCell).ToArray();         
          this.FlowMatrix = new CFlowMatrix(this.Settings, this.IoCount, aMatrix);
 
-         this.WriteLogInfoMessage("Matrix", aMatrix.Cast<object>());
-         this.WriteLogInfoMessage("Enables", this.FlowMatrix.EnableInts.Cast<object>());
+         //this.WriteLogInfoMessage("Matrix", aMatrix.Cast<object>());
+         //this.WriteLogInfoMessage("Enables", this.FlowMatrix.EnableInts.Cast<object>());
 
          foreach (var aRowIdx in Enumerable.Range(0, this.FlowMatrix.IoCount))
          {
