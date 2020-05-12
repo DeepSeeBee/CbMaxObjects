@@ -3,11 +3,12 @@
 
 - ResourceManagment (Dateien, Dateinamen etc)
 - Persistenz
-
+- Threading
+- If Routing.IsInputLinked
 
 - MemoryLeakTests
 ------------------------------
 Object.In.Matrix      ?
-Object.Out.Matrix     ok      20200511: Small leak remaining. https://cycling74.com/forums/_jit_register-how-to-unregister-free-unique-symbol-name
+Object.Out.Matrix     ok      20200511: Small leak remaining. TODO: CHeck how unregister changed behaviour. https://cycling74.com/forums/_jit_register-how-to-unregister-free-unique-symbol-name
 Object.In.List        ?
 Object.Out.List       ?

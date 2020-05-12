@@ -359,7 +359,7 @@ namespace CbChannelStrip
 
          var aWithOutputs = from aTest in aRoutings
                             where aTest.InputIdx == 0
-                               || aTest.IsLinkedToOutput 
+                               || aTest.IsLinkedToSomething 
                             select aTest;
 
          foreach(var aRouting in aWithOutputs)
@@ -387,11 +387,11 @@ namespace CbChannelStrip
 
       private void VisitNonNull(CNonNullRouting aRouting)
       {
-         if(aRouting.IsLinkedToOutput)
+         if(aRouting.IsLinkedToSomething)
          {
             foreach (var aOutput in aRouting.Outputs)
             {
-               if(aOutput.IsLinkedToOutput)
+               if(aOutput.IsLinkedToSomething)
                {
                   this.AddLine(this.GetInName(aRouting) + " -> " + this.GetOutName(aOutput) + ";");
                }
@@ -622,7 +622,10 @@ namespace CbChannelStrip
          {
             if(!this.FinalOutputLatencyM.HasValue)
             {
-               var aLatencies = (from aInput in this.Inputs select aInput.OutputLatency);
+               var aLatencies = (from aInput in this.Inputs
+                                 where aInput.IsLinkedToInput
+                                 where aInput.IsLinkedToOutput
+                                 select aInput.OutputLatency);
                var aLatency = aLatencies.IsEmpty() ? 0 : aLatencies.Max();
                this.FinalOutputLatencyM = aLatency;
             }
@@ -638,6 +641,11 @@ namespace CbChannelStrip
             if(!this.InputLatencyM.HasValue)
             {
                if(this.InputIdx == 0)
+               {
+                  this.InputLatencyM = 0;
+               }
+               else if(!this.IsLinkedToOutput
+                    || !this.IsLinkedToInput)
                {
                   this.InputLatencyM = 0;
                }
@@ -685,7 +693,36 @@ namespace CbChannelStrip
             return this.IsLinkedToOutputM.Value;
          }
       }
-      
+
+      private bool? IsLinkedToInputM;
+      internal bool IsLinkedToInput
+      {
+         get
+         {
+            if(!this.IsLinkedToInputM.HasValue )
+            {
+               this.IsLinkedToInputM = this.InputIdx == 0 
+                                     ? true 
+                                     : (from aInput in this.Inputs select aInput.IsLinkedToInput).Contains(true);
+            }
+            return this.IsLinkedToInputM.Value;
+         }
+      }
+
+      private bool? IsLinkedToSomethingM;
+      internal bool IsLinkedToSomething
+      {
+         get
+         {
+            if(!this.IsLinkedToSomethingM.HasValue)
+            {
+               this.IsLinkedToSomethingM = this.InputIdx == 0 
+                                         ? true
+                                         : (!this.Inputs.IsEmpty() || !this.Outputs.IsEmpty());
+            }
+            return this.IsLinkedToSomethingM.Value;
+         }
+      }
 
 
    }
@@ -791,9 +828,6 @@ namespace CbChannelStrip
       {
          var aMatrix = (from aRow in this.Rows from aCell in aRow select aCell).ToArray();         
          this.FlowMatrix = new CFlowMatrix(this.Settings, this.IoCount, aMatrix);
-
-         //this.WriteLogInfoMessage("Matrix", aMatrix.Cast<object>());
-         //this.WriteLogInfoMessage("Enables", this.FlowMatrix.EnableInts.Cast<object>());
 
          foreach (var aRowIdx in Enumerable.Range(0, this.FlowMatrix.IoCount))
          {

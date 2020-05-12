@@ -44,7 +44,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 181.0, 6.0, 34.0, 22.0 ],
+					"patching_rect" : [ 33.0, 11.0, 34.0, 22.0 ],
 					"text" : "init 5"
 				}
 
@@ -56,7 +56,7 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "jit_matrix", "" ],
-					"patching_rect" : [ 475.183669999999893, 35.0, 829.0, 706.0 ]
+					"patching_rect" : [ 265.183669999999893, 2.0, 829.0, 706.0 ]
 				}
 
 			}
@@ -67,7 +67,7 @@
 					"numinlets" : 3,
 					"numoutlets" : 2,
 					"outlettype" : [ "", "" ],
-					"patching_rect" : [ 181.0, 64.0, 214.0, 22.0 ],
+					"patching_rect" : [ 33.0, 69.0, 214.0, 22.0 ],
 					"text" : "cb_clrobject"
 				}
 
@@ -81,7 +81,7 @@
 					"numoutlets" : 2,
 					"outlettype" : [ "list", "list" ],
 					"parameter_enable" : 0,
-					"patching_rect" : [ 194.0, 162.0, 115.0, 126.0 ],
+					"patching_rect" : [ 46.0, 167.0, 115.0, 126.0 ],
 					"rows" : 5
 				}
 
