@@ -22,15 +22,15 @@ namespace CbMaxClrAdapter.Jitter
 
       internal CCellTypeEnum CellTypeEnum { get; private set; } // TODO: rest der matrix_info properties public machen.
 
-      internal int ByteCount => object.ReferenceEquals(this.Buffer, null) ? 0 : this.Buffer.Length;
+      public int ByteCount => object.ReferenceEquals(this.Buffer, null) ? 0 : this.Buffer.Length;
       private int DimensionCountM;
-      internal int DimensionCount => this.DimensionCountM;
+      public int DimensionCount => this.DimensionCountM;
       private int[] DimensionSizesM;
-      internal int[] DimensionSizes => this.DimensionSizesM;
+      public int[] DimensionSizes => this.DimensionSizesM;
       private int[] DimensionStridesM;
-      internal int[] DimensionStrides => this.DimensionStridesM;
+      public int[] DimensionStrides => this.DimensionStridesM;
       private int PlaneCountM;
-      internal int PlaneCount => this.PlaneCountM;
+      public int PlaneCount => this.PlaneCountM;
 
       internal byte[] Buffer;
 
@@ -79,6 +79,17 @@ namespace CbMaxClrAdapter.Jitter
          this.Buffer[aPos] = aByte;
          ++aPos;
       }
+
+      public double GetCellFloat(int[] aDimensions, int aPlane)
+      {
+         throw new NotImplementedException();
+      }
+
+      public void SetCellFloat(int[] aDimensions, int aPlane, double aValue)
+      {
+         throw new NotImplementedException();
+      }
+
       public void WriteByte(ref int aPos, byte aByte)
       {
          this.CheckWrite();

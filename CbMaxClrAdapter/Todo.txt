@@ -5,6 +5,11 @@
 - Persistenz
 - Threading
 - If Routing.IsInputLinked
+- Message.Action  => Typed actions for multityped inlet
+- testen ob inlet-messages versiegelt werden    
+- Farbige bobbel mit 3d api/opengl
+- animierte farbige bobbel
+- animierte graph-modifizierung
 
 - MemoryLeakTests
 ------------------------------

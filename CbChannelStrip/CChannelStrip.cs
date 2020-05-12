@@ -15,6 +15,7 @@ namespace CbChannelStrip
    using System.IO;
    using System.Security.AccessControl;
    using System.Windows.Media.Imaging;
+   using CbChannelStrip.GraphWiz;
    using CbMaxClrAdapter;
    using CbMaxClrAdapter.Jitter;
 
@@ -330,213 +331,6 @@ namespace CbChannelStrip
    }
 
 
-   internal sealed class CGraphWizDiagram : CRoutingVisitor, IEnumerable<string>
-   {
-      internal CGraphWizDiagram(CSettings aSettings)
-      {
-         this.Settings = aSettings;
-      }
-
-      private CSettings Settings;
-
-      private readonly List<string> Rows = new List<string>();
-      public IEnumerator<string> GetEnumerator() => this.Rows.GetEnumerator();
-      IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
-
-      private int Indent;
-      private void AddLine(string aCode) => this.Rows.Add(new string(' ', this.Indent) + aCode);
-
-      private void AddLines(CRouting aRouting, string aName, int aLatency, bool aActive = true, string aShape = "")
-      {
-         var aAttributes = new Dictionary<string, string>();
-         aAttributes.Add("label", aName + " l=" + aLatency);
-         if(!aShape.IsEmpty())
-            aAttributes.Add("shape", aShape);
-         if (aActive)
-         {
-            aAttributes.Add("color", "black");
-            aAttributes.Add("fontcolor", "black");
-         }
-         else
-         {
-            aAttributes.Add("color", "lightgrey");
-            aAttributes.Add("fontcolor", "lightgrey");
-
-         }
-         var aStringBuilder = new StringBuilder();
-         aStringBuilder.Append("\"" + aName + "\"");
-         aStringBuilder.Append("[");
-         var aAttributeOpen = false;
-         foreach (var aAttribute in aAttributes)
-         {
-            if(aAttributeOpen)
-            {
-               aStringBuilder.Append(" ");
-            }
-            aStringBuilder.Append(aAttribute.Key + "=" + "\"" + aAttribute.Value + "\"");
-         }
-         aStringBuilder.Append("]");
-         aStringBuilder.Append(";");
-         this.AddLine(aStringBuilder.ToString());
-      }
-
-      public override void Visit(CRoutings aRoutings)
-      {
-         this.AddLine("digraph G");
-         this.AddLine("{");
-         ++this.Indent;
-
-         var aWithOutputs = from aTest in aRoutings
-                            where aTest.InputIdx == 0
-                               || aTest.IsLinkedToSomething 
-                            select aTest;
-
-         foreach(var aRouting in aWithOutputs)
-         {
-            if(aRouting.InputIdx == 0)
-            {
-               this.AddLines(aRouting, this.GetInName(aRouting), 0, aRouting.IsLinkedToOutput, "invtriangle");
-               this.AddLines(aRouting, this.GetOutName(aRouting), aRouting.FinalOutputLatency, aRouting.IsLinkedToOutput, "triangle");
-            }
-            else
-            {
-               this.AddLines(aRouting, this.GetInName(aRouting), aRouting.OutputLatency, aRouting.IsLinkedToInput && aRouting.IsLinkedToOutput, "Mcircle"); 
-            }           
-         }
-
-         base.Visit(aRoutings);
-         --this.Indent;
-         this.AddLine("}");
-      }
-       
-      private string GetName(CRouting aRouting) => "R" + aRouting.InputIdx;
-
-      private string GetInName(CRouting aRouting) => aRouting.InputIdx == 0 ? "in" : this.GetName(aRouting);
-      private string GetOutName(CRouting aRouting) => aRouting.InputIdx == 0 ? "out" : this.GetName(aRouting);
-
-      private void VisitNonNull(CNonNullRouting aRouting)
-      {
-         if(aRouting.IsLinkedToSomething)
-         {
-            foreach (var aOutput in aRouting.Outputs)
-            {
-               if(aOutput.IsLinkedToSomething)
-               {
-                  this.AddLine(this.GetInName(aRouting) + " -> " + this.GetOutName(aOutput) + ";");
-               }
-            }
-         }
-      }
-
-      public override void Visit(CParalellRouting aParalellRouting)
-      {
-         this.VisitNonNull(aParalellRouting);
-      }
-
-      public override void Visit(CDirectRouting aDirectRouting)
-      {
-         this.VisitNonNull(aDirectRouting);
-      }
-
-      public override void Visit(CNullRouting aNullRouting)
-      {
-      }
-
-      #region Test
-      private static void Test(string aId, CGraphWizDiagram aDiagram, Action<string> aFailAction)
-      {
-         aDiagram.Bitmap.Save(@"C:\Program Files\Cycling '74\Max 8\packages\max-sdk-8.0.3\source\charly_beck\CbChannelStrip\m4l\Test\graph.png");
-         var aLinesText = aDiagram.JoinString(Environment.NewLine);
-
-      }
-
-      internal static void Test(Action<string> aFailAction)
-      {
-         var aSettings = new CSettings();
-         Test("", new CFlowMatrix(aSettings, 7,
-                                  0, 1, 1, 0, 0, 0, 0,
-                                  0, 0, 0, 0, 0, 0, 1,
-                                  0, 0, 0, 1, 1, 0, 0,
-                                  0, 0, 0, 0, 0, 1, 0,
-                                  0, 0, 0, 0, 0, 1, 0,
-                                  0, 0, 0, 0, 0, 0, 1,
-                                  1, 0, 0, 0, 0, 0, 0                                  
-                                  ).Routings.GraphWizDiagram, aFailAction);
-      }
-      #endregion
-      private void NewGraph(IEnumerable<string> aLines,
-                              string aGraphoutputType,
-                              Stream aStream)
-      {
-         var aErmGraphNodeVm = this;
-         var aDotProcess = new ProcessStartInfo();
-         var aInstallDir = this.Settings.GraphWizInstallDir;
-         var aBinDir = new DirectoryInfo(Path.Combine(aInstallDir.FullName, "bin"));
-         var aDir = aBinDir;
-         aDotProcess.FileName = Path.Combine(aDir.FullName, "dot.exe");
-         aDotProcess.Arguments = aGraphoutputType.IsEmpty() ? string.Empty : "-T" + aGraphoutputType;
-         aDotProcess.RedirectStandardInput = true;
-         aDotProcess.RedirectStandardOutput = true;
-         aDotProcess.RedirectStandardError = true;
-         aDotProcess.UseShellExecute = false;
-         aDotProcess.WindowStyle = ProcessWindowStyle.Hidden;
-         aDotProcess.CreateNoWindow = true;
-         var aText = aLines.JoinString("\n");
-         var aCompatibleText = aText;
-         var aProcess = Process.Start(aDotProcess);
-         aProcess.StandardInput.Write(aCompatibleText);
-         aProcess.StandardInput.Close();
-         var aReader = new BinaryReader(aProcess.StandardOutput.BaseStream);
-         var aBuf = new byte[1024];
-         var aByteCount = 0;
-         do
-         {
-            aByteCount = aReader.Read(aBuf, 0, aBuf.Length);
-            aStream.Write(aBuf, 0, aByteCount);
-         }
-         while (aByteCount != 0);
-         var aError1 = aProcess.StandardError.ReadToEnd();
-         var aError2 = aError1 is object ? aError1.ToString() : string.Empty;
-         var aError = aError2;
-         if (aError != string.Empty)
-         {
-            var aExc = new Exception(aError);
-            throw aExc;
-         }
-      }
-
-      private Bitmap NewBitmap(IEnumerable<string> aLines)
-      {
-         var aGraphoutputType = "bmp";
-         var aImageStream = new MemoryStream();
-         try
-         {
-            this.NewGraph(aLines, aGraphoutputType, aImageStream);
-         }
-         catch (Exception aExc)
-         {
-            throw new Exception("Could not create graph. " + aExc.Message, aExc);
-         }
-         aImageStream.Seek(0, SeekOrigin.Begin);
-         var aBitmap = new Bitmap(aImageStream);
-         return aBitmap;
-      }
-
-      private Bitmap BitmapM;
-      public Bitmap Bitmap
-      {
-         get
-         {
-            if(!(this.BitmapM is object))
-            {
-               this.BitmapM = this.NewBitmap(this);
-            }
-            return this.BitmapM;
-         }
-      }
-   }
-
-
 
 
 
@@ -587,14 +381,14 @@ namespace CbChannelStrip
          }
       }
 
-      private CGraphWizDiagram GraphWizDiagramM;
-      internal CGraphWizDiagram GraphWizDiagram
+      private CGwDiagramBuilder GraphWizDiagramM;
+      internal CGwDiagramBuilder GraphWizDiagram
       {
          get
          {
             if (!(this.GraphWizDiagramM is object))
             {
-               var aDiagram = new CGraphWizDiagram(this.FlowMatrix.Settings);
+               var aDiagram = new CGwDiagramBuilder(this.FlowMatrix.Settings);
                aDiagram.Visit(this);
                this.GraphWizDiagramM = aDiagram;
             }
@@ -905,7 +699,7 @@ namespace CbChannelStrip
       public static void Test(Action<string> aFailAction)
       {
          CFlowMatrix.Test(aFailAction);
-         CGraphWizDiagram.Test(aFailAction);
+         CGwDiagramBuilder.Test(aFailAction);
       }
 
    }
