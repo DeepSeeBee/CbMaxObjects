@@ -620,10 +620,11 @@ void __stdcall Object_Out_Matrix_Send(SCbClrObject* aSCbClrObjectPtr,
             sysmem_freeptr(aAtomPtr);
          }
 
-         // TODO: Unregister Matrix ?!
-
-         if(aMatrixPtr)
-            jit_object_free(aMatrixPtr);         
+         if (aMatrixPtr)
+         {
+            object_unregister(aMatrixPtr);
+            jit_object_free(aMatrixPtr);
+         }            
       }	
    }
 }
