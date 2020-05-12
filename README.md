@@ -8,6 +8,9 @@ C:\Program Files\Cycling '74\Max 8\packages\max-sdk-8.0.3\externals\charly_beck
 
 Using this path will ensure that the project runs though there are some hardcoded development paths around.
 
+## IDE
+Open .sln file in Visual Studio 2019.
+
 ## Compile
 
 There is an external package included not submitet to git. Select the 'CbMaxClrAdapter' project as active project and call tools->Nu Get Package manager console and type
@@ -22,9 +25,9 @@ Problem 3: It happened visual studio opened the root solution when opening the p
 
 ## Quickstart
 
-Look at CbChannelStrip\CChannelStrip.cs
+Look at class CbChannelStrip.CTestObject
 
-This is a sample Max Object called 'External' implemented using the C# Adapter's (base) classes. The code should be ovious at this state.
+This is a sample Max Object called 'External' implemented using the C# Adapter's (base) classes. The code should be obvious at this state when knowing how max objects work.
 
 ## License
 
