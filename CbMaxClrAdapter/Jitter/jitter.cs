@@ -186,6 +186,7 @@ namespace CbMaxClrAdapter.Jitter
       }
 
       internal override void AddTo(CEditableListData value) => new InvalidOperationException();
+      internal override void Send(CMultiTypeOutlet aMultiTypeOutlet) => aMultiTypeOutlet.MaxObject.Marshal.Send(aMultiTypeOutlet, this);
    }
 
    public sealed class CMatrixOutlet

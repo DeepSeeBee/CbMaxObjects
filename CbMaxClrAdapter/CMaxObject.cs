@@ -21,7 +21,8 @@ namespace CbMaxClrAdapter
       List = 3,
       Symbol = 4,
       Null = 5,
-      Matrix = 6
+      Matrix = 6,
+      Any = 7
    }
 
    public sealed class CDataTypeAttribute : Attribute
@@ -65,6 +66,8 @@ namespace CbMaxClrAdapter
       internal abstract object Data { get; }
       internal abstract bool DataIsDefined { get; }
       internal abstract void AddTo(CEditableListData aList);
+
+      internal abstract void Send(CMultiTypeOutlet aMultiTypeOutlet);
    }
 
    [CDataTypeAttribute(CMessageTypeEnum.Bang)]
@@ -77,6 +80,11 @@ namespace CbMaxClrAdapter
       internal override object Data => throw new InvalidOperationException();
       internal override bool DataIsDefined => false;
       internal override void AddTo(CEditableListData value) => throw new InvalidOperationException();
+
+      internal override void Send(CMultiTypeOutlet aMultiTypeOutlet)
+      {
+         aMultiTypeOutlet.MaxObject.Marshal.Send(aMultiTypeOutlet, this);
+      }
    }
 
    public abstract class CValMessage : CMessage
@@ -124,6 +132,7 @@ namespace CbMaxClrAdapter
          this.Value = string.Empty;
       }
       internal override void AddTo(CEditableListData aListData) => aListData.Add(this.Value);
+      internal override void Send(CMultiTypeOutlet aMultiTypeOutlet) => aMultiTypeOutlet.MaxObject.Marshal.Send(aMultiTypeOutlet, this);
    }
 
    [CDataTypeAttribute(CMessageTypeEnum.Int)]
@@ -134,6 +143,7 @@ namespace CbMaxClrAdapter
          this.Value = aValue;
       }
       internal override void AddTo(CEditableListData aList) => aList.Add(this.Value);
+      internal override void Send(CMultiTypeOutlet aMultiTypeOutlet) => aMultiTypeOutlet.MaxObject.Marshal.Send(aMultiTypeOutlet, this);
    }
 
    [CDataTypeAttribute(CMessageTypeEnum.Float)]
@@ -144,6 +154,7 @@ namespace CbMaxClrAdapter
          this.Value = aValue;
       }
       internal override void AddTo(CEditableListData aList) => aList.Add(this.Value);
+      internal override void Send(CMultiTypeOutlet aMultiTypeOutlet) => aMultiTypeOutlet.MaxObject.Marshal.Send(aMultiTypeOutlet, this);
    }
 
    [CDataTypeAttribute(CMessageTypeEnum.List)]
@@ -158,6 +169,7 @@ namespace CbMaxClrAdapter
                                                    || aMessageType == CMessageTypeEnum.Symbol
                                                     ;
       internal override void AddTo(CEditableListData value) => throw new InvalidOperationException();
+      internal override void Send(CMultiTypeOutlet aMultiTypeOutlet) => aMultiTypeOutlet.MaxObject.Marshal.Send(aMultiTypeOutlet, this);
    }
 
    public abstract class CConnector
@@ -228,11 +240,12 @@ namespace CbMaxClrAdapter
          {
             throw new InvalidOperationException();
          }
-
       }
+
       public void Support(CMessageTypeEnum aMessageType)
       {
-         this.CheckSupport(aMessageType);
+         // 20200512: Auskommentiert, macht doch keinen sinn ?! 
+         // this.CheckSupport(aMessageType);
          this.SupportInternal(aMessageType);
       }
       internal bool GetSupport(CMessageTypeEnum aMessageType)
@@ -249,7 +262,7 @@ namespace CbMaxClrAdapter
          }
          return aMessage;
       }
-      internal TMessage GetMessage<TMessage>() => (TMessage)(object)this.GetMessage(CDataTypeAttribute.Get(typeof(TMessage)));
+      public TMessage GetMessage<TMessage>() => (TMessage)(object)this.GetMessage(CDataTypeAttribute.Get(typeof(TMessage)));
       internal abstract void Delete();
 
    }
@@ -490,8 +503,6 @@ namespace CbMaxClrAdapter
          this.Ptr = this.MaxObject.Marshal.AddOutlet(this, aMessageTypeEnum);
       }
       internal override void Delete() => this.MaxObject.Marshal.Delete(this);
-      public abstract void Send();
-
       private readonly int IndexM;
       internal override int Index => this.IndexM;
       internal override bool IsReadonly => false;
@@ -514,10 +525,21 @@ namespace CbMaxClrAdapter
       public TMessage Message { get => this.GetMessage<TMessage>(); }
       internal void SupportInternal() => this.SupportInternal(this.DataTypeEnum);
       internal override void Add() => this.AddOutlet(this.DataTypeEnum);
+      public abstract void Send();
    }
 
-
-
+   public sealed class CMultiTypeOutlet : COutlet<CMessage> 
+   {
+      public CMultiTypeOutlet(CMaxObject aMaxObject) : base(aMaxObject)
+      {
+      }
+      public void Send(CMessageTypeEnum aMessageTypeEnum)
+      {
+         var aMessage = this.GetMessage(aMessageTypeEnum);
+         aMessage.Send(this);
+      }
+      internal override void Add() => this.AddOutlet( CMessageTypeEnum.Any);
+   }
 
    public sealed class CBangOutlet : CSingleTypeOutlet<CBang>
    {

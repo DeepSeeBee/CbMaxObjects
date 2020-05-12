@@ -206,11 +206,13 @@ namespace CbMaxClrAdapter
 
       private IntPtr Alloc(int aSize) => Marshal.AllocHGlobal(aSize);
 
-      internal void Send(CMatrixOutlet aMatrixOutlet)
+
+
+      internal void Send(COutlet aOutlet, CMatrix aMatrix)
       {
+         var aMatrixData = aMatrix.Value;
          var aObjectPtr = this.MaxObject.NewArgs.mObjectPtr;
-         var aIndex = aMatrixOutlet.Index;
-         var aMatrixData = aMatrixOutlet.Message.Value;
+         var aIndex = aOutlet.Index;         
          var aSize = aMatrixData.ByteCount;
          var aDimensionCount = aMatrixData.DimensionCount;
          var aDimensionSizesPtr = this.Alloc(aDimensionCount * sizeof(Int32));
@@ -232,7 +234,7 @@ namespace CbMaxClrAdapter
                   var aPlaneCount = aMatrixData.PlaneCount;
                   var aBuffer = aMatrixData.Buffer;
                   Marshal.Copy(aBuffer, 0, aDataPtr, aSize);
-                  DllImports.Object_Out_Matrix_Send(aObjectPtr, aMatrixOutlet.Ptr, aSize, aCellType, aDimensionCount, aDimensionSizesPtr, aDimensionStridesPtr, aPlaneCount, aDataPtr);                 
+                  DllImports.Object_Out_Matrix_Send(aObjectPtr, aOutlet.Ptr, aSize, aCellType, aDimensionCount, aDimensionSizesPtr, aDimensionStridesPtr, aPlaneCount, aDataPtr);                 
                }
                finally
                {
@@ -250,6 +252,7 @@ namespace CbMaxClrAdapter
          }
       }
 
+      internal void Send(CMatrixOutlet aMatrixOutlet)=> this.Send(aMatrixOutlet, aMatrixOutlet.Message);
       private void Object_In_List_AddFloat(Int32 aInletIdx, double aFloat)
       {
          this.WithCatch(delegate ()
@@ -412,7 +415,9 @@ namespace CbMaxClrAdapter
          return aIntArray;
       }
 
-      internal void Send(CBangOutlet aBangOutlet) => DllImports.Object_Out_Bang_Send(aBangOutlet.MaxObject.Ptr, aBangOutlet.Ptr);
+      internal void Send(COutlet aOutlet, CBang aBang) => DllImports.Object_Out_Bang_Send(aOutlet.MaxObject.Ptr, aOutlet.Ptr);
+
+      internal void Send(CBangOutlet aBangOutlet) => this.Send(aBangOutlet, aBangOutlet.Message);
 
       private Int32 Object_In_Matrix_Receive(Int32 aInletIdx, Int32 aSize, string aCellType, Int32 aDimensionCount, IntPtr aDimensionSizesI64Ptr, IntPtr aDimensionStridesI64Ptr, Int32 aPlaneCount, IntPtr aMatrixDataU8Ptr)
       {
@@ -439,11 +444,15 @@ namespace CbMaxClrAdapter
          );
       }
 
-      internal void Send(CSymbolOutlet aSymbolOutlet) => DllImports.Object_Out_Symbol_Send(aSymbolOutlet.MaxObject.Ptr, aSymbolOutlet.Ptr, aSymbolOutlet.Message.Value);
-      internal void Send(CFloatOutlet aFloatOutlet) => DllImports.Object_Out_Float_Send(this.MaxObject.Ptr, aFloatOutlet.Ptr, aFloatOutlet.Message.Value);
-      internal void Send(CIntOutlet aIntOutlet) => DllImports.Object_Out_Int_Send(this.MaxObject.Ptr, aIntOutlet.Ptr, aIntOutlet.Message.Value);
+      internal void Send(COutlet aOutlet, CSymbol aSymbol) => DllImports.Object_Out_Symbol_Send(aOutlet.MaxObject.Ptr, aOutlet.Ptr, aSymbol.Value);
+      internal void Send(CSymbolOutlet aSymbolOutlet) => this.Send(aSymbolOutlet, aSymbolOutlet.Message);
+      internal void Send(COutlet aOutlet, CFloat aFloat) => DllImports.Object_Out_Float_Send(this.MaxObject.Ptr, aOutlet.Ptr, aFloat.Value);
+      internal void Send(CFloatOutlet aFloatOutlet) => this.Send(aFloatOutlet, aFloatOutlet.Message);
+      internal void Send(COutlet aOutlet, CInt aInt) => DllImports.Object_Out_Int_Send(this.MaxObject.Ptr, aOutlet.Ptr, aInt.Value);
+      internal void Send(CIntOutlet aIntOutlet) => this.Send(aIntOutlet, aIntOutlet.Message);
       internal void Object_In_Matrix_Receive(Int32 aInletIdx, string aObjectName) => DllImports.Object_In_Matrix_Receive(this.MaxObject.NewArgs.mObjectPtr, aInletIdx, aObjectName);
-      internal void Send(CListOutlet aListOutlet) => DllImports.Object_Out_List_Send(this.MaxObject.Ptr, aListOutlet.Ptr, aListOutlet.Index);
+      internal void Send(COutlet aOutlet, CList aList) => DllImports.Object_Out_List_Send(aOutlet.MaxObject.Ptr, aOutlet.Ptr, aOutlet.Index);
+      internal void Send(CListOutlet aListOutlet) => this.Send(aListOutlet, aListOutlet.Message);
       internal IntPtr AddOutlet(COutlet aOutlet, CMessageTypeEnum aDataTypeEnum) => DllImports.Object_Out_Add(this.MaxObject.NewArgs.mObjectPtr, (int)aDataTypeEnum, aOutlet.Index);
       internal void Max_Log_Write(string aMsg, bool aIsError) => DllImports.Max_Log_Write(this.MaxObject.NewArgs.mObjectPtr, aMsg, aIsError ? 1 : 0);
    }

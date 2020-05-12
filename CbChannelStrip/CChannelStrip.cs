@@ -346,9 +346,38 @@ namespace CbChannelStrip
       private int Indent;
       private void AddLine(string aCode) => this.Rows.Add(new string(' ', this.Indent) + aCode);
 
-      private void AddLines(CRouting aRouting, string aName, int aLatency)
+      private void AddLines(CRouting aRouting, string aName, int aLatency, bool aActive = true, string aShape = "")
       {
-         this.AddLine("\"" + aName + "\"" + "[" + "label" + "=" + "\"" + aName + " l=" + aLatency + "\"" + "]" + ";");
+         var aAttributes = new Dictionary<string, string>();
+         aAttributes.Add("label", aName + " l=" + aLatency);
+         if(!aShape.IsEmpty())
+            aAttributes.Add("shape", aShape);
+         if (aActive)
+         {
+            aAttributes.Add("color", "black");
+            aAttributes.Add("fontcolor", "black");
+         }
+         else
+         {
+            aAttributes.Add("color", "lightgrey");
+            aAttributes.Add("fontcolor", "lightgrey");
+
+         }
+         var aStringBuilder = new StringBuilder();
+         aStringBuilder.Append("\"" + aName + "\"");
+         aStringBuilder.Append("[");
+         var aAttributeOpen = false;
+         foreach (var aAttribute in aAttributes)
+         {
+            if(aAttributeOpen)
+            {
+               aStringBuilder.Append(" ");
+            }
+            aStringBuilder.Append(aAttribute.Key + "=" + "\"" + aAttribute.Value + "\"");
+         }
+         aStringBuilder.Append("]");
+         aStringBuilder.Append(";");
+         this.AddLine(aStringBuilder.ToString());
       }
 
       public override void Visit(CRoutings aRoutings)
@@ -366,12 +395,12 @@ namespace CbChannelStrip
          {
             if(aRouting.InputIdx == 0)
             {
-               this.AddLines(aRouting, this.GetInName(aRouting), 0);
-               this.AddLines(aRouting, this.GetOutName(aRouting), aRouting.FinalOutputLatency);
+               this.AddLines(aRouting, this.GetInName(aRouting), 0, aRouting.IsLinkedToOutput, "invtriangle");
+               this.AddLines(aRouting, this.GetOutName(aRouting), aRouting.FinalOutputLatency, aRouting.IsLinkedToOutput, "triangle");
             }
             else
             {
-               this.AddLines(aRouting, this.GetInName(aRouting), aRouting.OutputLatency); 
+               this.AddLines(aRouting, this.GetInName(aRouting), aRouting.OutputLatency, aRouting.IsLinkedToInput && aRouting.IsLinkedToOutput, "Mcircle"); 
             }           
          }
 
@@ -766,14 +795,16 @@ namespace CbChannelStrip
          this.MatrixCtrlRightOutIn = new CListInlet(this);
          this.MatrixCtrlRightOutIn.Action = this.OnMatrixCtrlRightOutIn;
          this.MatrixCtrlLeftInOut = new CListOutlet(this);
-         this.GraphBitmapOut = new CMatrixOutlet(this);
+         this.PWindowInOut = new CMultiTypeOutlet(this);
+         this.PWindowInOut.Support(CMessageTypeEnum.List);
+         this.PWindowInOut.Support(CMessageTypeEnum.Matrix);
       }
 
       private readonly CListInlet MatrixCtrlLeftOutIn;
       private readonly CListInlet MatrixCtrlRightOutIn;
 
       private readonly CListOutlet MatrixCtrlLeftInOut;
-      private readonly CMatrixOutlet GraphBitmapOut;
+      private readonly CMultiTypeOutlet PWindowInOut;
 
       private Int32 IoCount;
       private bool RequestRowsPending;
@@ -841,8 +872,15 @@ namespace CbChannelStrip
                this.MatrixCtrlLeftInOut.Send();
             }
          }
-         this.GraphBitmapOut.Message.Value.SetImage(this.FlowMatrix.Routings.GraphWizDiagram.Bitmap);
-         this.GraphBitmapOut.Send();
+         var aBitmap = this.FlowMatrix.Routings.GraphWizDiagram.Bitmap;
+         var aSizeList = this.PWindowInOut.GetMessage<CList>().Value;
+         aSizeList.Clear();
+         aSizeList.Add("size");
+         aSizeList.Add(aBitmap.Width);
+         aSizeList.Add(aBitmap.Height);
+         this.PWindowInOut.Send(CMessageTypeEnum.List);
+         this.PWindowInOut.GetMessage<CMatrix>().Value.SetImage(aBitmap);
+         this.PWindowInOut.Send(CMessageTypeEnum.Matrix);
       }
 
       private void OnMatrixCtrlRightOutIn(CInlet aInlet, CList aList)
