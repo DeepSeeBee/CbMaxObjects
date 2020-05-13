@@ -1,4 +1,5 @@
-﻿using CbMaxClrAdapter;
+﻿using CbChannelStrip.Graph;
+using CbMaxClrAdapter;
 using CbMaxClrAdapter.Jitter;
 using System;
 using System.Collections.Generic;
