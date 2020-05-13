@@ -6,9 +6,162 @@ using System.Threading.Tasks;
 
 namespace CbMaxClrAdapter.Jitter
 {
+   using System.Collections;
    using System.Drawing;
    using System.IO;
    using System.Runtime.InteropServices;
+   using System.Security.Permissions;
+
+   public abstract class CMatrixCellEnumerator  : IEnumerator
+   {
+      internal CMatrixCellEnumerator(CMatrixData aMatrixData)
+      {
+         this.MatrixData = aMatrixData;
+         this.DimensionCount = aMatrixData.DimensionCount;
+         this.DimensionSizes = aMatrixData.DimensionSizes;
+         this.Pos = new int[this.DimensionCount];
+         this.Bof = true;
+      }
+
+      internal void CheckPos()
+      {
+         if (this.Bof)
+            throw new InvalidOperationException("No valid position.");
+      }
+
+      internal readonly CMatrixData MatrixData;
+      private readonly int DimensionCount;
+      private readonly int[] DimensionSizes;
+      private int[] PosM;
+      internal int[] Pos { get { this.CheckPos(); return this.PosM; } private set { this.PosM = value; } }
+      private bool Bof;
+      private int PlaneM;
+      public int Plane { get { return this.PlaneM; } set { this.MatrixData.CheckPlane(value); this.PlaneM = value; } }
+
+      public object Current { get => this.GetCurrentObj(this.Plane); }
+      public abstract object GetCurrentObj(int aPlane);
+
+      public void Dispose() { }
+
+
+      private static void Test(string aId, CMatrixCellEnumerator aEnumerator, int[] aPos, Action<string> aFailAction)
+      {
+         Test(aId, aEnumerator.Pos.SequenceEqual(aPos), aFailAction);
+      }
+
+      private static void Test(string aId, bool aOk, Action<string> aFailAction)
+      {
+         if (!aOk)
+            aFailAction(aId);
+      }
+
+      public static void Test(Action<string> aFailAction)
+      {
+         var aMatrixData = new CMatrixData();
+         aMatrixData.Reallocate(CMatrixData.CCellTypeEnum.Char, 3, new int[] { 2, 2, 2 }, 1);
+         var aEnumerator = aMatrixData.GetEnumerator();
+         Test("947ad689-cc81-45ab-9fe3-708b61830795", aEnumerator.MoveNext(), aFailAction);
+         Test("84c3a114-e563-4dc4-a478-7d8faf219577", aEnumerator, new int[] { 0, 0, 0 }, aFailAction);
+         Test("f8afda6d-0b8a-4581-abf9-6323a5ad0324", aEnumerator.MoveNext(), aFailAction);
+         Test("1ab67394-0814-4d62-94f2-209e6b8cb9c7", aEnumerator, new int[] { 1, 0, 0 }, aFailAction);
+         Test("154bdd87-ec83-4658-bc01-494ea7ef63fd", aEnumerator.MoveNext(), aFailAction);
+         Test("ec67df3f-b547-4431-a071-e4afd2e80181", aEnumerator, new int[] { 0, 1, 0 }, aFailAction);
+         Test("32083d5b-656c-421e-babf-1631dcd0f40f", aEnumerator.MoveNext(), aFailAction);
+         Test("01b84778-6ed4-4f13-aa1a-3a5adf474aca", aEnumerator, new int[] { 1, 1, 0 }, aFailAction);
+         Test("df8d56ea-5208-491c-8af9-258b0375f988", aEnumerator.MoveNext(), aFailAction);
+         Test("88a5d93e-0937-483e-ab40-0e51de4bee8d", aEnumerator, new int[] { 0, 0, 1 }, aFailAction);
+         Test("f1ae375f-f67d-4dc9-a469-8a3c58fc6c02", aEnumerator.MoveNext(), aFailAction);
+         Test("124fa3a5-b598-4a48-93f8-78d0cc5578fe", aEnumerator, new int[] { 1, 0, 1 }, aFailAction);
+         Test("f183cc2e-3c0a-4a5a-82e4-49e167b276e2", aEnumerator.MoveNext(), aFailAction);
+         Test("636549a1-ac5d-4733-a5c7-bfd94469e358", aEnumerator, new int[] { 0, 1, 1 }, aFailAction);
+         Test("f183cc2e-3c0a-4a5a-82e4-49e167b276e2", aEnumerator.MoveNext(), aFailAction);
+         Test("636549a1-ac5d-4733-a5c7-bfd94469e358", aEnumerator, new int[] { 1, 1, 1 }, aFailAction);
+         Test("75ec4a8d-0956-4275-bfae-5f245059c4ad", !aEnumerator.MoveNext(), aFailAction);
+      }
+
+      public bool MoveNext()
+      {
+         if (this.Bof)
+         {
+            this.Bof = false;
+            return this.DimensionSizes[0] > 0;
+         }
+         else
+         {
+            for (var aIdx = 0; aIdx < this.DimensionCount; ++aIdx)
+            {
+               if (this.Pos[aIdx] + 1 < this.DimensionSizes[aIdx])
+               {
+                  this.Pos[aIdx]++;
+                  for (var aIdx2 = aIdx - 1; aIdx2 >= 0; --aIdx2)
+                  {
+                     this.Pos[aIdx2] = 0;
+                  }
+                  return true;
+               }
+            }
+            return false;
+         }
+      }
+      public void Reset()
+      {
+         for(var aIdx =0; aIdx < this.DimensionCount; ++aIdx)
+         {
+            this.Pos[aIdx] = 0;            
+         }
+         this.Bof = true;
+      }
+   }
+
+   public abstract class CMatrixCellEnumerator<T> : CMatrixCellEnumerator
+   {
+      internal CMatrixCellEnumerator(CMatrixData aMatrixData):base(aMatrixData)
+      {
+
+      }
+      public new T Current { get => this.CurrentT; }
+      internal T CurrentT { get => this.GetCurrent(this.Plane); }
+      public abstract T GetCurrent(int aPlane);
+   }
+
+   public sealed class CMatrixCellCharEnumerator : CMatrixCellEnumerator<byte>
+   {
+      internal CMatrixCellCharEnumerator(CMatrixData aMatrixData):base(aMatrixData)
+      {
+         aMatrixData.CheckCellType(CMatrixData.CCellTypeEnum.Char);
+      }
+      public override byte GetCurrent(int aPlane)=> this.MatrixData.GetCellChar(this.Pos, this.Plane);
+      public override object GetCurrentObj(int aPlane) => this.GetCurrent(aPlane);
+   }
+
+   public sealed class CMatrixCellLongEnumerator : CMatrixCellEnumerator<Int32>
+   {
+      internal CMatrixCellLongEnumerator(CMatrixData aMatrixData) : base(aMatrixData)
+      {
+         aMatrixData.CheckCellType(CMatrixData.CCellTypeEnum.Long);
+      }
+      public override Int32 GetCurrent(int aPlane) => this.MatrixData.GetCellLong(this.Pos, this.Plane);
+      public override object GetCurrentObj(int aPlane) => this.GetCurrent(aPlane);
+   }
+
+   public sealed class CMatrixCellFloat64Enumerator : CMatrixCellEnumerator<double>
+   {
+      internal CMatrixCellFloat64Enumerator(CMatrixData aMatrixData) : base(aMatrixData)
+      {
+         aMatrixData.CheckCellType(CMatrixData.CCellTypeEnum.Float64);
+      }
+      public override double GetCurrent(int aPlane) => this.MatrixData.GetCellLong(this.Pos, this.Plane);
+      public override object GetCurrentObj(int aPlane) => this.GetCurrent(aPlane);
+   }
+   public sealed class CMatrixCellFloat32Enumerator : CMatrixCellEnumerator<float>
+   {
+      internal CMatrixCellFloat32Enumerator(CMatrixData aMatrixData) : base(aMatrixData)
+      {
+         aMatrixData.CheckCellType(CMatrixData.CCellTypeEnum.Float32);
+      }
+      public override float GetCurrent(int aPlane) => this.MatrixData.GetCellLong(this.Pos, this.Plane);
+      public override object GetCurrentObj(int aPlane) => this.GetCurrent(aPlane);
+   }
 
    public sealed class CMatrixData : CSealable
    {
@@ -34,6 +187,30 @@ namespace CbMaxClrAdapter.Jitter
 
       internal byte[] Buffer;
 
+      public int CellSize { get; private set; }
+
+      public CMatrixCellCharEnumerator GetCellCharEnumerator() =>new CMatrixCellCharEnumerator(this); 
+      public CMatrixCellLongEnumerator GetCellLongEnumerator() => new CMatrixCellLongEnumerator(this);
+      public CMatrixCellFloat32Enumerator GetCellFloat32Enumerator() => new CMatrixCellFloat32Enumerator(this);
+      public CMatrixCellFloat64Enumerator GetCellFloat64Enumerator() => new CMatrixCellFloat64Enumerator(this);
+
+      public CMatrixCellEnumerator GetEnumerator()
+      {
+         switch(this.CellTypeEnum)
+         {
+            case CCellTypeEnum.Char:
+               return this.GetCellCharEnumerator();
+            case CCellTypeEnum.Float32:
+               return this.GetCellFloat32Enumerator();
+            case CCellTypeEnum.Float64:
+               return this.GetCellFloat64Enumerator();
+            case CCellTypeEnum.Long:
+               return this.GetCellLongEnumerator();
+            default:
+               throw new Exception("CellTypeEnum out of range.");
+         }
+      }
+
       internal void ClearInternal()
       {
          this.ReallocateInternal(0, CCellTypeEnum.Char, 0, new int[] { }, new int[] { }, 0);
@@ -43,6 +220,37 @@ namespace CbMaxClrAdapter.Jitter
       {
          this.CheckWrite();
          this.ClearInternal();
+      }
+
+      public static int GetCellSize(CCellTypeEnum aCellTypeEnum)
+      {
+         switch (aCellTypeEnum)
+         {
+            case CCellTypeEnum.Char:
+               return 1;
+            case CCellTypeEnum.Float32:
+               return 4;
+            case CCellTypeEnum.Float64:
+               return  8;
+            case CCellTypeEnum.Long:
+               return 4;
+            default:
+               throw new ArgumentException("CellTypeEnum missmatch.");
+         }
+      }
+
+      public void Reallocate(CCellTypeEnum aCellTypeEnum, int aDimensionCount, int[] aDimensionSizes, int aPlaneCount)
+      {
+         var aStrides = new int[aDimensionCount];
+         var aStride = aPlaneCount * GetCellSize(aCellTypeEnum);
+         aStrides[0] = aStride;         
+         for(var aIdx = 1; aIdx < aDimensionCount; ++aIdx)
+         {
+            aStride = aStride * aDimensionSizes[aIdx];
+            aStrides[aIdx] = aStride;
+         }
+         var aSize = aStrides[aDimensionCount - 1] * aDimensionSizes[aDimensionCount - 1];
+         this.Reallocate(aSize, aCellTypeEnum, aDimensionCount, aDimensionSizes, aStrides, aPlaneCount);
       }
 
       public void Reallocate(int aSize, CCellTypeEnum aCellTypeEnum, int aDimensionCount, int[] aDimensionSizes, int[] aStrides, int aPlaneCount)
@@ -62,15 +270,24 @@ namespace CbMaxClrAdapter.Jitter
          }
          else
          {
+            var aCellSize = GetCellSize(aCellTypeEnum);
             if (aByteCount != this.ByteCount)
             {
                this.Buffer = new byte[aByteCount];
+            }
+            else
+            {
+               for(var aIdx = 0; aIdx < aByteCount; ++aIdx)
+               {
+                  this.Buffer[aIdx] = 0;
+               }
             }
             this.CellTypeEnum = aCellTypeEnum;
             this.DimensionCountM = aDimensionCount;
             this.DimensionSizesM = aDimensionSizes;
             this.DimensionStridesM = aStrides;
             this.PlaneCountM = aPlaneCount;
+            this.CellSize = aCellSize;         
          }
       }
 
@@ -80,14 +297,97 @@ namespace CbMaxClrAdapter.Jitter
          ++aPos;
       }
 
-      public double GetCellFloat(int[] aDimensions, int aPlane)
+      public void CheckCompatible(CMatrixData aRhs)
       {
-         throw new NotImplementedException();
+         if(this.DimensionCount != aRhs.DimensionCount
+         || ! this.DimensionSizes.SequenceEqual(aRhs.DimensionSizes)
+         || this.PlaneCount != aRhs.PlaneCount
+         || this.CellTypeEnum != aRhs.CellTypeEnum)
+         {
+            throw new Exception("Matrix not compatible.");
+         }
       }
 
-      public void SetCellFloat(int[] aDimensions, int aPlane, double aValue)
+      internal int GetBytePos(int[] aPos, int aPlane)
       {
-         throw new NotImplementedException();
+         int aBytePos = 0;
+         for(var aIdx = 0; aIdx < this.DimensionCount; ++aIdx)
+         {
+            aBytePos += aPos[aIdx] * this.DimensionStrides[aIdx];
+         }
+         aBytePos += this.CellSize * aPlane;
+         return aBytePos;
+      }
+
+      public double GetCellFloat64(int[] aPos, int aPlane)
+      {
+         this.CheckCellType(CCellTypeEnum.Float64);
+         var aBytePos = this.GetBytePos(aPos, aPlane);
+         var aDouble = BitConverter.ToDouble(this.Buffer, aBytePos);
+         return aDouble;
+      }
+
+      public float GetCellFloat32(int[] aPos, int aPlane)
+      {
+         this.CheckCellType(CCellTypeEnum.Float32);
+         var aBytePos = this.GetBytePos(aPos, aPlane);
+         var aDouble = BitConverter.ToSingle(this.Buffer, aBytePos);
+         return aDouble;
+      }
+
+      internal byte GetCellChar(int[] aPos, int aPlane)
+      {
+         this.CheckCellType(CCellTypeEnum.Char);
+         var aBytePos = this.GetBytePos(aPos, aPlane);
+         var aChar = this.Buffer[aBytePos];
+         return aChar;
+      }
+
+      internal Int32 GetCellLong(int[] aPos, int aPlane)
+      {
+         this.CheckCellType(CCellTypeEnum.Long);
+         var aBytePos = this.GetBytePos(aPos, aPlane);
+         var aInt32 = BitConverter.ToInt32(this.Buffer, aBytePos);
+         return aInt32;
+      }
+
+      public void SetCellFloat64(int[] aPos, int aPlane, double aValue)
+      {
+         this.CheckCellType(CCellTypeEnum.Float64);
+         var aBytePos = this.GetBytePos(aPos, aPlane);
+         var aBytes = BitConverter.GetBytes(aValue);
+         for(var aIdx = 0; aIdx < aBytes.Length;++aIdx)
+         {
+            this.Buffer[aBytePos + aIdx] = aBytes[aIdx];
+         }
+      }
+      public void SetCellFloat32(int[] aPos, int aPlane, float aValue)
+      {
+         this.CheckCellType(CCellTypeEnum.Float32);
+         var aBytePos = this.GetBytePos(aPos, aPlane);
+         var aBytes = BitConverter.GetBytes(aValue);
+         for (var aIdx = 0; aIdx < aBytes.Length; ++aIdx)
+         {
+            this.Buffer[aBytePos + aIdx] = aBytes[aIdx];
+         }
+      }
+
+      public void SetCellLong(int[] aPos, int aPlane, Int32 aValue)
+      {
+         this.CheckCellType(CCellTypeEnum.Long);
+         var aBytePos = this.GetBytePos(aPos, aPlane);
+         var aBytes = BitConverter.GetBytes(aValue);
+         for (var aIdx = 0; aIdx < aBytes.Length; ++aIdx)
+         {
+            this.Buffer[aBytePos + aIdx] = aBytes[aIdx];
+         }
+      }
+
+      public void SetCellChar(int[] aPos, int aPlane, byte aValue)
+      {
+         this.CheckCellType(CCellTypeEnum.Char);
+         var aBytePos = this.GetBytePos(aPos, aPlane);
+         this.Buffer[aBytePos] = aValue;
       }
 
       public void WriteByte(ref int aPos, byte aByte)
@@ -145,7 +445,7 @@ namespace CbMaxClrAdapter.Jitter
             aBytePos += aDimensionStrides[1]; 
          }
       }
-      public byte ReadByte(ref int aBytePos)
+      internal byte ReadByte(ref int aBytePos)
       {
          var aByte = this.Buffer[aBytePos]; 
          ++aBytePos;
@@ -182,6 +482,18 @@ namespace CbMaxClrAdapter.Jitter
          {
             throw new FormatException("Matrixformat not supported.");
          }
+      }
+
+      internal void CheckPlane(int aPlane)
+      {
+         if (aPlane < 0 || aPlane >= this.PlaneCount)
+            throw new ArgumentException("Plane out of range.");
+      }
+
+      internal void CheckCellType(CCellTypeEnum aCellTypeEnum)
+      {
+         if (aCellTypeEnum != this.CellTypeEnum)
+            throw new InvalidOperationException("CellTypeEnum missmatch.");
       }
    }
 

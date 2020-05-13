@@ -1,5 +1,6 @@
 ﻿using CbChannelStrip;
 using CbMaxClrAdapter;
+using CbMaxClrAdapter.Jitter;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,7 @@ namespace CbChannelStripTest
             var aFailAction = new Action<string>(delegate(string aTestCaseId) { throw new Exception("Test failed: " + aTestCaseId); });
             CListData.Test(aFailAction);
             CChannelStrip.Test(aFailAction);
+            CMatrixCellEnumerator.Test(aFailAction);
         }
     }
 }
