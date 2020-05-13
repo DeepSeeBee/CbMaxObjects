@@ -70,3 +70,8 @@ typedef long(__stdcall CObject_In_Matrix_Receive_Func)(long aInletIdx, long aSiz
 __declspec(dllexport) void __stdcall Object_In_Matrix_Receive_Func_Set(void* aSCbClrObjectPtr, CObject_In_Matrix_Receive_Func* aFuncPtr);
 
 __declspec(dllexport) void __stdcall Object_Out_Matrix_Send(void* aSCbClrObjectPtr, void* aOutletPtr, long aSize, const TCHAR* aCellTypePtr, long aDimensionCount, void* aDimensionSizesI32s, void* aDimensionStridesI32s, long aPlaneCount, void* aMatrixDataPtr);
+
+typedef void(__stdcall CObject_MainTask_Func)();
+__declspec(dllexport) void __stdcall Object_MainTask_Func_Set(void* aSCbClrObjectPtr, CObject_MainTask_Func* aFuncPtr);
+
+__declspec(dllexport) void __stdcall Object_MainTask_Request(void* aSCbClrObjectPtr);

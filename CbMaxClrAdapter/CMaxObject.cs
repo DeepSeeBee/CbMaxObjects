@@ -911,8 +911,60 @@ namespace CbMaxClrAdapter
       internal Exception NewDoesNotUnderstandExc(CConnector aConnector, string aWhat) => new Exception(aConnector.GetType().Name + " does not understand " + aWhat);
       internal Exception NewDoesNotUnderstandExc(CConnector aConnector, CMessageTypeEnum aMessageTypeEnum) => this.NewDoesNotUnderstandExc(aConnector, aMessageTypeEnum.ToString());
       #endregion
+      #region MainTask
+      private List<Action> MainTaskActivity = new List<Action>();
+      /// <summary>
+      /// Requests a call of the given action in the max low prio task.
+      /// Can be called from any thread.
+      /// Uses Max::QElem mechanism.
+      /// </summary>
+      protected void RequestMainTaskActivity(Action aAction)
+      {
+         lock(this.MainTaskActivity)
+         {
+            this.MainTaskActivity.Add(aAction);
+         }
+         this.Marshal.Object_MainTask_Request();
+      }
+      /// <summary>
+      /// Called in the Max-Lo-Prio-Task after 'RequestMainTaskActivity' is called.
+      /// Uses Max::QElem mechanism.
+      /// </summary>
+      internal void OnMainTask()
+      {
+         var aRun = true;
+         while(aRun)
+         {
+            Action aAction;
+            lock(this.MainTaskActivity)
+            {
+               if(this.MainTaskActivity.IsEmpty())
+               {
+                  aRun = false;
+                  aAction = default;
+               }
+               else
+               {
+                  aAction = this.MainTaskActivity.First();
+                  this.MainTaskActivity.RemoveAt(0);
+               }
+            }
+            if(aAction is object)
+            {
+               try
+               {
+                  aAction();
+               }
+               catch(Exception aExc)
+               {
+                  this.WriteLogErrorMessage(aExc);
+               }
+               aAction = default;
+            }
+         }
+      }
+      #endregion
    }
-
 
    public static class CStringExtensions
    {

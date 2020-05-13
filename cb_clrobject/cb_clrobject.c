@@ -13,8 +13,7 @@ typedef struct _SCbClrObject
    SClrObject_New mClrObjectNewArgs;
    CClrObjectVoidPtr mClrObjectPtr;
    t_symbol* mNamePtr;
-   //void* mOutlet1;	
-   //void* mProxyPtr;
+   void* mQelemPtr;
 
    CObject_DeleteFunc* mObjectDeleteFuncPtr;
    CObject_In_Bang_Func* mInBangFuncPtr;
@@ -35,6 +34,7 @@ typedef struct _SCbClrObject
    CObject_Out_List_Element_Int_Get_Func* mObjectOutListElementIntGetFuncPtr;
    CObject_Out_List_Element_Symbol_Get_Func* mObjectOutListElementSymbolGetFuncPtr;
    CObject_In_Matrix_Receive_Func* mObjectInMatrixReceiveFuncPtr;
+   CObject_MainTask_Func* mObjectMainTaskFuncPtr;
 
    long mInletIdx;
 
@@ -76,34 +76,20 @@ void __stdcall In_Delete(void* aProxy)
 void* __stdcall Object_Out_Add(void* aObjectPtr, int aType, int aPos)
 {
    return outlet_new(aObjectPtr, NULL);
-   //switch (aType)
-   //{
-   //case 0: // Any
-   //   return outlet_new(aObjectPtr, NULL);
-
-   //case 1: // Bang
-   //   return outlet_new(aObjectPtr, "bang");
-
-   //case 2: // Float
-   //   return outlet_new(aObjectPtr, "f");
-
-   //case 3: // Int
-   //   return outlet_new(aObjectPtr, NULL);
-
-   //case 4: // List
-   //   return outlet_new(aObjectPtr, "l");
-
-   //case 6: // Matrix
-   //   return outlet_new(aObjectPtr, NULL);
-
-   //default:
-   //   return 0;
-   //}
 }
 
 void __stdcall Out_Delete(void* aOutletPtr)
 {
    outlet_delete(aOutletPtr);
+}
+
+void cb_clrobject_qelem_callback(SCbClrObject* aObjectPtr)
+{
+   if(aObjectPtr
+   && aObjectPtr->mObjectMainTaskFuncPtr)
+   {
+      aObjectPtr->mObjectMainTaskFuncPtr();
+   }
 }
 
 void* cb_clrobject_new(t_symbol* s, long argc, t_atom* argv)
@@ -120,6 +106,7 @@ void* cb_clrobject_new(t_symbol* s, long argc, t_atom* argv)
       //aObjectPtr->mClrObjectNewArgs.mInletsAppendFuncPtr = Inlets_Append;
       //aObjectPtr->mClrObjectNewArgs.mOutletsAppendFuncPtr = Outlets_Append;
       aObjectPtr->mClrObjectPtr = ClrObject_New(&aObjectPtr->mClrObjectNewArgs);
+      aObjectPtr->mQelemPtr = qelem_new(aObjectPtr, cb_clrobject_qelem_callback);
    }
 
    if (aObjectPtr) 
@@ -150,6 +137,7 @@ void cb_clrobject_free(SCbClrObject* aObjectPtr)
    }
    if (aObjectPtr)
    {
+      qelem_free(aObjectPtr->mQelemPtr);
       ClrObject_Free(aObjectPtr->mClrObjectPtr);
    }	
 }
@@ -667,6 +655,22 @@ void __stdcall Object_In_Matrix_Receive(SCbClrObject* aSCbClrObjectPtr, long aIn
    }
 }
 
+void __stdcall Object_MainTask_Func_Set(SCbClrObject* aSCbClrObjectPtr, CObject_MainTask_Func* aFuncPtr)
+{
+   if (aSCbClrObjectPtr)
+   {
+      aSCbClrObjectPtr->mObjectMainTaskFuncPtr = aFuncPtr;
+   }
+}
+
+void __stdcall Object_MainTask_Request(SCbClrObject* aSCbClrObjectPtr)
+{
+   if(aSCbClrObjectPtr
+   && aSCbClrObjectPtr->mQelemPtr)
+   {
+      qelem_set(aSCbClrObjectPtr->mQelemPtr);
+   }
+}
  
 void ext_main(void* r)
 {
