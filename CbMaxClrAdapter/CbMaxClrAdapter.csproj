@@ -70,6 +70,7 @@
     <Compile Include="CMaxObject.cs" />
     <Compile Include="DllFuncs.cs" />
     <Compile Include="Jitter\jitter.cs" />
+    <Compile Include="MGraphics\mgraphics.cs" />
     <Compile Include="Peristency\pers.cs" />
     <Compile Include="Reflection\rfl.cs" />
   </ItemGroup>

@@ -47,6 +47,7 @@ namespace CbMaxClrAdapter
          var aObjectOutListElementSymbolGetFunc = new DllImports.CObject_Out_List_Element_Symbol_Get_Func(this.Object_Out_List_Element_Symbol_Get);
          var aObjectInMatrixReceiveFunc = new DllImports.CObject_In_Matrix_Receive_Func(this.Object_In_Matrix_Receive);
          var aObjectMainTask = new DllImports.CObject_MainTask_Func(this.Object_MainTask);
+         var aObjectShutdownFunc = new DllImports.CObject_Shutdown_Func(this.Object_Shutdown);
 
          this.Funcs.Add(aObjectDeleteFunc);
          this.Funcs.Add(aObjectOnInBangFunc);
@@ -68,6 +69,7 @@ namespace CbMaxClrAdapter
          this.Funcs.Add(aObjectOutListElementSymbolGetFunc);
          this.Funcs.Add(aObjectInMatrixReceiveFunc);
          this.Funcs.Add(aObjectMainTask);
+         this.Funcs.Add(aObjectShutdownFunc);
 
          DllImports.Object_Delete_Func_Set(aArgs.mObjectPtr, aObjectDeleteFunc);
          DllImports.Object_In_Bang_Func_Set(aArgs.mObjectPtr, aObjectOnInBangFunc);
@@ -89,6 +91,7 @@ namespace CbMaxClrAdapter
          DllImports.Object_Out_List_Element_Symbol_Get_Func_Set(aArgs.mObjectPtr, aObjectOutListElementSymbolGetFunc); 
          DllImports.Object_In_Matrix_Receive_Func_Set(aArgs.mObjectPtr, aObjectInMatrixReceiveFunc);
          DllImports.Object_MainTask_Func_Set(aArgs.mObjectPtr, aObjectMainTask);
+         DllImports.Object_Shutdown_Func_Set(aArgs.mObjectPtr, aObjectShutdownFunc);
       }
       private void Memory_Delete(IntPtr aHGlobalMem)
       {
@@ -129,7 +132,7 @@ namespace CbMaxClrAdapter
          try
          {
             var aResult = aFunc();
-            GC.Collect();
+            //GC.Collect();
             return aResult;
 
          }
@@ -455,11 +458,11 @@ namespace CbMaxClrAdapter
       internal void Send(CIntOutlet aIntOutlet) => this.Send(aIntOutlet, aIntOutlet.Message);
       internal void Object_In_Matrix_Receive(Int32 aInletIdx, string aObjectName) => DllImports.Object_In_Matrix_Receive(this.MaxObject.NewArgs.mObjectPtr, aInletIdx, aObjectName);
       internal void Send(COutlet aOutlet, CList aList) => DllImports.Object_Out_List_Send(aOutlet.MaxObject.Ptr, aOutlet.Ptr, aOutlet.Index);
-      internal void Send(CListOutlet aListOutlet) => this.Send(aListOutlet, aListOutlet.Message);
+      internal void Send(CSingleTypeOutlet<CList> aListOutlet) => this.Send(aListOutlet, aListOutlet.Message);
       internal IntPtr AddOutlet(COutlet aOutlet, CMessageTypeEnum aDataTypeEnum) => DllImports.Object_Out_Add(this.MaxObject.NewArgs.mObjectPtr, (int)aDataTypeEnum, aOutlet.Index);
       internal void Max_Log_Write(string aMsg, bool aIsError) => DllImports.Max_Log_Write(this.MaxObject.NewArgs.mObjectPtr, aMsg, aIsError ? 1 : 0);
-
       internal void Object_MainTask_Request() => DllImports.Object_MainTask_Request(this.MaxObject.NewArgs.mObjectPtr);
       private void Object_MainTask() => this.WithCatch(delegate () { this.MaxObject.OnMainTask(); });
+      private void Object_Shutdown() => this.WithCatch(this.MaxObject.Shutdown);
    }
 }

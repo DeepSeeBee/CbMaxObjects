@@ -172,6 +172,11 @@ namespace CbMaxClrAdapter
       [DllImport(mDllName)]
       public static extern void Object_MainTask_Request(IntPtr aSbClrObjectPtr);
 
+      public delegate void CObject_Shutdown_Func();
+
+      [DllImport(mDllName)]
+      public static extern void Object_Shutdown_Func_Set(IntPtr aSbClrObjectPtr, CObject_Shutdown_Func aFunc);
+
    }
 
 

@@ -35,6 +35,7 @@ typedef struct _SCbClrObject
    CObject_Out_List_Element_Symbol_Get_Func* mObjectOutListElementSymbolGetFuncPtr;
    CObject_In_Matrix_Receive_Func* mObjectInMatrixReceiveFuncPtr;
    CObject_MainTask_Func* mObjectMainTaskFuncPtr;
+   CObject_Shutdown_Func* mObjectShutdownFuncPtr;
 
    long mInletIdx;
 
@@ -85,10 +86,16 @@ void __stdcall Out_Delete(void* aOutletPtr)
 
 void cb_clrobject_qelem_callback(SCbClrObject* aObjectPtr)
 {
+   //Max_Log_Write(aObjectPtr, "cb_clrobject_qelem_callback", 0);
    if(aObjectPtr
    && aObjectPtr->mObjectMainTaskFuncPtr)
    {
       aObjectPtr->mObjectMainTaskFuncPtr();
+   }
+   if (aObjectPtr
+      && aObjectPtr->mQelemPtr)
+   {
+      qelem_unset(aObjectPtr->mQelemPtr);
    }
 }
 
@@ -129,6 +136,12 @@ void* cb_clrobject_new(t_symbol* s, long argc, t_atom* argv)
 
 void cb_clrobject_free(SCbClrObject* aObjectPtr)
 {
+   if (aObjectPtr
+   && aObjectPtr->mObjectShutdownFuncPtr)
+   {
+      aObjectPtr->mObjectShutdownFuncPtr();
+   }
+
    if(aObjectPtr
    && aObjectPtr->mObjectDeleteFuncPtr)
    {
@@ -457,8 +470,10 @@ void __stdcall Object_Out_List_Send(SCbClrObject* aSCbClrObjectPtr, void* aOutle
       long aCountAllocated = 0;
       t_atom* aAtomsPtr = 0;
       char aAllocated = 0;
-      atom_alloc_array(aCount, &aCountAllocated, &aAtomsPtr, &aAllocated);
-      if (aAllocated)
+      if(aCount != 0)
+         atom_alloc_array(aCount, &aCountAllocated, &aAtomsPtr, &aAllocated);
+      if (aAllocated
+      || aCount == 0)
       {
          if (aCountAllocated >= aCount)
          {
@@ -494,10 +509,12 @@ void __stdcall Object_Out_List_Send(SCbClrObject* aSCbClrObjectPtr, void* aOutle
             {
                t_symbol* aSymbolPtr = gensym(aSymbolNamePtr);
                outlet_anything(aOutletPtr, aSymbolPtr, aCount, aAtomsPtr);
-              
+            }
+            else
+            {
+               sysmem_freeptr(aAtomsPtr);
             }
          }
-         //sysmem_freeptr(aAtomsPtr);
       }
       if (aSymbolNamePtr)
       {
@@ -665,10 +682,19 @@ void __stdcall Object_MainTask_Func_Set(SCbClrObject* aSCbClrObjectPtr, CObject_
 
 void __stdcall Object_MainTask_Request(SCbClrObject* aSCbClrObjectPtr)
 {
+   //Max_Log_Write(aSCbClrObjectPtr, "Object_MainTask_Request", 0);
    if(aSCbClrObjectPtr
    && aSCbClrObjectPtr->mQelemPtr)
    {
-      qelem_set(aSCbClrObjectPtr->mQelemPtr);
+      qelem_set(aSCbClrObjectPtr->mQelemPtr); 
+   }
+}
+
+void __stdcall Object_Shutdown_Func_Set(SCbClrObject* aSCbClrObjectPtr, CObject_Shutdown_Func* aFuncPtr)
+{
+   if (aSCbClrObjectPtr)
+   {
+      aSCbClrObjectPtr->mObjectShutdownFuncPtr = aFuncPtr;
    }
 }
  

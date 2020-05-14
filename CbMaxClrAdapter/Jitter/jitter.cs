@@ -33,7 +33,7 @@ namespace CbMaxClrAdapter.Jitter
       private readonly int DimensionCount;
       private readonly int[] DimensionSizes;
       private int[] PosM;
-      internal int[] Pos { get { this.CheckPos(); return this.PosM; } private set { this.PosM = value; } }
+      public int[] Pos { get { this.CheckPos(); return this.PosM; } private set { this.PosM = value; } }
       private bool Bof;
       private int PlaneM;
       public int Plane { get { return this.PlaneM; } set { this.MatrixData.CheckPlane(value); this.PlaneM = value; } }
@@ -59,7 +59,7 @@ namespace CbMaxClrAdapter.Jitter
       {
          var aMatrixData = new CMatrixData();
          aMatrixData.Reallocate(CMatrixData.CCellTypeEnum.Char, 3, new int[] { 2, 2, 2 }, 1);
-         var aEnumerator = aMatrixData.GetEnumerator();
+         var aEnumerator = aMatrixData.GetCellEnumerator();
          Test("947ad689-cc81-45ab-9fe3-708b61830795", aEnumerator.MoveNext(), aFailAction);
          Test("84c3a114-e563-4dc4-a478-7d8faf219577", aEnumerator, new int[] { 0, 0, 0 }, aFailAction);
          Test("f8afda6d-0b8a-4581-abf9-6323a5ad0324", aEnumerator.MoveNext(), aFailAction);
@@ -130,7 +130,7 @@ namespace CbMaxClrAdapter.Jitter
       {
          aMatrixData.CheckCellType(CMatrixData.CCellTypeEnum.Char);
       }
-      public override byte GetCurrent(int aPlane)=> this.MatrixData.GetCellChar(this.Pos, this.Plane);
+      public override byte GetCurrent(int aPlane)=> this.MatrixData.GetCellChar(this.Plane, this.Pos);
       public override object GetCurrentObj(int aPlane) => this.GetCurrent(aPlane);
    }
 
@@ -140,7 +140,7 @@ namespace CbMaxClrAdapter.Jitter
       {
          aMatrixData.CheckCellType(CMatrixData.CCellTypeEnum.Long);
       }
-      public override Int32 GetCurrent(int aPlane) => this.MatrixData.GetCellLong(this.Pos, this.Plane);
+      public override Int32 GetCurrent(int aPlane) => this.MatrixData.GetCellLong(this.Plane, this.Pos);
       public override object GetCurrentObj(int aPlane) => this.GetCurrent(aPlane);
    }
 
@@ -150,7 +150,7 @@ namespace CbMaxClrAdapter.Jitter
       {
          aMatrixData.CheckCellType(CMatrixData.CCellTypeEnum.Float64);
       }
-      public override double GetCurrent(int aPlane) => this.MatrixData.GetCellLong(this.Pos, this.Plane);
+      public override double GetCurrent(int aPlane) => this.MatrixData.GetCellLong(this.Plane, this.Pos);
       public override object GetCurrentObj(int aPlane) => this.GetCurrent(aPlane);
    }
    public sealed class CMatrixCellFloat32Enumerator : CMatrixCellEnumerator<float>
@@ -159,7 +159,7 @@ namespace CbMaxClrAdapter.Jitter
       {
          aMatrixData.CheckCellType(CMatrixData.CCellTypeEnum.Float32);
       }
-      public override float GetCurrent(int aPlane) => this.MatrixData.GetCellLong(this.Pos, this.Plane);
+      public override float GetCurrent(int aPlane) => this.MatrixData.GetCellLong(this.Plane, this.Pos);
       public override object GetCurrentObj(int aPlane) => this.GetCurrent(aPlane);
    }
 
@@ -194,7 +194,7 @@ namespace CbMaxClrAdapter.Jitter
       public CMatrixCellFloat32Enumerator GetCellFloat32Enumerator() => new CMatrixCellFloat32Enumerator(this);
       public CMatrixCellFloat64Enumerator GetCellFloat64Enumerator() => new CMatrixCellFloat64Enumerator(this);
 
-      public CMatrixCellEnumerator GetEnumerator()
+      public CMatrixCellEnumerator GetCellEnumerator()
       {
          switch(this.CellTypeEnum)
          {
@@ -308,7 +308,7 @@ namespace CbMaxClrAdapter.Jitter
          }
       }
 
-      internal int GetBytePos(int[] aPos, int aPlane)
+      internal int GetBytePos(int aPlane, params int[] aPos)
       {
          int aBytePos = 0;
          for(var aIdx = 0; aIdx < this.DimensionCount; ++aIdx)
@@ -319,52 +319,52 @@ namespace CbMaxClrAdapter.Jitter
          return aBytePos;
       }
 
-      public double GetCellFloat64(int[] aPos, int aPlane)
+      public double GetCellFloat64(int aPlane, params int[] aPos)
       {
          this.CheckCellType(CCellTypeEnum.Float64);
-         var aBytePos = this.GetBytePos(aPos, aPlane);
+         var aBytePos = this.GetBytePos(aPlane, aPos);
          var aDouble = BitConverter.ToDouble(this.Buffer, aBytePos);
          return aDouble;
       }
 
-      public float GetCellFloat32(int[] aPos, int aPlane)
+      public float GetCellFloat32(int aPlane, params int[] aPos)
       {
          this.CheckCellType(CCellTypeEnum.Float32);
-         var aBytePos = this.GetBytePos(aPos, aPlane);
+         var aBytePos = this.GetBytePos(aPlane, aPos);
          var aDouble = BitConverter.ToSingle(this.Buffer, aBytePos);
          return aDouble;
       }
 
-      internal byte GetCellChar(int[] aPos, int aPlane)
+      internal byte GetCellChar(int aPlane, params int[] aPos)
       {
          this.CheckCellType(CCellTypeEnum.Char);
-         var aBytePos = this.GetBytePos(aPos, aPlane);
+         var aBytePos = this.GetBytePos(aPlane, aPos);
          var aChar = this.Buffer[aBytePos];
          return aChar;
       }
 
-      internal Int32 GetCellLong(int[] aPos, int aPlane)
+      internal Int32 GetCellLong(int aPlane, params int[] aPos)
       {
          this.CheckCellType(CCellTypeEnum.Long);
-         var aBytePos = this.GetBytePos(aPos, aPlane);
+         var aBytePos = this.GetBytePos(aPlane, aPos);
          var aInt32 = BitConverter.ToInt32(this.Buffer, aBytePos);
          return aInt32;
       }
 
-      public void SetCellFloat64(int[] aPos, int aPlane, double aValue)
+      public void SetCellFloat64(double aValue, int aPlane, params int[] aPos)
       {
          this.CheckCellType(CCellTypeEnum.Float64);
-         var aBytePos = this.GetBytePos(aPos, aPlane);
+         var aBytePos = this.GetBytePos(aPlane, aPos);
          var aBytes = BitConverter.GetBytes(aValue);
          for(var aIdx = 0; aIdx < aBytes.Length;++aIdx)
          {
             this.Buffer[aBytePos + aIdx] = aBytes[aIdx];
          }
       }
-      public void SetCellFloat32(int[] aPos, int aPlane, float aValue)
+      public void SetCellFloat32(float aValue, int aPlane, params int[] aPos)
       {
          this.CheckCellType(CCellTypeEnum.Float32);
-         var aBytePos = this.GetBytePos(aPos, aPlane);
+         var aBytePos = this.GetBytePos(aPlane, aPos);
          var aBytes = BitConverter.GetBytes(aValue);
          for (var aIdx = 0; aIdx < aBytes.Length; ++aIdx)
          {
@@ -372,10 +372,10 @@ namespace CbMaxClrAdapter.Jitter
          }
       }
 
-      public void SetCellLong(int[] aPos, int aPlane, Int32 aValue)
+      public void SetCellLong(Int32 aValue, int aPlane, params int[] aPos)
       {
          this.CheckCellType(CCellTypeEnum.Long);
-         var aBytePos = this.GetBytePos(aPos, aPlane);
+         var aBytePos = this.GetBytePos(aPlane, aPos);
          var aBytes = BitConverter.GetBytes(aValue);
          for (var aIdx = 0; aIdx < aBytes.Length; ++aIdx)
          {
@@ -383,10 +383,10 @@ namespace CbMaxClrAdapter.Jitter
          }
       }
 
-      public void SetCellChar(int[] aPos, int aPlane, byte aValue)
+      public void SetCellChar(byte aValue, int aPlane, params int[] aPos)
       {
          this.CheckCellType(CCellTypeEnum.Char);
-         var aBytePos = this.GetBytePos(aPos, aPlane);
+         var aBytePos = this.GetBytePos(aPlane, aPos);
          this.Buffer[aBytePos] = aValue;
       }
 
@@ -525,6 +525,7 @@ namespace CbMaxClrAdapter.Jitter
       {
          this.MaxObject.Marshal.Send(this);
       }
+
 
    }
 

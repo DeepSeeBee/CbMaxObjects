@@ -1,10 +1,13 @@
 ﻿using CbChannelStrip.Graph;
+using CbChannelStrip.GraphOverlay;
 using CbMaxClrAdapter;
 using CbMaxClrAdapter.Jitter;
+using CbMaxClrAdapter.MGraphics;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http.Headers;
@@ -15,63 +18,38 @@ using System.Threading.Tasks;
 namespace CbChannelStrip.GraphWiz
 {
  
+   internal sealed class CGwEdge
+   {
+      internal CGwEdge()
+      {
+
+      }
+   }
+
    internal sealed class CGwNode
    {
-      internal CGwNode(string aName, double aX, double aY, double aDx, double aDy)
+      internal CGwNode(string aName, double aX, double aY, double aDx, double aDy, string aShape)
       {
          this.Name = aName;
          this.X = aX;
          this.Y = aY;
+         this.Dx = aDx;
+         this.Dy = aDy;
+         this.ShapeEnum = (CShapeEnum)Enum.Parse(typeof(CShapeEnum), aShape, true);
       }
       internal readonly string Name;      
       internal readonly double X;
       internal readonly double Y;
       internal readonly double Dx;
       internal readonly double Dy;
-      internal readonly string Shape;
-      internal enum COutlineShapeEnum
+      internal enum CShapeEnum
       {
          Triangle,
          InvTriangle,
-         Circle,
+         MCircle,
+         MSquare
       }
-      private COutlineShapeEnum? ShapeEnumM;
-      internal COutlineShapeEnum ShapeEnum
-      {
-         get
-         {
-            if (!(this.ShapeEnumM.HasValue))
-               this.ShapeEnumM = this.CalcShapeEnum();
-            return this.ShapeEnumM.Value;
-         }
-      }
-      private COutlineShapeEnum CalcShapeEnum()
-      {
-         switch (this.Shape.ToLower())
-         {
-            case "triangle":
-               return COutlineShapeEnum.Triangle;
-            case "invtriangle":
-               return COutlineShapeEnum.InvTriangle;
-            case "Mcircle":
-               return COutlineShapeEnum.Circle;
-            default:
-               throw new ArgumentException();
-         }
-      }
-
-      internal CMatrixData NewShapeMatrix()
-      {
-         //var aMatrix = new CMatrixData();
-         //aMatrix.ReallocateInternal(, CMatrixData.CCellTypeEnum.Float32, 1, new int[] {}
-         throw new NotImplementedException();
-      }
-
-      internal CMatrixData NewTransformMatrix()
-      {
-         throw new NotImplementedException();
-      }
-
+      internal readonly CShapeEnum ShapeEnum;
 
       internal double CenterX
       {
@@ -85,11 +63,13 @@ namespace CbChannelStrip.GraphWiz
    }
    internal sealed class CGwGraph
    {
-      internal CGwGraph(IEnumerable<CGwNode> aNodes)
+      internal CGwGraph(IEnumerable<CGwNode> aNodes, CPoint aSize)
       {
          this.Nodes = aNodes;
+         this.Size = aSize;
       }
-
+      internal CGwGraph():this(new CGwNode[] { }, new CPoint()) { }
+      internal readonly CPoint Size;
       internal static CGwGraph New(string aCode)
       {
          aCode = aCode.Replace(Environment.NewLine, " ");
@@ -112,10 +92,10 @@ namespace CbChannelStrip.GraphWiz
          aParser.SkipWhitespace();
          var aCoords = aParser.ReadString().Trim();
          var aToks = aCoords.Split(',').ToArray();
-         var aDiagX = double.Parse(aToks[0]);
-         var aDiagY = double.Parse(aToks[1]);
-         var aDiagDx = double.Parse(aToks[2]);
-         var aDiagDy = double.Parse(aToks[3]);
+         var aDiagX = aParser.ParseDouble(aToks[0]);
+         var aDiagY = aParser.ParseDouble(aToks[1]);
+         var aDiagDx = aParser.ParseDouble(aToks[2]);
+         var aDiagDy = aParser.ParseDouble(aToks[3]);
          aParser.SkipWhitespace();
          aParser.Expect("]");
          aParser.SkipWhitespace();
@@ -155,20 +135,20 @@ namespace CbChannelStrip.GraphWiz
                aParser.Expect("]");
                aParser.SkipWhitespace();
                aParser.Expect(";");
-               if (aNodeAttributes.ContainsKey("Pos"))
+               if (aNodeAttributes.ContainsKey("pos"))
                {
-                  var aPos = aNodeAttributes["Pos"];
+                  var aPos = aNodeAttributes["pos"];
                   var aXy = aPos.Split(',');
                   var aXText = aXy[0];
                   var aYText = aXy[1];
-                  var aX = double.Parse(aXText);
-                  var aY = double.Parse(aYText);
-                  var aDx = double.Parse(aNodeAttributes["width"]);
-                  var aDy = double.Parse(aNodeAttributes["height"]);
-                  var aGwNode = new CGwNode(aNodeName, aX, aY, aDx, aDy);
+                  var aX = aParser.ParseDouble(aXText);
+                  var aY = aDiagDy - aParser.ParseDouble(aYText);
+                  var aDx = InchesToPixels(aParser.ParseDouble(aNodeAttributes["width"]));
+                  var aDy = InchesToPixels(aParser.ParseDouble(aNodeAttributes["height"]));
+                  var aShape = aNodeAttributes["shape"];
+                  var aGwNode = new CGwNode(aNodeName, aX, aY, aDx, aDy, aShape);
                   aGwNodes.Add(aGwNode);
                }
-
             }
             aParser.SkipWhitespace();
          }
@@ -177,10 +157,12 @@ namespace CbChannelStrip.GraphWiz
          aParser.SkipWhitespace();
          aParser.ExpectEndOfFile();
 
-         var aGwGraph = new CGwGraph(aGwNodes);
+         var aGwGraph = new CGwGraph(aGwNodes, new CPoint(aDiagDx, aDiagDy));
          return aGwGraph;
 
       }
+
+      private static double InchesToPixels(double aInches) => aInches * 72;
 
       private sealed class CParser
       {
@@ -274,7 +256,8 @@ namespace CbChannelStrip.GraphWiz
             this.Expect("\"");
             return aSb.ToString();
          }
-
+         private static CultureInfo EnCulture = CultureInfo.GetCultureInfo("en-us");
+         internal double ParseDouble(string aText) => double.Parse(aText, EnCulture);
          internal string ReadValue()
          {
             if(this.IsNumeric)
@@ -286,14 +269,15 @@ namespace CbChannelStrip.GraphWiz
                }
                if (this.Char == '.')
                {
-                  aSb.Append(this.ReadChar());
+                  this.ReadChar();
+                  aSb.Append(".");
                   while (this.IsNumeric)
                   {
                      aSb.Append(this.ReadChar());
                   }
                }
-               var aDbl = double.Parse(aSb.ToString());
-               return aDbl.ToString();
+               var aDbl = this.ParseDouble(aSb.ToString());
+               return aDbl.ToString(EnCulture);
             }
             else if(this.Char == '\"')
             {
@@ -318,7 +302,7 @@ namespace CbChannelStrip.GraphWiz
                aParser.Expect("=");
                aParser.SkipWhitespace();
                var aAttributeValue = aParser.ReadValue();
-               aAttributes.Add(aAttributeName, aAttributeValue);
+               aAttributes.Add(aAttributeName, aAttributeValue.ToString(EnCulture));
                aParser.SkipWhitespace();
                aMoreAttribs = aParser.Char == ',';
                if (aMoreAttribs)
@@ -338,14 +322,18 @@ namespace CbChannelStrip.GraphWiz
          }
       }
 
+      internal static CGwGraph NewTestGraph(Action<string> aDebugPrint) => CGwDiagramBuilder.NewTestDiagramBuilder(aDebugPrint).GwGraph;
+
       internal readonly IEnumerable<CGwNode> Nodes;
    }
 
 
    internal sealed class CGwDiagramBuilder : CRoutingVisitor
    {
-      internal CGwDiagramBuilder(CSettings aSettings)
+      private Action<string> DebugPrint;
+      internal CGwDiagramBuilder(Action<string> aDebugPrint, CSettings aSettings)
       {
+         this.DebugPrint = aDebugPrint;
          this.Settings = aSettings;
       }
 
@@ -353,6 +341,20 @@ namespace CbChannelStrip.GraphWiz
 
       private readonly List<string> CodeWithoutCoords = new List<string>();
 
+      private volatile CGwGraph GwGraphM;
+      internal CGwGraph GwGraph
+      {
+         get
+         {
+            if(!(this.GwGraphM is object))
+            {
+               var aGraph = CGwGraph.New(this.CodeWithCoords.JoinString(" "));
+               this.DebugPrint("CGwGraph.New: NodeCount: " + aGraph.Nodes.Count());
+               this.GwGraphM = aGraph;
+            }
+            return this.GwGraphM;
+         }
+      }
 
       private int Indent;
       private void AddLine(string aCode) => this.CodeWithoutCoords.Add(new string(' ', this.Indent) + aCode);
@@ -372,8 +374,8 @@ namespace CbChannelStrip.GraphWiz
          {
             aAttributes.Add("color", "lightgrey");
             aAttributes.Add("fontcolor", "lightgrey");
-
          }
+         //aAttributes.Add("fixedsize", "true");
          var aStringBuilder = new StringBuilder();
          aStringBuilder.Append("\"" + aName + "\"");
          aStringBuilder.Append("[");
@@ -461,18 +463,11 @@ namespace CbChannelStrip.GraphWiz
          var aGwGraph = CGwGraph.New(aCodeWithCoords);
       }
 
-      internal static void Test(Action<string> aFailAction)
+      internal static CGwDiagramBuilder NewTestDiagramBuilder(Action<string> aDebugPrint) => CFlowMatrix.NewTestFlowMatrix(aDebugPrint).Routings.GwDiagramBuilder;
+
+      internal static void Test(Action<string> aFailAction, Action<string> aDebugPrint)
       {
-         var aSettings = new CSettings();
-         Test("", new CFlowMatrix(aSettings, 7,
-                                  0, 1, 1, 0, 0, 0, 0,
-                                  0, 0, 0, 0, 0, 0, 1,
-                                  0, 0, 0, 1, 1, 0, 0,
-                                  0, 0, 0, 0, 0, 1, 0,
-                                  0, 0, 0, 0, 0, 1, 0,
-                                  0, 0, 0, 0, 0, 0, 1,
-                                  1, 0, 0, 0, 0, 0, 0
-                                  ).Routings.GraphWizDiagram, aFailAction);
+         Test("1baa58c2-5e3a-49c4-b762-eceab52cf977", NewTestDiagramBuilder(aDebugPrint), aFailAction);
       }
       #endregion
 
@@ -531,7 +526,7 @@ namespace CbChannelStrip.GraphWiz
             if (aError != string.Empty)
             {
                var aExc = new Exception(aError);
-               throw aExc;
+               throw aExc; 
             }
          }
          catch (Exception aExc)
@@ -578,7 +573,7 @@ namespace CbChannelStrip.GraphWiz
       //   }
       //   aImageStream.Seek(0, SeekOrigin.Begin);
       //   var aBitmap = new Bitmap(aImageStream);
-      //   return aBitmap;
+      //   return aBitmap; 
       //}
 
       private Bitmap BitmapM;

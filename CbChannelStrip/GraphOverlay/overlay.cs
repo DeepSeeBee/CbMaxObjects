@@ -1,136 +1,287 @@
 ﻿using CbChannelStrip.GraphWiz;
 using CbMaxClrAdapter;
 using CbMaxClrAdapter.Jitter;
+using CbMaxClrAdapter.MGraphics;
 using System;
 using System.CodeDom;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using System.Windows.Media;
+using System.Windows.Documents;
+using System.Windows.Media.Converters;
+using System.Windows.Threading;
 
 namespace CbChannelStrip.GraphOverlay
 {
+   using CWorkerResult = Tuple<BackgroundWorker, CGraphOverlay.CState>;
 
-   internal sealed class COvShape
+   internal abstract class COvShape
    {
-      internal COvShape(CGwNode aGwShape)
+      internal CGraphOverlay GraphOverlay;
+      internal COvShape(CGraphOverlay aGraphOverlay)
       {
-         this.GwShape = aGwShape;
-         this.OriginalShapeMatrix = aGwShape.NewShapeMatrix();
-         this.ShapeMatrix = aGwShape.NewShapeMatrix();
-         this.TransformMatrix = aGwShape.NewTransformMatrix();
+         this.GraphOverlay = aGraphOverlay;
       }
 
-      internal readonly CGwNode GwShape;
-      internal string Name { get => this.GwShape.Name; }
-      internal readonly CMatrixData OriginalShapeMatrix;
-      internal readonly CMatrixData TransformMatrix;
-      internal readonly CMatrixData ShapeMatrix;
-      private int[] mTmpDim = new int[1];
+      private volatile object OpacityM = (double)0.0d;
+      internal double Opacity { get => (double)this.OpacityM; set => this.OpacityM = value; }
+      internal abstract string Name { get; }
+      internal abstract void Paint(CVector2dPainter aOut);
 
-      internal void SetShapeMatrix(double aScale)
+      internal virtual void AnimateAppear(double aPercent)
       {
-         var aDims = this.mTmpDim;
-         var aDimSize = this.OriginalShapeMatrix.DimensionSizes[0];
-         for(var aDim = 0; aDim < aDimSize; ++aDim)
-         {
-            aDims[0] = aDim;
-            for (var aPlane =  0; aPlane < 2; ++aPlane) 
-            {
-               var aSrcVal = this.OriginalShapeMatrix.GetCellFloat(aDims, aPlane);
-               var aDstVal = aSrcVal * aScale;
-               this.ShapeMatrix.SetCellFloat(aDims, aPlane, aDstVal);
-            }            
-         }
+         this.Opacity = 1.0d - aPercent;
+      }
+
+      internal virtual void AnimateDisappear(double aPercent)
+      {
+         this.Opacity = aPercent;
       }
    }
 
-   internal sealed class COvGraph
+   internal sealed class COvNode : COvShape
    {
-      internal COvGraph(CGwGraph aGwGraph)
+      internal COvNode(CGraphOverlay aGraphOverlay, CGwNode aGwNode):base(aGraphOverlay)
       {
-         this.GwGraph = aGwGraph;
+         this.GwNode = aGwNode;
+         this.Pos = new CPoint(aGwNode.X, aGwNode.Y);
+      }
+      
+      internal COvNode CopyNode() => new COvNode(this.GraphOverlay, this.GwNode);
 
-         foreach(var aGwShape in aGwGraph.Nodes)
+      internal readonly CGwNode GwNode;
+      internal override string Name => this.GwNode.Name;
+       
+      public CPoint Pos { get; set; }
+
+      private volatile object ScaleM = (double)1.0d;
+      internal double Scale { get => (double)this.ScaleM; set => this.ScaleM = value; }
+
+      internal override void AnimateAppear(double aPercent)
+      {
+         base.AnimateAppear(aPercent);
+
+         this.GraphOverlay.DebugPrint("AnimateAppear.Percent=" + aPercent);
+         this.Scale = aPercent;
+      }
+
+      internal override void AnimateDisappear(double aPercent)
+      {
+         base.AnimateDisappear(aPercent);
+         this.Scale = 1.0d - aPercent;
+      }
+
+      internal override void Paint(CVector2dPainter aOut)
+      {
+         //this.GraphOverlay.DebugPrint("COvNode.Paint.Begin.");
+         var aScale = this.Scale;
+         var aDx = this.GwNode.Dx * aScale;
+         var aDy = this.GwNode.Dy * aScale;
+         var aX = this.Pos.X - aDx / 2.0d;
+         var aY = this.Pos.Y - aDy / 2.0d;
+         var aPos = new CPoint(aX, aY);
+         var aRect = new CRectangle(aX, aY, aDx, aDy);
+         var aText = this.Name;
+         var aOpacity = this.Opacity;
+         var aAlpha = 1.0d - aOpacity;
+         var aBaseColor = Color.Black;
+         var aColor = Color.FromArgb((int)(aAlpha * 255.0d), aBaseColor);
+
+         //this.GraphOverlay.DebugPrint("Alpha=" + aColor.A);
+         //this.GraphOverlay.DebugPrint("Scale=" + aScale);
+
+         aOut.SetSourceRgba(aColor);
+
+         
+
+         switch(this.GwNode.ShapeEnum)
          {
-            var aOvShape = new COvShape(aGwShape);
+            case CGwNode.CShapeEnum.InvTriangle:
+               aOut.NewPath();
+               aOut.MoveTo(aX, aY);
+               aOut.LineTo(aX + aDx, aY);
+               aOut.LineTo(aX + aDx / 2.0d, aY + aDy);
+               aOut.ClosePath();
+               aOut.Stroke();
+               break;
+
+            case CGwNode.CShapeEnum.Triangle:
+               aOut.NewPath();
+               aOut.MoveTo(aX + aDx / 2.0d, aY); 
+               aOut.LineTo(aX + aDx, aY + aDy);
+               aOut.LineTo(aX, aY + aDy);
+               aOut.ClosePath();
+               aOut.Stroke();
+               break;
+
+            case CGwNode.CShapeEnum.MCircle:
+               aOut.Ellipse(aX, aY, aDx, aDy);
+               aOut.Stroke();
+               aOut.MoveTo(aX, aY);
+               break;
+
+            case CGwNode.CShapeEnum.MSquare:
+               aOut.Rectangle(aRect);
+               break;
+         }
+         if (aScale >= 1.0d)
+         {
+            aOut.Text(aText, aRect);
+         }
+         //this.GraphOverlay.DebugPrint("COvNode.Paint.End.");
+      }
+   }
+
+   internal sealed class COvGraph : IEnumerable<COvShape>
+   {
+      internal COvGraph(CGraphOverlay aGraphOverlay, CPoint aSize, IEnumerable<COvShape> aShapes)
+      {
+         //aGraphOverlay.DebugPrint("COvGraph.COvGraph(): Shapes.Count=" + aShapes.Count());
+
+         this.Size = aSize;
+         this.GraphOverlay = aGraphOverlay;
+         foreach (var aShape in aShapes)
+         {
+            this.ShapesDic.Add(aShape.Name, aShape);
+         }
+      }
+
+      internal COvGraph(CGraphOverlay aGraphOverlay, CGwGraph aGwGraph)
+      {
+         //aGraphOverlay.DebugPrint("COvGraph.COvGraph(): GwGraph.Nodes.Count=" + aGwGraph.Nodes.Count());
+         this.Size = aGwGraph.Size;
+         this.GraphOverlay = aGraphOverlay;
+
+         foreach (var aGwShape in aGwGraph.Nodes)
+         {
+            var aOvShape = new COvNode(this.GraphOverlay, aGwShape);
             this.ShapesDic.Add(aOvShape.Name, aOvShape);
          }
-
       }
-      internal readonly CGwGraph GwGraph;
+
+      internal readonly CPoint Size;
+
+      private CGraphOverlay GraphOverlay;
+      internal COvGraph(CGraphOverlay aGraphOverlay) :this(aGraphOverlay, new CGwGraph())
+      {
+      }
 
       internal Dictionary<string, COvShape> ShapesDic = new Dictionary<string, COvShape>();
+      public IEnumerator<COvShape> GetEnumerator() => this.ShapesDic.Values.GetEnumerator();
+      IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
    }
 
-   internal abstract class CMatrixMorph
+   //internal abstract class CMatrixMorph
+   //{
+   //   internal CMatrixMorph(CMatrixData aOldMatrix, CMatrixData aNewMatrix, CMatrixData aMorphed)
+   //   {
+   //      this.OldMatrix = aOldMatrix;
+   //      this.NewMatrix = aNewMatrix;
+   //      this.Morphed = aMorphed;
+   //      this.MatrixCellEnumerator = aOldMatrix.GetCellEnumerator();
+   //      this.PlaneCount = aOldMatrix.PlaneCount;
+   //      this.CheckCompatible();
+   //   }
+
+   //   public readonly int PlaneCount;
+   //   public readonly CMatrixData OldMatrix;
+   //   public readonly CMatrixData NewMatrix;
+   //   public readonly CMatrixData Morphed;
+   //   internal readonly CMatrixCellEnumerator MatrixCellEnumerator;
+
+   //   private void CheckCompatible()
+   //   {
+   //      this.OldMatrix.CheckCompatible(this.NewMatrix);
+   //      this.OldMatrix.CheckCompatible(this.Morphed);
+   //   }
+
+   //   protected abstract void Morph(int[] aPos);
+
+   //   public double MorphPercent;
+
+   //   internal void Morph()
+   //   {
+   //      this.CheckCompatible();
+   //      var aPlaneCount = this.OldMatrix.PlaneCount;
+   //      var aEnumerator = this.MatrixCellEnumerator;
+   //      aEnumerator.Reset();
+   //      while(aEnumerator.MoveNext())
+   //      {
+   //         this.Morph(aEnumerator.Pos);
+   //      }
+   //   }
+   //}
+
+
+   //internal sealed class CLinearMatrixMorphFloat64 : CMatrixMorph
+   //{
+   //   internal CLinearMatrixMorphFloat64(CMatrixData aOldMatrix, CMatrixData aNewMatrix, CMatrixData aMarphed) :base(aOldMatrix, aNewMatrix, aMarphed)
+   //   {
+   //   }
+   //   protected override void Morph(int[] aPos)
+   //   {
+   //      var aPercent = this.MorphPercent;
+   //      for(int aPlane = 0; aPlane < this.PlaneCount; ++aPlane)
+   //      {
+   //         var aOldValue = this.OldMatrix.GetCellFloat64(aPos, aPlane);
+   //         var aNewValue = this.NewMatrix.GetCellFloat64(aPos, aPlane);
+   //         double aMorphValue;
+   //         if (aOldValue > aNewValue)
+   //         {
+   //            aMorphValue = aNewValue + (aOldValue - aNewValue) * aPercent;
+   //         }
+   //         else if (aOldValue < aNewValue)
+   //         {
+   //            aMorphValue = aOldValue - (aNewValue - aOldValue) * aPercent;
+   //         }
+   //         else
+   //         {
+   //            aMorphValue = aOldValue;
+   //         }
+   //         this.Morphed.SetCellFloat64(aPos, aPlane, aMorphValue);
+   //      }
+   //   }
+   //}
+
+   internal sealed class COvNodeMorph
    {
-      internal CMatrixMorph(CMatrixData aOldMatrix, CMatrixData aNewMatrix, CMatrixData aMorphed)
+      internal COvNodeMorph(COvNode aOldNode, COvNode aNewNode)
       {
-         this.OldMatrix = aOldMatrix;
-         this.NewMatrix = aNewMatrix;
-         this.Morphed = aMorphed;
+         this.OldNode = aOldNode;
+         this.NewNode = aNewNode;
+         this.MorphNode = aOldNode.CopyNode();
       }
 
-      internal readonly CMatrixData OldMatrix;
-      internal readonly CMatrixData NewMatrix;
-      internal readonly CMatrixData Morphed;
+      internal readonly COvNode OldNode;
+      internal readonly COvNode NewNode;
+      internal readonly COvNode MorphNode;
 
-      protected abstract double MorphDouble(int[] aDimensions, int aPlane, double aPercent);
+      internal double MorphPercent { get; set; }
 
-      internal void Morph(double aPercent)
+      internal void Morph()
       {
-         if(this.OldMatrix.DimensionCount == this.NewMatrix.DimensionCount
-         && this.OldMatrix.DimensionSizes.SequenceEqual(this.NewMatrix.DimensionSizes))
-         {
-            var aDimensions = new int[this.OldMatrix.DimensionCount];
-            throw new NotImplementedException();
-         }
-         else
-         {
-            throw new Exception("MatrixSize missmatch.");
-         }
-      }
-
-   }
-
-   internal sealed class CLinearMatrixMorph : CMatrixMorph
-   {
-      internal CLinearMatrixMorph(CMatrixData aOldMatrix, CMatrixData aNewMatrix, CMatrixData aMarphed) :base(aOldMatrix, aNewMatrix, aMarphed)
-      {
-      }
-      protected override double MorphDouble(int[] aDimensions, int aPlane, double aPercent)
-      {
-         var aOldValue = this.OldMatrix.GetCellFloat(aDimensions, aPlane);
-         var aNewValue = this.NewMatrix.GetCellFloat(aDimensions, aPlane);
-         if (aOldValue > aNewValue)
-         {
-            return aNewValue + (aOldValue - aNewValue) * aPercent;
-         }
-         else if (aOldValue < aNewValue)
-         {
-            return aOldValue - (aNewValue - aOldValue) * aPercent;
-
-         }
-         else
-         {
-            return aOldValue;
-         }
+         var aOldPos = this.OldNode.Pos;
+         var aNewPos = this.NewNode.Pos;
+         var aDeltaPos = aNewPos - aOldPos;
+         var aPercent = new CPoint(this.MorphPercent, this.MorphPercent);
+         var aMorphPos = aOldPos + aDeltaPos * aPercent;
+         this.MorphNode.Pos = aMorphPos;
       }
    }
-
-
-
 
 
    internal sealed class CGraphTransition
    {
-      internal CGraphTransition(COvGraph aOldGraph, COvGraph aNewGraph)
+      internal CGraphTransition(CGraphOverlay aGraphOverlay, CPoint aSize, COvGraph aOldGraph, COvGraph aNewGraph)
       {
+         this.GraphOverlay = aGraphOverlay;
          var aKeys = aOldGraph.ShapesDic.Keys.Concat(aNewGraph.ShapesDic.Keys);
          var aMorphingKeys = from aKey in aKeys
                            where aOldGraph.ShapesDic.ContainsKey(aKey)
@@ -146,14 +297,18 @@ namespace CbChannelStrip.GraphOverlay
                               where aNewGraph.ShapesDic.ContainsKey(aKey)
                               select aKey
                                  ;
-         var aMorphings = new Dictionary<string, CMatrixMorph>();
+         var aMorphings = new Dictionary<string, COvNodeMorph>();
          foreach (var aKey in aMorphingKeys)
          {
             if(!aMorphings.ContainsKey(aKey))
             {
                var aOldShape = aOldGraph.ShapesDic[aKey];
                var aNewShape = aNewGraph.ShapesDic[aKey];
-               aMorphings[aKey] = new CLinearMatrixMorph(aOldShape.OriginalShapeMatrix, aNewShape.OriginalShapeMatrix, aOldShape.ShapeMatrix);
+               if(aOldShape is COvNode
+               && aNewShape is COvNode)
+               {
+                  aMorphings[aKey] = new COvNodeMorph((COvNode)aOldShape, (COvNode)aNewShape);
+               }
             }
          }
          var aDisappearings = new List<COvShape>();
@@ -166,18 +321,32 @@ namespace CbChannelStrip.GraphOverlay
          {
             aAppearings.Add(aNewGraph.ShapesDic[aKey]);
          }
+         var aMorphShapes1 = (from aMorph in aMorphings.Values select aMorph.MorphNode).AsEnumerable<COvShape>().ToArray();
+         var aMorphShapes2 = (aDisappearings.Concat(aAppearings).Concat(aMorphShapes1)).ToArray();
+
+         foreach(var aAppearing in aAppearings)
+         {
+            aAppearing.AnimateAppear(0.0d);
+         }
+         foreach(var aDisappearing in aDisappearings)
+         {
+            aDisappearing.AnimateDisappear(0.0d);
+         }
          this.OldGraph = aOldGraph;
          this.NewGraph = aNewGraph;
-         this.Moprhings = aMorphings;
-         this.Disappearings = aDisappearings;
+         this.MorphGraph = new COvGraph(this.GraphOverlay, aSize, aMorphShapes2);
+         this.Morphings = aMorphings;
+         this.Disappearings = aDisappearings; 
          this.Appearings = aAppearings;
       }
 
+      internal readonly CGraphOverlay GraphOverlay;
       internal readonly COvGraph OldGraph; 
       internal readonly COvGraph NewGraph;
-      internal readonly Dictionary<string, CMatrixMorph> Moprhings = new Dictionary<string, CMatrixMorph>();
-      internal readonly List<COvShape> Disappearings = new List<COvShape>();
-      internal readonly List<COvShape> Appearings = new List<COvShape>();
+      internal readonly COvGraph MorphGraph;
+      internal readonly Dictionary<string, COvNodeMorph> Morphings;
+      internal readonly List<COvShape> Disappearings;
+      internal readonly List<COvShape> Appearings;
       internal CAnimStateEnum AnimState = CAnimStateEnum.OldGraph;
 
    }
@@ -191,119 +360,92 @@ namespace CbChannelStrip.GraphOverlay
       NewGraph
    }
 
-   internal sealed class CWorkerPool
+   public sealed class CGraphOverlay
    {
-      internal CWorkerPool(Action<Exception> aOnExc)
+      internal CGraphOverlay(Action<Exception> aOnExc,
+                             Func<CGwGraph> aCalcNewGraph,
+                             Action aNotifyResult,
+                             Action aNotifyPaint,
+                             Action<string> aDebugPrint)
       {
-         this.OnExc = aOnExc;
-      }
-
-      private readonly Action<Exception> OnExc;
-
-      private List<BackgroundWorker> Free = new List<BackgroundWorker>();
-      private List<BackgroundWorker> CancelationPending = new List<BackgroundWorker>();
-
-      internal BackgroundWorker Allocate()
-      {
-         BackgroundWorker aWorker;
-         lock (this)
-         {
-            if (this.Free.IsEmpty())
-            {
-               aWorker = default;
-            }
-            else
-            {
-               aWorker = this.Free.First();
-            }
-         }
-         if (aWorker is object)
-            return aWorker;
-         var aNewWorker = new BackgroundWorker();
-         aNewWorker.WorkerSupportsCancellation = true;
-         return aNewWorker;
-      }
-
-      internal void Deallocate(BackgroundWorker aWorker)
-      {
-         lock(this)
-         {
-            this.Free.Add(aWorker);
-         }
-      }
-
-      internal void Cancel(BackgroundWorker aWorker)
-      {
-         aWorker.CancelAsync();
-         aWorker.RunWorkerCompleted += this.OnWorkerCompleted;
-      }
-
-      private void OnWorkerCompleted(object aSender, RunWorkerCompletedEventArgs aArgs)
-      {
-         try
-         {
-            var aWorker = (BackgroundWorker)aSender;
-            aWorker.RunWorkerCompleted -= this.OnWorkerCompleted;
-            this.Deallocate(aWorker);
-         }
-         catch(Exception aExc)
-         {
-            this.OnExc(aExc);  
-         }
-      }
-   }
-
-   internal sealed class CGraphMorph
-   {
-      internal CGraphMorph(Action<Exception> aOnExc, COvGraph aOvGraph, Func<CGwGraph> aCalcNewGraph)
-      {
+         this.ExternDebugPrint = aDebugPrint;
          this.OnExc = aOnExc;      
-         this.WorkerPool = new CWorkerPool(aOnExc);
-         this.State = new CState(this, aOvGraph);
+         this.State = new CState(this, new COvGraph(this)); 
          this.AnimationThread = new System.Threading.Thread(RunAnimationThread);
          this.CalcNewGraph = aCalcNewGraph;
+         this.NotifyResult = aNotifyResult;
+         this.NotifyPaint = aNotifyPaint;         
+         this.AnimationThread.Start();
       }
 
-      private Action<Exception> OnExc;
-      private Action Paint;
-      private readonly Func<CGwGraph> CalcNewGraph;    
-      private CWorkerPool WorkerPool;
-      private BackgroundWorker Worker;
-
-
-      internal bool Repaint { get; private set; }
-      internal void OnRepaintDone()
+      public static void Test(Action<string> aFailAction, Action<string> aDebugPrint)
       {
-         this.Repaint = false;
-      }
-
-      private sealed class CState
-      {
-         internal CState(CGraphMorph aMorphGraph, COvGraph aGraph)
+         var aDispatcherFrame = default(DispatcherFrame);
+         var aDispatcher = default(Dispatcher);
+         var aBackgroundWorker = new BackgroundWorker();
+         var aBackgroundWorkerReady = new AutoResetEvent(false);
+         aBackgroundWorker.DoWork += new DoWorkEventHandler(delegate (object aSender, DoWorkEventArgs aArgs)
          {
-            this.GraphMorph = aMorphGraph;
+            aDispatcher = Dispatcher.CurrentDispatcher;
+            aDispatcherFrame = new DispatcherFrame();
+            aBackgroundWorkerReady.Set();
+            Dispatcher.PushFrame(aDispatcherFrame);
+         });
+         aBackgroundWorker.RunWorkerAsync();
+         aBackgroundWorkerReady.WaitOne();
+         var aOnExc = new Action<Exception>(delegate (Exception aExc) { aDebugPrint(aExc.Message); });
+         var aCalcNewGraph = new Func<CGwGraph>(() => CGwGraph.NewTestGraph(aDebugPrint));
+         var aGraphOverlay = default(CGraphOverlay);
+         var aNotifyResult = new Action(delegate () { aDispatcher.BeginInvoke(new Action(delegate () { aGraphOverlay.ProcessNewGraph(); })); });
+         var aNotifyPaint = new Action(delegate () { aDispatcher.BeginInvoke(new Action(delegate () { aGraphOverlay.OnPaintDone(); })); });
+         aGraphOverlay = new CGraphOverlay(aOnExc, aCalcNewGraph, aNotifyResult, aNotifyPaint, aDebugPrint);
+         aGraphOverlay.NextGraph();
+         System.Console.WriteLine("press any key to shutdown CGraphOverlay test");
+         System.Console.ReadKey();
+         aGraphOverlay.Shutdown();
+         aDispatcherFrame.Continue = false;
+      }
+
+      private Action<string> ExternDebugPrint;
+      internal void DebugPrint(string aMsg) => this.ExternDebugPrint(aMsg); // System.Diagnostics.Debug.Print(aMsg);
+      private Action NotifyResult;
+      private Action NotifyPaint;
+      private Action<Exception> OnExc;
+      private readonly Func<CGwGraph> CalcNewGraph;    
+      private BackgroundWorker WorkerNullable;
+      private volatile bool PaintIsPending;      
+      internal void OnPaintDone()
+      {
+         this.PaintIsPending = false;
+      }
+
+      internal sealed class CState
+      {
+         internal CState(CGraphOverlay aGraphOverlay, COvGraph aGraph)
+         {
+            this.GraphOverlay = aGraphOverlay;
             this.OldGraph = aGraph;
             this.NewGraph = aGraph;
-            this.GraphTransition = new CGraphTransition(aGraph, aGraph);
+            this.GraphTransition = new CGraphTransition(aGraphOverlay, this.Size, aGraph, aGraph);
             this.WorkingAnimation = new CWorkingAnimation(this);
             this.AppearAnimationNullable = default;
             this.MoveAnimationNullable = default;
             this.AppearAnimationNullable = default;
          }
 
-         internal CState(CGraphMorph aGraphMorph, CState aOldState, COvGraph aNewGraph)
+         internal CState(CGraphOverlay aGraphOverlay, CState aOldState, COvGraph aNewGraph)
          {
-            this.GraphMorph = aGraphMorph;
+            this.GraphOverlay = aGraphOverlay;
             this.OldGraph = aOldState.NewGraph;
             this.NewGraph = aNewGraph;
-            this.GraphTransition = new CGraphTransition(this.OldGraph, this.NewGraph);
+            this.GraphTransition = new CGraphTransition(aGraphOverlay, this.Size, this.OldGraph, this.NewGraph);
             this.WorkingAnimation = new CWorkingAnimation(this);
             this.FadeOutAnimationNullable = new CDisappearAnimation(this);
             this.MoveAnimationNullable = new CMoveAnimation(this);
             this.AppearAnimationNullable = new CAppearAnimation(this);            
          }
 
-         internal readonly CGraphMorph GraphMorph;
+         internal readonly CGraphOverlay GraphOverlay;
          internal readonly COvGraph OldGraph;
          internal readonly COvGraph NewGraph;
          internal readonly CGraphTransition GraphTransition;
@@ -311,9 +453,10 @@ namespace CbChannelStrip.GraphOverlay
          internal readonly CDisappearAnimation FadeOutAnimationNullable;
          internal readonly CMoveAnimation MoveAnimationNullable;
          internal readonly CAppearAnimation AppearAnimationNullable;
+         
          //internal CAnimState AnimState;
 
-         internal IEnumerable<CAnimation> Animations
+         internal IEnumerable<CAnimation> RunningAnimations
          {
             get
             {
@@ -331,87 +474,146 @@ namespace CbChannelStrip.GraphOverlay
             }
          }
 
+         internal CPoint Size { get => new CPoint(Math.Max(this.OldGraph.Size.X, this.NewGraph.Size.X),
+                                                  Math.Max(this.OldGraph.Size.Y, this.NewGraph.Size.Y)); }
       }
 
-      private CState State;
+      internal volatile CState State;
 
       private void CancelWorkerOnDemand()
       {
-         lock(this)
+         //this.DebugPrint("CGraphOverlay.CancelWorkerOnDemand.Begin");
+         lock (this)
          {
-            if(this.Worker is object)
+            var aWorker = this.WorkerNullable;
+            if(aWorker is object)
             {
-               lock (this.Worker)
-               {
-                  if (this.Worker.IsBusy)
-                  {
-                     this.Worker.RunWorkerCompleted -= this.BackgroundWorkerRunWorkerCompleted;
-                     this.WorkerPool.Cancel(this.Worker);
-                  }
-               }
+               this.WorkerNullable = default;
+               this.RemoveWorkerCallbacks(aWorker);
             }
          }
+         //this.DebugPrint("CGraphOverlay.CancelWorkerOnDemand.End");
       }
+      private bool IsCurrentWorker(BackgroundWorker aWorker)
+      {
+         return object.ReferenceEquals(this.WorkerNullable, aWorker);
+      }
+
       private void StartWorker()
       {
+         //this.DebugPrint("CGraphOverlay.StartWorker");
          this.CancelWorkerOnDemand();
-         this.Worker = this.WorkerPool.Allocate();
-         this.Worker.RunWorkerCompleted += this.BackgroundWorkerRunWorkerCompleted;
+         var aWorker = new BackgroundWorker();
+         this.WorkerNullable = aWorker;
+         this.AddWorkerCallbacks(aWorker);         
          this.State.WorkingAnimation.Start();
+         aWorker.RunWorkerAsync(this.State);
+      }
 
+      private void AddWorkerCallbacks(BackgroundWorker aWorker)
+      {
+         aWorker.DoWork += this.BackgroundWorkerDoWork;
+         aWorker.RunWorkerCompleted += this.BackgroundWorkerRunWorkerCompleted;
+      }
+      private void RemoveWorkerCallbacks(BackgroundWorker aWorker)
+      {
+         aWorker.DoWork -= this.BackgroundWorkerDoWork;
+         aWorker.RunWorkerCompleted -= this.BackgroundWorkerRunWorkerCompleted;
+      }
+
+      internal void NextGraph()
+      {
+         this.StartWorker();
       }
 
       private void BackgroundWorkerDoWork(object aSender, DoWorkEventArgs aArgs)
       {
+         System.Threading.Thread.CurrentThread.Priority = ThreadPriority.AboveNormal;
+         //this.DebugPrint("CGraphOverlay.BackgroundWorkerDoWork.Begin");
+         var aOldState = (CState)aArgs.Argument;
          var aNewGwGraph = this.CalcNewGraph();
-         var aNewOvGraph = new COvGraph(aNewGwGraph);
-         var aNewState = new CState(this, aNewOvGraph);
+         var aNewOvGraph = new COvGraph(this, aNewGwGraph);
+         var aNewState = new CState(this, aOldState, aNewOvGraph);
          aArgs.Result = aNewState;
+         //this.DebugPrint("CGraphOverlay.BackgroundWorkerDoWork.End");
       }
+
 
       private void BackgroundWorkerRunWorkerCompleted(object aSender, RunWorkerCompletedEventArgs aArgs)
       {
-         CState aWorkerResult;
-         lock (this)
+         //this.DebugPrint("CGraphOverlay.BackgroundWorkerRunWorkerCompleted");
+         CState aNewState;
+         var aWorker = (BackgroundWorker)aSender;
+         if(aArgs.Error is object)
          {
-            if(aArgs.Error is object)
-            {
-               this.OnExc(new Exception("Error calculating GraphMorph.NewGraph. " + aArgs.Error.Message, aArgs.Error));
-               aWorkerResult = default;
-            }
-            else if(aArgs.Cancelled)
-            {
-               // nix.
-               aWorkerResult = default;
-            }
-            else if(aArgs.Result is object)
-            {
-               aWorkerResult = (CState)aArgs.Result;               
-            }
-            else
-            {
-               this.OnExc(new Exception("No result when calculating GraphMorph.NewGraph."));
-               aWorkerResult = default;
-            }
+            //this.OnExc(new Exception("Error calculating GraphMorph.NewGraph. " + aArgs.Error.Message, aArgs.Error));
+            aNewState = default;
          }
-         if(aWorkerResult is object)
+         else if(aArgs.Cancelled)
          {
-            this.ReceiveWorkerResult(aWorkerResult);
+            // nix.
+            aNewState = default;
+         }
+         else if(aArgs.Result is object)
+         {
+            aNewState = (CState)aArgs.Result;               
+         }
+         else
+         {
+            //this.OnExc(new Exception("No result when calculating GraphMorph.NewGraph."));
+            aNewState = default;
+         }
+         if(aNewState is object)
+         {
+            this.AddWorkerResult(new CWorkerResult(aWorker, aNewState));
          }
       }
-
-      private void ReceiveWorkerResult(CState aNewState)
+      private void AddWorkerResult(CWorkerResult aWorkerResult)
       {
-         this.State.WorkingAnimation.Stop();
-         this.State.WorkingAnimation.Finish();
-         this.State = aNewState;
-         aNewState.FadeOutAnimationNullable.Start();
-         
+         //this.DebugPrint("CGraphOverlay.AddWorkerResult.Begin");
+         lock (this.WorkerResults)
+         {
+            this.WorkerResults.Add(aWorkerResult);
+            this.NotifyResult();
+         }
+         //this.DebugPrint("CGraphOverlay.AddWorkerResult.End");
+      }
+
+
+      private readonly List<CWorkerResult> WorkerResults = new List<Tuple<BackgroundWorker, CState>>();
+      private CWorkerResult PeekWorkerResultNullable()
+      {
+         //this.DebugPrint("CGraphOverlay.PeekWorkerResultNullable.Begin");
+         lock (this.WorkerResults)
+         {
+            if(!this.WorkerResults.IsEmpty())
+            {
+               var aWorkerResult = this.WorkerResults.Last();
+               this.WorkerResults.Clear();
+               return aWorkerResult;
+            }
+         }
+         //this.DebugPrint("CGraphOverlay.PeekWorkerResultNullable.End");
+         return default;
+      }
+      internal void ProcessNewGraph()
+      {
+         //this.DebugPrint("CGraphOverlay.ProcessNewGraph");
+         var aResult = this.PeekWorkerResultNullable();
+         if(aResult is object
+         && this.IsCurrentWorker(aResult.Item1))
+         {
+            this.WorkerNullable = default;
+            this.RemoveWorkerCallbacks(aResult.Item1);
+            this.State.WorkingAnimation.Finish();
+            this.State = aResult.Item2;
+            this.State.FadeOutAnimationNullable.Start();
+         }
       }
 
       private readonly System.Threading.Thread AnimationThread;
 
-      internal void Stop()
+      internal void Shutdown()
       {
          this.CancelWorkerOnDemand();
          this.StopAnimationThread = true;
@@ -419,24 +621,34 @@ namespace CbChannelStrip.GraphOverlay
       }
 
       private bool StopAnimationThread;
+
+      internal CPoint Size => this.State.Size;
+
       private void RunAnimationThread(object aObj)
       {
-         try
+         System.Threading.Thread.CurrentThread.Priority = ThreadPriority.AboveNormal;
+         var aStopWatch = new Stopwatch();
+         aStopWatch.Start();
+         while (!this.StopAnimationThread)
          {
-            var aStopWatch = new Stopwatch();
-            aStopWatch.Start();
-            while (!this.StopAnimationThread)
+            try
             {
-               System.Threading.Thread.Sleep(33);
-               var aElapsed = aStopWatch.ElapsedMilliseconds;
-               aStopWatch.Stop();
-               aStopWatch.Start();
-               this.Animate(aStopWatch.ElapsedMilliseconds);
+               System.Threading.Thread.Sleep(100);
+               if (!this.PaintIsPending)
+               {
+                  var aElapsed = aStopWatch.ElapsedMilliseconds;
+                  aStopWatch.Stop();
+                  aStopWatch.Start();
+                  if (this.Animate(aStopWatch.ElapsedMilliseconds))
+                  {
+                     this.Paint();
+                  }
+               }
             }
-         }
-         catch(Exception)
-         {
-            // TODO
+            catch (Exception aExc)
+            {
+               this.DebugPrint("AnimationThread: " + aExc.Message);
+            }
          }
       }
 
@@ -444,7 +656,7 @@ namespace CbChannelStrip.GraphOverlay
       {
          var aBusy = false;
          var aState = this.State;
-         foreach(var aAnimation in aState.Animations)
+         foreach(var aAnimation in aState.RunningAnimations)
          {
             aAnimation.Animate(aElapsedMilliseconds);
             aBusy = true;
@@ -452,7 +664,7 @@ namespace CbChannelStrip.GraphOverlay
          return aBusy;
       }
 
-      private abstract class CAnimation
+      internal abstract class CAnimation
       {
          internal CAnimation(CState aState)
          {
@@ -471,18 +683,22 @@ namespace CbChannelStrip.GraphOverlay
             this.FrameLen = 0;
             this.Stopwatch.Start();
             this.IsRunning = true;            
-            this.OnStart();            
+            this.OnStart();
+            //this.State.GraphOverlay.DebugPrint(this.GetType().Name + "started.");
          }
 
          internal void Stop()
          {
             this.IsRunning = false;
+            //this.State.GraphOverlay.DebugPrint(this.GetType().Name + "stopped.");
          }
-
+          
          internal void Finish()
          {
+          //  this.Animate(0);
             this.Stop();
-            this.OnFinish();
+            this.OnFinish();            
+            this.State.GraphOverlay.DebugPrint(this.GetType().Name + "finished.");
          }
 
          internal virtual void OnFinish()
@@ -490,12 +706,12 @@ namespace CbChannelStrip.GraphOverlay
          }
 
 
-         internal bool RepaintIsPending { get => this.State.GraphMorph.Repaint; }
+         internal  bool RepaintIsPending { get => this.State.GraphOverlay.PaintIsPending; }
          private Stopwatch Stopwatch = new Stopwatch();
 
-         internal void Repaint()
+         internal void Paint()
          {
-            this.State.GraphMorph.Repaint = true;
+            this.State.GraphOverlay.Paint();
          }
 
          private long FrameLen;
@@ -512,20 +728,16 @@ namespace CbChannelStrip.GraphOverlay
             {
                var aMaxDuration = this.MaxDuration;
                var aElapsed = this.Stopwatch.ElapsedMilliseconds;
-               if (aMaxDuration.HasValue)
-                  return Math.Min(aMaxDuration.Value, aElapsed);
                return aElapsed;
             }
          }
-         internal double TotalElapsedPercent { get => ((double)this.TotalElapsed) / ((double)this.MaxDuration.Value); }
-
+         internal double PercentLin { get => ((double)Math.Min(this.MaxDuration.Value, this.TotalElapsed)) / ((double)this.MaxDuration.Value); }
+         internal double PercentExp { get => 1.0d - Math.Pow((1.0d - this.PercentLin) * 10, 2) / 100.0d; }
+         internal double Percent { get => this.PercentExp; }
          internal void Animate(long aElapsed)
          {
-            if (this.RepaintIsPending)
-            {
-               this.FrameLen += aElapsed;
-            }
-            else
+            this.FrameLen += aElapsed;
+            if (!this.RepaintIsPending)
             {
                var aMaxDuration = this.MaxDuration;
                var aTotalElapsed = this.TotalElapsed;
@@ -544,7 +756,7 @@ namespace CbChannelStrip.GraphOverlay
                }
                this.OnAnimate(aFrameLen2);
                this.FrameLen = 0;
-               this.Repaint();
+               this.Paint();
 
                if(aDone)
                {
@@ -555,7 +767,23 @@ namespace CbChannelStrip.GraphOverlay
          }
       }
 
-      private sealed class CWorkingAnimation : CAnimation
+      private void Paint()
+      {         
+         this.PaintIsPending = true;
+         this.NotifyPaint();
+      }
+
+      internal void Paint(CVector2dPainter aOut)
+      {
+         //this.State.GraphMorph.DebugPrint("CGraphOverlay.Paint.Begin.");
+         foreach (var aShape in this.State.GraphTransition.MorphGraph)
+         {
+            aShape.Paint(aOut);
+         }
+         //this.State.GraphMorph.DebugPrint("CGraphOverlay.Paint.End.");
+      }
+
+      internal sealed class CWorkingAnimation : CAnimation
       {
          internal CWorkingAnimation(CState aState) : base(aState)
          {
@@ -572,14 +800,14 @@ namespace CbChannelStrip.GraphOverlay
             base.OnAnimate(aFrameLen);
             var aMin = 0.7;
             var aWobble = Math.Sin(Math.PI * 2 * ((double)aFrameLen) / 1000.0d * 500.0d) * (1.0f - aMin) + aMin;                
-            foreach (var aShape in this.State.OldGraph.ShapesDic.Values)
+            foreach (var aShape in this.State.OldGraph.ShapesDic.Values.OfType<COvNode>())
             {
-               aShape.SetShapeMatrix(aWobble);
+               aShape.Scale = aWobble;
             }            
          }
       }
 
-      private sealed class CDisappearAnimation : CAnimation
+      internal sealed class CDisappearAnimation : CAnimation
       {
          internal CDisappearAnimation(CState aState) : base(aState)
          {
@@ -590,13 +818,15 @@ namespace CbChannelStrip.GraphOverlay
             base.OnStart();
             this.State.GraphTransition.AnimState = CAnimStateEnum.Disappear;
          }
-         internal override long? MaxDuration => 1000;
+         internal override long? MaxDuration => 333;
          internal override void OnAnimate(long aFrameLen)
          {
-            var aShapeMatrixSize = 1.0d - this.TotalElapsedPercent;
+            var aPercent = this.Percent;
+            var aOpacity = aPercent;
+            //this.State.GraphOverlay.DebugPrint("Disappear.Opacity=" + aOpacity);
             foreach (var aShape in this.State.GraphTransition.Disappearings)
             {
-               aShape.SetShapeMatrix(aShapeMatrixSize);
+               aShape.AnimateDisappear(aPercent);
             }            
          }
          internal override void OnFinish()
@@ -607,7 +837,7 @@ namespace CbChannelStrip.GraphOverlay
          }
       }
 
-      private sealed class CMoveAnimation : CAnimation
+      internal sealed class CMoveAnimation : CAnimation
       {
          internal CMoveAnimation(CState aState) : base(aState)
          {
@@ -619,13 +849,14 @@ namespace CbChannelStrip.GraphOverlay
             this.State.GraphTransition.AnimState = CAnimStateEnum.Move;
          }
 
-         internal override long? MaxDuration => MaxDurationDefault;
+         internal override long? MaxDuration => 500;
          internal override void OnAnimate(long aElapsedMilliseconds)
          {
-            var aProgress = this.TotalElapsedPercent;
-            foreach (var aMatrixMorph in this.State.GraphTransition.Moprhings.Values)
+            var aProgress = this.Percent;
+            foreach (var aMatrixMorph in this.State.GraphTransition.Morphings.Values)
             {
-               aMatrixMorph.Morph(aProgress);
+               aMatrixMorph.MorphPercent = aProgress;
+               aMatrixMorph.Morph();
             }            
          }
          internal override void OnFinish()
@@ -636,33 +867,28 @@ namespace CbChannelStrip.GraphOverlay
          }
       }
 
-      private sealed class CAppearAnimation : CAnimation
+      internal sealed class CAppearAnimation : CAnimation
       {
          internal CAppearAnimation(CState aState) : base(aState)
          {
          }
 
-         internal override long? MaxDuration => MaxDurationDefault;
-
-         private void SetProgress(double aProgress)
-         {
-            foreach (var aShape in this.State.GraphTransition.Appearings)
-            {
-               aShape.SetShapeMatrix(aProgress);
-            }
-         }
+         internal override long? MaxDuration => 333;
 
          internal override void OnStart()
          {
             base.OnStart();
-            this.SetProgress(0);
             this.State.GraphTransition.AnimState = CAnimStateEnum.Appear;
          }
 
          internal override void OnAnimate(long aFrameLen)
-         {
-            this.SetProgress(this.TotalElapsedPercent);
-            this.Repaint();
+         { 
+            var aPercent = this.Percent;
+            this.State.GraphOverlay.DebugPrint("CAppearAnimation.OnAnimate.Percent=" + aPercent);            
+            foreach (var aShape in this.State.GraphTransition.Appearings)
+            {
+               aShape.AnimateAppear(aPercent);
+            }
          }
       }
    }

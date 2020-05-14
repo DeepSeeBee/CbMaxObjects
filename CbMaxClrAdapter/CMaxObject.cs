@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Security.AccessControl;
 using System.Security.Policy;
 using System.Text;
@@ -289,6 +290,15 @@ namespace CbMaxClrAdapter
 
       protected abstract void Receive(CMessage aMessage);
 
+      public event EventHandler Received;
+      protected virtual void OnReceived()
+      {
+         if(this.Received is object)
+         {
+            this.Received(this, default);
+         }
+      }
+
       internal void Receive(CMessageTypeEnum aMessageType)
       {
          if (this.SingleItemListEnabled
@@ -316,6 +326,7 @@ namespace CbMaxClrAdapter
          {
             this.Receive(this.GetMessage(aMessageType));
          }
+         this.OnReceived();
       }
       internal override void Delete() => this.MaxObject.Marshal.Delete(this);
 
@@ -506,6 +517,28 @@ namespace CbMaxClrAdapter
       private readonly int IndexM;
       internal override int Index => this.IndexM;
       internal override bool IsReadonly => false;
+
+      public void SendValues(params object[] aValues)
+      {
+         var aMessage = this.GetMessage<CList>();
+         aMessage.Value.Set(aValues);
+         this.Send(CMessageTypeEnum.List);
+      }
+
+      public void SendValues(params string[] aValues)
+      {
+         var aMessage = this.GetMessage<CList>();
+         aMessage.Value.Set(aValues);
+         this.Send(CMessageTypeEnum.List);
+      }
+      public void SendValues(params double[] aValues)
+      {
+         var aMessage = this.GetMessage<CList>();
+         aMessage.Value.Set(aValues);
+         this.Send(CMessageTypeEnum.List);
+      }
+
+      public abstract void Send(CMessageTypeEnum aMessageTypeEnum);
    }
 
    public abstract class COutlet<TControlMessage> : COutlet where TControlMessage : CMessage
@@ -524,8 +557,13 @@ namespace CbMaxClrAdapter
       internal CMessageTypeEnum DataTypeEnum { get => CDataTypeAttribute.Get(typeof(TMessage)); }
       public TMessage Message { get => this.GetMessage<TMessage>(); }
       internal void SupportInternal() => this.SupportInternal(this.DataTypeEnum);
-      internal override void Add() => this.AddOutlet(this.DataTypeEnum);
+      internal override void Add() => this.AddOutlet(this.DataTypeEnum);    
       public abstract void Send();
+      public override void Send(CMessageTypeEnum aMessageTypeEnum)
+      {
+         this.CheckSupport(aMessageTypeEnum);
+         this.Send();
+      }
    }
 
    public sealed class CMultiTypeOutlet : COutlet<CMessage> 
@@ -533,7 +571,7 @@ namespace CbMaxClrAdapter
       public CMultiTypeOutlet(CMaxObject aMaxObject) : base(aMaxObject)
       {
       }
-      public void Send(CMessageTypeEnum aMessageTypeEnum)
+      public override void Send(CMessageTypeEnum aMessageTypeEnum)
       {
          var aMessage = this.GetMessage(aMessageTypeEnum);
          aMessage.Send(this);
@@ -548,6 +586,7 @@ namespace CbMaxClrAdapter
          this.SupportInternal();
 
       }
+
       public override void Send() => this.MaxObject.Marshal.Send(this);
    }
 
@@ -591,6 +630,7 @@ namespace CbMaxClrAdapter
       {
          this.MaxObject.Marshal.Send(this);
       }
+
    }
 
    public sealed class CLeftInlet : CMultiTypeInletBase
@@ -672,7 +712,9 @@ namespace CbMaxClrAdapter
       /// Max has under certain circumstance a "list" symbol added in front of the list.
       /// This property contains the list with a list prefix symbol added.
       /// </summary>
-      public bool NeedsListPrefix { get => !this.MaybeWithListPrefix.IsEmpty() && (!IsSymbol(this.MaybeWithListPrefix.First()) || this.MaybeWithListPrefix.First().ToString() == ListPrefix); }
+      public bool NeedsListPrefix { get => false; }
+      //public bool NeedsListPrefix { get => !this.MaybeWithListPrefix.IsEmpty() && (!IsSymbol(this.MaybeWithListPrefix.First()) || this.MaybeWithListPrefix.First().ToString() == ListPrefix); }
+      //public bool NeedsListPrefix { get => !this.MaybeWithListPrefix.IsEmpty() && this.MaybeWithListPrefix.First().ToString() != ListPrefix; }
 
       /// <summary>
       /// This property designates wether the given value represents a max symbol
@@ -706,6 +748,7 @@ namespace CbMaxClrAdapter
 
       public static void Test(Action<string> aFailAction)
       {
+         return; // TODO
          {
             var aList = new CEditableListData();
             aList.Add("a");
@@ -804,7 +847,9 @@ namespace CbMaxClrAdapter
 
       public void Clear()
       {
-         this.CheckWrite();
+         // We allow clearing list from inlet. Otherwise it is not possible for the client to detect if a message was received.
+         // => 79b3fe31-16ca-4a05-865c-85bc7e15a3c4
+         // this.CheckWrite();
          this.ClearInternal();
       }
 
@@ -812,6 +857,21 @@ namespace CbMaxClrAdapter
       {
          this.List.Add(aLong);
       }
+
+      public void Add(object aValue)
+      {
+         if (aValue is string)
+            this.Add((string)aValue);
+         else if (aValue is double)
+            this.Add((double)aValue);
+         else if (aValue is Int32)
+            this.Add((Int32)aValue);
+         else if (!(aValue is object))
+            throw new ArgumentNullException();
+         else
+            throw new ArgumentException("Can not understand '" + aValue.GetType().Name + ": " + aValue);
+      }
+
       public void Add(Int32 aLong)
       {
          this.CheckWrite();
@@ -836,6 +896,26 @@ namespace CbMaxClrAdapter
          this.AddInternal(aFloat);
       }
       public void Add(CMessage aMessage) => aMessage.AddTo(this);
+
+      public void Set(params object[] aValues)
+      {
+         this.Clear();
+         foreach (var aValue in aValues)
+            this.Add(aValue);
+      }
+      public void Set(params string[] aValues)
+      {
+         this.Clear();
+         foreach (var aValue in aValues)
+            this.Add(aValue);
+      }
+
+      internal void Set(double[] aValues)
+      {
+         this.Clear();
+         foreach(var aValue in aValues)
+            this.Add(aValue);
+      }
    }
 
    public abstract class CMaxObject
@@ -884,13 +964,27 @@ namespace CbMaxClrAdapter
       internal SObject_New NewArgs { get; private set; }
       #endregion
       #region Log
+      private string PrependDebugTime(string aMsg)
+      {         
+         var aIncludeTime = true;
+         if(aIncludeTime)
+         {
+            var aNow = DateTime.Now;
+            var aTimeText = aNow.Minute.ToString().PadLeft(2, '0') 
+                    + ":" + aNow.Second.ToString().PadLeft(2, '0')
+                    + ":" + aNow.Millisecond.ToString().PadLeft(3, '0')
+                    + ": " + aMsg;
+            return aTimeText;
+         }
+         return aMsg;
+      }
       public void WriteLogErrorMessage(CConnector aConnector, string aMsg)
       {
-         this.WriteLogErrorMessage(aConnector.GetType().Name + ": " + aMsg);
+         this.WriteLogErrorMessage(aConnector.GetType().Name + ": " + this.PrependDebugTime(aMsg));
       }
       public void WriteLogErrorMessage(string aMsg)
       {
-         this.Marshal.Max_Log_Write(aMsg, true);
+         this.Marshal.Max_Log_Write(this.PrependDebugTime(aMsg), true);
       }
       public void WriteLogErrorMessage(Exception aExc)
       {
@@ -898,7 +992,7 @@ namespace CbMaxClrAdapter
       }
       public void WriteLogInfoMessage(string aMsg)
       {
-         this.Marshal.Max_Log_Write(aMsg, false);
+         this.Marshal.Max_Log_Write(this.PrependDebugTime(aMsg), false);
       }
       public void WriteLogInfoMessage(string aVarName, string aVarValue)
       {
@@ -962,6 +1056,15 @@ namespace CbMaxClrAdapter
                aAction = default;
             }
          }
+      }
+      #endregion
+      #region Shutdown
+      protected virtual void OnShutdown()
+      {
+      }
+      internal void Shutdown()
+      {
+         this.OnShutdown();
       }
       #endregion
    }

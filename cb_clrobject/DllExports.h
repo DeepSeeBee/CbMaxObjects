@@ -75,3 +75,7 @@ typedef void(__stdcall CObject_MainTask_Func)();
 __declspec(dllexport) void __stdcall Object_MainTask_Func_Set(void* aSCbClrObjectPtr, CObject_MainTask_Func* aFuncPtr);
 
 __declspec(dllexport) void __stdcall Object_MainTask_Request(void* aSCbClrObjectPtr);
+
+typedef void(__stdcall CObject_Shutdown_Func)();
+__declspec(dllexport) void __stdcall Object_Shutdown_Func_Set(void* aSCbClrObjectPtr, CObject_Shutdown_Func* aFuncPtr);
+

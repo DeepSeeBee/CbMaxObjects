@@ -16,10 +16,11 @@ namespace CbChannelStrip
    using System.Security.AccessControl;
    using System.Windows.Media.Imaging;
    using CbChannelStrip.Graph;
+   using CbChannelStrip.GraphOverlay;
    using CbChannelStrip.GraphWiz;
    using CbMaxClrAdapter;
    using CbMaxClrAdapter.Jitter;
-
+   using CbMaxClrAdapter.MGraphics;
 
    internal sealed class CSettings
    {
@@ -42,7 +43,23 @@ namespace CbChannelStrip
          this.PWindowInOut = new CMultiTypeOutlet(this);
          this.PWindowInOut.Support(CMessageTypeEnum.List);
          this.PWindowInOut.Support(CMessageTypeEnum.Matrix);
+         this.Vector2dOut = new CMultiTypeOutlet(this);
+         this.Vector2dOut.Support(CMessageTypeEnum.List);
+         this.Vector2dOut.Support(CMessageTypeEnum.Bang);
+         this.Vector2dDumpIn = new CListInlet(this);
+         this.FlowMatrix = new CFlowMatrix(this.WriteLogInfoMessage, this.Settings, 2, new bool[] { false, false, false, false });
+         this.GraphOverlay = new CGraphOverlay(this.WriteLogErrorMessage,
+                                               () => this.GwDiagramBuilder.GwGraph,
+                                               this.OnGraphAvailable,
+                                               this.OnGraphRequestPaint,
+                                               this.WriteLogInfoMessage
+                                               );
+         this.PWindow2InOut = new CListOutlet(this);
+         this.PWindow2InOut.Support(CMessageTypeEnum.List);
+         this.PWindow2UpdateEnabledOut = new CIntOutlet(this);
       }
+
+      private CGwDiagramBuilder GwDiagramBuilder { get => this.FlowMatrix.Routings.GwDiagramBuilder; }
 
       private readonly CListInlet MatrixCtrlLeftOutIn;
       private readonly CListInlet MatrixCtrlRightOutIn;
@@ -50,11 +67,41 @@ namespace CbChannelStrip
       private readonly CListOutlet MatrixCtrlLeftInOut;
       private readonly CMultiTypeOutlet PWindowInOut;
 
+      private readonly CMultiTypeOutlet Vector2dOut;
+      private readonly CListInlet Vector2dDumpIn;
+      private readonly CListOutlet PWindow2InOut;
+
+      private readonly CIntOutlet PWindow2UpdateEnabledOut;
+
       private Int32 IoCount;
       private bool RequestRowsPending;
       private Int32 RequestRowIdx;
       private Int32[][] Rows;
-      private CFlowMatrix FlowMatrix;
+      private volatile CFlowMatrix FlowMatrix;
+
+      private readonly CGraphOverlay GraphOverlay;
+
+      private void OnGraphRequestPaint()
+      {
+         //this.WriteLogInfoMessage("OnGraphRequestPaint");
+
+         this.RequestMainTaskActivity(delegate ()
+         {
+            //this.WriteLogInfoMessage("->SendGraphOverlay");
+            this.SendGraphOverlay();
+            this.GraphOverlay.OnPaintDone();
+         });
+      }
+      
+      private void OnGraphAvailable()
+      {
+         this.RequestMainTaskActivity(delegate ()
+         {
+            this.GraphOverlay.ProcessNewGraph();
+         });
+      }
+
+      private bool PWindow2UpdateEnabled { get => this.PWindow2UpdateEnabledOut.Message.Value != 0; set { this.PWindow2UpdateEnabledOut.Message.Value = value ? 1 : 0; this.PWindow2UpdateEnabledOut.Send(); } }
 
       private void OnInit(CInlet aInlet, string aFirstItem, CReadonlyListData aParams)
       {
@@ -102,7 +149,7 @@ namespace CbChannelStrip
       private void UpdateMatrix()
       {
          var aMatrix = (from aRow in this.Rows from aCell in aRow select aCell).ToArray();         
-         this.FlowMatrix = new CFlowMatrix(this.Settings, this.IoCount, aMatrix);
+         this.FlowMatrix = new CFlowMatrix(this.WriteLogInfoMessage, this.Settings, this.IoCount, aMatrix);
 
          foreach (var aRowIdx in Enumerable.Range(0, this.FlowMatrix.IoCount))
          {
@@ -116,7 +163,14 @@ namespace CbChannelStrip
                this.MatrixCtrlLeftInOut.Send();
             }
          }
-         var aBitmap = this.FlowMatrix.Routings.GraphWizDiagram.Bitmap;
+         this.SendGraphBitmap();
+         this.GraphOverlay.NextGraph();
+      }
+
+      private void SendGraphBitmap()
+      { 
+         //return; // TODO
+         var aBitmap = this.FlowMatrix.Routings.GwDiagramBuilder.Bitmap;
          var aSizeList = this.PWindowInOut.GetMessage<CList>().Value;
          aSizeList.Clear();
          aSizeList.Add("size");
@@ -125,6 +179,41 @@ namespace CbChannelStrip
          this.PWindowInOut.Send(CMessageTypeEnum.List);
          this.PWindowInOut.GetMessage<CMatrix>().Value.SetImage(aBitmap);
          this.PWindowInOut.Send(CMessageTypeEnum.Matrix);
+      }
+
+
+      private void SendPWindow2Size()
+      {
+         var aGraphOverlay = this.GraphOverlay;
+         var aSize = aGraphOverlay.Size;        
+         var aSizeList = this.PWindow2InOut.GetMessage<CList>().Value;
+         aSizeList.Clear();
+         aSizeList.Add("size");
+         aSizeList.Add(aSize.X);
+         aSizeList.Add(aSize.Y);
+         this.PWindow2InOut.Send();
+      }
+
+      private void SendGraphOverlay()
+      {
+         var aPainter = new CVector2dPainter(this.Vector2dDumpIn, this.Vector2dOut);
+         aPainter.Clear();
+         //this.PWindow2UpdateEnabled = false;
+         //try
+         //{
+            var aGraphOverlay = this.GraphOverlay;            
+            var aSize = aGraphOverlay.Size;
+            var aImageSurfaceSize = new CPoint(1000, 1000); // aPainter.ImageSurfaceSize;
+            var aScale = aImageSurfaceSize / aSize;            
+            this.SendPWindow2Size();
+            aPainter.Scale(aScale);
+            this.GraphOverlay.Paint(aPainter);
+            this.Vector2dOut.Send(CMessageTypeEnum.Bang);
+         //}
+         //finally
+         //{
+         //   this.PWindow2UpdateEnabled = true;
+         //}
       }
 
       private void OnMatrixCtrlRightOutIn(CInlet aInlet, CList aList)
@@ -146,10 +235,17 @@ namespace CbChannelStrip
          this.Rows[aY][aX] = aCellState;
          this.UpdateMatrix();
       }
-      public static void Test(Action<string> aFailAction)
+      public static void Test(Action<string> aFailAction, Action<string> aDebugPrint)
       {
-         CFlowMatrix.Test(aFailAction);
-         CGwDiagramBuilder.Test(aFailAction);
+         CFlowMatrix.Test(aFailAction, aDebugPrint);
+         CGwDiagramBuilder.Test(aFailAction, aDebugPrint);
+      }
+
+      protected override void OnShutdown()
+      {
+         base.OnShutdown();
+
+         this.GraphOverlay.Shutdown();
       }
 
    }

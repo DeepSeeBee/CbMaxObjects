@@ -12,10 +12,12 @@ namespace CbChannelStrip.Graph
 
    internal sealed class CFlowMatrix
    {
-      internal CFlowMatrix(CSettings aSettings, Int32 aIoCount, params int[] aMatrix) : this(aSettings, aIoCount, (from aItem in aMatrix select aItem != 0).ToArray())
+      internal readonly Action<string> DebugPrint;
+      internal CFlowMatrix(Action<string> aDebugPrint, CSettings aSettings, Int32 aIoCount, params int[] aMatrix) : this(aDebugPrint, aSettings, aIoCount, (from aItem in aMatrix select aItem != 0).ToArray())
       {
+         this.DebugPrint = aDebugPrint;
       }
-      internal CFlowMatrix(CSettings aSettings, Int32 aIoCount, params bool[] aMatrix)
+      internal CFlowMatrix(Action<string> aDebugPrint, CSettings aSettings, Int32 aIoCount, params bool[] aMatrix)
       {
          if (aMatrix.Length != aIoCount * aIoCount)
             throw new ArgumentException("Can not understand this list. Length must be IoCount^2.");
@@ -23,13 +25,13 @@ namespace CbChannelStrip.Graph
          this.IoCount = aIoCount;
          this.Matrix = aMatrix;
       }
-      internal static CFlowMatrix New(CSettings aSettings, IEnumerable<object> aSpec)
+      internal static CFlowMatrix New(Action<string> aDebugPrint, CSettings aSettings, IEnumerable<object> aSpec)
       {
          try
          {
             var aIoCount = Convert.ToInt32(aSpec.ElementAt(0));
             var aMatrix = from aItem in aSpec.Skip(1) select Convert.ToInt32(aItem);
-            return new CFlowMatrix(aSettings, aIoCount, aMatrix.ToArray());
+            return new CFlowMatrix(aDebugPrint, aSettings, aIoCount, aMatrix.ToArray());
          }
          catch (Exception aExc)
          {
@@ -226,11 +228,10 @@ namespace CbChannelStrip.Graph
             aFail(aTestId);
          }
       }
-      public static void Test(Action<string> aFailTest)
+      public static void Test(Action<string> aFailTest, Action<string> aDebugPrint)
       {
          var aSettings = new CSettings();
-
-         Test("c6090373-ca31-409c-968b-cc954900d29f", new CFlowMatrix(aSettings, 5,
+         Test("c6090373-ca31-409c-968b-cc954900d29f", new CFlowMatrix(aDebugPrint, aSettings, 5,
                                                                      0, 0, 0, 0, 0,
                                                                      0, 0, 0, 0, 0,
                                                                      0, 0, 0, 0, 0,
@@ -242,7 +243,7 @@ namespace CbChannelStrip.Graph
                                                1, 1, 1, 0, 1,
                                                1, 1, 1, 1, 0 }, aFailTest);
 
-         Test("4bb437c9-db94-49e1-bf85-e285aa2dc8e2", new CFlowMatrix(aSettings, 5,
+         Test("4bb437c9-db94-49e1-bf85-e285aa2dc8e2", new CFlowMatrix(aDebugPrint, aSettings, 5,
                                                                      0, 1, 0, 0, 0,
                                                                      0, 0, 0, 0, 0,
                                                                      0, 0, 0, 0, 0,
@@ -256,7 +257,7 @@ namespace CbChannelStrip.Graph
 
 
 
-         Test("c459dacd-ce57-4490-b44e-22f59a922179", new CFlowMatrix(aSettings, 5,
+         Test("c459dacd-ce57-4490-b44e-22f59a922179", new CFlowMatrix(aDebugPrint, aSettings, 5,
                                                                      0, 1, 0, 0, 0,
                                                                      0, 0, 1, 0, 0,
                                                                      0, 0, 0, 0, 0,
@@ -268,7 +269,7 @@ namespace CbChannelStrip.Graph
                                                1, 1, 1, 0, 1,
                                                1, 1, 1, 1, 0 }, aFailTest);
 
-         Test("f02dd08f-8c78-4118-bf4b-680e08681ef9", new CFlowMatrix(aSettings, 5,
+         Test("f02dd08f-8c78-4118-bf4b-680e08681ef9", new CFlowMatrix(aDebugPrint, aSettings, 5,
                                                                      0, 0, 0, 0, 0,
                                                                      0, 0, 1, 1, 1,
                                                                      0, 0, 0, 0, 1,
@@ -283,7 +284,7 @@ namespace CbChannelStrip.Graph
 
       }
       #endregion
-      private CRoutings RoutingsM;
+      private volatile CRoutings RoutingsM;
       public CRoutings Routings
       {
          get
@@ -296,6 +297,15 @@ namespace CbChannelStrip.Graph
          }
       }
 
+      internal static CFlowMatrix NewTestFlowMatrix(Action<string> aDebugPrint) => new CFlowMatrix(aDebugPrint, new CSettings(), 7,
+                                                                      0, 1, 1, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 1,
+                                                                      0, 0, 0, 1, 1, 0, 0,
+                                                                      0, 0, 0, 0, 0, 1, 0,
+                                                                      0, 0, 0, 0, 0, 1, 0,
+                                                                      0, 0, 0, 0, 0, 0, 1,
+                                                                      1, 0, 0, 0, 0, 0, 0
+                                                                      );
    }
 
 
@@ -361,18 +371,18 @@ namespace CbChannelStrip.Graph
          }
       }
 
-      private CGwDiagramBuilder GraphWizDiagramM;
-      internal CGwDiagramBuilder GraphWizDiagram
+      private volatile CGwDiagramBuilder GwDiagramBuilderM;
+      internal CGwDiagramBuilder GwDiagramBuilder
       {
          get
          {
-            if (!(this.GraphWizDiagramM is object))
+            if (!(this.GwDiagramBuilderM is object))
             {
-               var aDiagram = new CGwDiagramBuilder(this.FlowMatrix.Settings);
+               var aDiagram = new CGwDiagramBuilder(this.FlowMatrix.DebugPrint, this.FlowMatrix.Settings);
                aDiagram.Visit(this);
-               this.GraphWizDiagramM = aDiagram;
+               this.GwDiagramBuilderM = aDiagram;
             }
-            return this.GraphWizDiagramM;
+            return this.GwDiagramBuilderM;
          }
       }
    }
