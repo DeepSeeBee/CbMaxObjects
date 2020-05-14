@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 311.0, 93.0, 1486.0, 929.0 ],
+		"rect" : [ 392.0, 243.0, 1486.0, 645.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -68,7 +68,7 @@
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 140.0, 442.0, 128.0, 22.0 ],
-					"text" : "size 235.54 153.49"
+					"text" : "size 288.19 128."
 				}
 
 			}
@@ -79,8 +79,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 372.0, -44.0, 581.0, 22.0 ],
-					"text" : "set_source_rgba 0 0 0 0.2, new_path, move_to 72 105, line_to 400 400, line_to 135 150, close_path, stroke"
+					"patching_rect" : [ 372.0, -44.0, 571.0, 22.0 ],
+					"text" : "set_source_rgba 0 0 0 1, new_path, move_to 72 105, line_to 400 400, line_to 135 150, close_path, stroke"
 				}
 
 			}
@@ -117,8 +117,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "jit_matrix", "" ],
-					"patching_rect" : [ 207.5, 183.0, 147.0, 23.0 ],
-					"text" : "jit.mgraphics 1000 1000"
+					"patching_rect" : [ 233.5, 189.0, 147.0, 23.0 ],
+					"text" : "jit.mgraphics 1020 1000"
 				}
 
 			}
@@ -169,9 +169,9 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "jit_matrix", "" ],
-					"patching_rect" : [ 376.0, 239.5, 235.0, 153.0 ],
+					"patching_rect" : [ 376.0, 239.5, 288.0, 128.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 223.0, 7.0, 235.0, 153.0 ]
+					"presentation_rect" : [ 223.0, 7.0, 288.0, 128.0 ]
 				}
 
 			}
@@ -194,8 +194,8 @@
 					"id" : "obj-1",
 					"maxclass" : "newobj",
 					"numinlets" : 4,
-					"numoutlets" : 5,
-					"outlettype" : [ "", "", "", "", "" ],
+					"numoutlets" : 4,
+					"outlettype" : [ "", "", "", "" ],
 					"patching_rect" : [ 33.0, 69.0, 224.0, 22.0 ],
 					"text" : "cb_clrobject"
 				}
@@ -243,15 +243,9 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-4", 0 ],
-					"source" : [ "obj-1", 2 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-6", 0 ],
-					"disabled" : 1,
-					"source" : [ "obj-1", 4 ]
+					"source" : [ "obj-1", 2 ],
+					"watchpoint_flags" : 5,
+					"watchpoint_id" : 1
 				}
 
 			}

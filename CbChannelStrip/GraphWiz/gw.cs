@@ -1,5 +1,5 @@
 ﻿using CbChannelStrip.Graph;
-using CbChannelStrip.GraphOverlay;
+using CbChannelStrip.GraphAnimator;
 using CbMaxClrAdapter;
 using CbMaxClrAdapter.Jitter;
 using CbMaxClrAdapter.MGraphics;
@@ -11,19 +11,36 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Resources;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace CbChannelStrip.GraphWiz
 {
- 
+   using CPoint = Tuple<double, double>;
+
    internal sealed class CGwEdge
    {
-      internal CGwEdge()
+      internal CGwEdge(string aNode1Name, string aNode2Name, IEnumerable<CPoint> aSplines, Color? aColor)
       {
-
+         this.Node1Name = aNode1Name;
+         this.Node2Name = aNode2Name;
+         this.Name = aNode1Name + " -> " + aNode2Name;
+         this.Splines = aSplines;
+         this.Color = aColor;
       }
+      internal readonly string Name;
+      internal readonly string Node1Name;
+      internal readonly string Node2Name;
+      internal readonly IEnumerable<CPoint> Splines;
+      internal readonly Color? Color;
+
+      internal IEnumerable<Tuple<CPoint, CPoint, CPoint>> NewBezierCurves()
+      {
+         throw new NotImplementedException();
+      }
+
    }
 
    internal sealed class CGwNode
@@ -37,7 +54,7 @@ namespace CbChannelStrip.GraphWiz
          this.Dy = aDy;
          this.ShapeEnum = (CShapeEnum)Enum.Parse(typeof(CShapeEnum), aShape, true);
       }
-      internal readonly string Name;      
+      internal readonly string Name;
       internal readonly double X;
       internal readonly double Y;
       internal readonly double Dx;
@@ -50,6 +67,8 @@ namespace CbChannelStrip.GraphWiz
          MSquare
       }
       internal readonly CShapeEnum ShapeEnum;
+      internal Color? Color;
+      internal Color? FontColor;
 
       internal double CenterX
       {
@@ -59,21 +78,79 @@ namespace CbChannelStrip.GraphWiz
       {
          get => this.Y + this.Dy / 2.0d;
       }
-
    }
+
+   internal sealed class CCaseInsenstiveComparer : IEqualityComparer<string>
+   {
+      bool IEqualityComparer<string>.Equals(string x, string y)
+         => x.ToLower() == y.ToLower();
+      int IEqualityComparer<string>.GetHashCode(string obj) => obj.ToLower().GetHashCode();
+   }
+
    internal sealed class CGwGraph
    {
-      internal CGwGraph(IEnumerable<CGwNode> aNodes, CPoint aSize)
+      internal CGwGraph(IEnumerable<CGwNode> aNodes, IEnumerable<CGwEdge> aEdges, CPoint aSize)
       {
          this.Nodes = aNodes;
+         this.Edges = aEdges;
          this.Size = aSize;
       }
-      internal CGwGraph():this(new CGwNode[] { }, new CPoint()) { }
+
+      internal CGwGraph() : this(new CGwNode[] { }, new CGwEdge[]{}, new CPoint(0.0d, 0.0d)) { }
       internal readonly CPoint Size;
+
+      private static void AddColor1(Dictionary<string, Color> aDic, string aName, Color aColor)
+      {
+         if (!aDic.ContainsKey(aName))
+            aDic.Add(aName, aColor);
+      }
+      private static void AddColor(Dictionary<string, Color> aDic, string aName, Color aColor)
+      {
+         AddColor1(aDic, aName, aColor);
+         if (aName.Contains("Gray"))
+            AddColor1(aDic, aName.Replace("Gray", "Grey"), aColor);
+      }
+
+      private static Dictionary<string, Color> NewColorDic()
+      {
+         var aDic = new Dictionary<string, Color>(0, new CCaseInsenstiveComparer());
+         var aProperties1 = typeof(Color).GetProperties(System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
+         var aProperties2 = from aField in aProperties1 where aField.PropertyType.Equals(typeof(Color)) select aField;
+         var aProperties = aProperties2;
+         foreach(var aProperty in aProperties2)
+         {
+            var aColor = (Color)aProperty.GetValue(null);
+            AddColor(aDic, aProperty.Name, aColor);
+         }
+         return aDic;
+      }
+
+      private static Dictionary<string, Color> ColorDic = NewColorDic();
+
+      private static Color? GetColor(Dictionary<string, string> aAttributes, string aAttributeName)
+      {
+         if (aAttributes.ContainsKey(aAttributeName))
+         {
+            var aColorName = aAttributes[aAttributeName];
+            if(ColorDic.ContainsKey(aColorName))
+            {
+               return ColorDic[aColorName];
+            }
+            else
+            {
+               return default(Color?);
+            }
+         }
+         else
+         {
+            return default(Color?);
+         }
+      }
       internal static CGwGraph New(string aCode)
       {
          aCode = aCode.Replace(Environment.NewLine, " ");
-         var aGwNodes = new List<CGwNode>();
+         var aNodes = new List<CGwNode>();
+         var aEdges = new List<CGwEdge>();
          var aParser = new CParser(aCode);
          aParser.SkipWhitespace();
          aParser.Expect("digraph");
@@ -115,13 +192,28 @@ namespace CbChannelStrip.GraphWiz
                aParser.SkipWhitespace();
                aParser.Expect("[");
                var aAttributes = aParser.ReadAttributes();
-
-               //var aData = aParser.ReadString();
+               var aPos = aAttributes["pos"]
+                         .Replace("\\ ", ""); // TODO ?!
+               var aPosParser = new CParser(aPos);
+               aPosParser.Expect("e,");
+               var aSplines = new List<CPoint>();
+               while(!aPosParser.IsEof)
+               {
+                  var aX = aPosParser.ParseDouble(aPosParser.ReadValue());
+                  aPosParser.Expect(",");
+                  var aY = aDiagDy - aPosParser.ParseDouble(aPosParser.ReadValue());
+                  var aPoint = new CPoint(aX, aY);
+                  aSplines.Add(aPoint);
+                  aPosParser.SkipWhitespace();
+               }
+               var aColor = GetColor(aAttributes, "color");
                aParser.SkipWhitespace();
                aParser.Expect("]");
                aParser.SkipWhitespace();
                aParser.Expect(";");
                aParser.SkipWhitespace();
+               var aEdge = new CGwEdge(aNodeName1, aTargetNodeName, aSplines, aColor);
+               aEdges.Add(aEdge);
             }
             else
             {
@@ -146,8 +238,12 @@ namespace CbChannelStrip.GraphWiz
                   var aDx = InchesToPixels(aParser.ParseDouble(aNodeAttributes["width"]));
                   var aDy = InchesToPixels(aParser.ParseDouble(aNodeAttributes["height"]));
                   var aShape = aNodeAttributes["shape"];
+                  var aColor = GetColor(aNodeAttributes, "color");
+                  var aFontColor = GetColor(aNodeAttributes, "fontcolor");                  
                   var aGwNode = new CGwNode(aNodeName, aX, aY, aDx, aDy, aShape);
-                  aGwNodes.Add(aGwNode);
+                  aGwNode.Color = aColor;
+                  aGwNode.FontColor = aFontColor;
+                  aNodes.Add(aGwNode);
                }
             }
             aParser.SkipWhitespace();
@@ -157,7 +253,10 @@ namespace CbChannelStrip.GraphWiz
          aParser.SkipWhitespace();
          aParser.ExpectEndOfFile();
 
-         var aGwGraph = new CGwGraph(aGwNodes, new CPoint(aDiagDx, aDiagDy));
+         var aGwGraph = new CGwGraph(aNodes.ToArray(), 
+                                     aEdges.ToArray(),
+                                     new CPoint(aDiagDx, aDiagDy)
+                                     );
          return aGwGraph;
 
       }
@@ -175,7 +274,7 @@ namespace CbChannelStrip.GraphWiz
          private int Pos;
          private readonly string String;
          internal char Char { get => this.String[this.Pos]; }
-         private bool IsEof { get => this.Pos >= this.String.Length; }
+         internal bool IsEof { get => this.Pos >= this.String.Length; }
          private bool IsWhitespace { get => this.Char.ToString().Trim() == string.Empty; }
          private void SkipCharacter() => ++this.Pos;
          internal void SkipWhitespace()
@@ -259,24 +358,42 @@ namespace CbChannelStrip.GraphWiz
          private static CultureInfo EnCulture = CultureInfo.GetCultureInfo("en-us");
          internal double ParseDouble(string aText) => double.Parse(aText, EnCulture);
          internal string ReadValue()
-         {
-            if(this.IsNumeric)
+         {           
+            if(this.IsNumeric
+            || this.Char == '-'
+            || this.Char == '+')
             {
+               double aMultiplier;
+               if(this.Char == '-')
+               {
+                  this.ReadChar();
+                  aMultiplier = -1;
+               }
+               else if(this.Char == '+')
+               {
+                  this.ReadChar();
+                  aMultiplier = 1;
+               }
+               else
+               {
+                  aMultiplier = 1;
+               }
+
                var aSb = new StringBuilder();
-               while (this.IsNumeric)
+               while (!this.IsEof && this.IsNumeric)
                {
                   aSb.Append(this.ReadChar());
                }
-               if (this.Char == '.')
+               if (!this.IsEof && this.Char == '.')
                {
                   this.ReadChar();
                   aSb.Append(".");
-                  while (this.IsNumeric)
+                  while (!this.IsEof && this.IsNumeric)
                   {
                      aSb.Append(this.ReadChar());
                   }
                }
-               var aDbl = this.ParseDouble(aSb.ToString());
+               var aDbl = this.ParseDouble(aSb.ToString()) * aMultiplier;
                return aDbl.ToString(EnCulture);
             }
             else if(this.Char == '\"')
@@ -320,11 +437,10 @@ namespace CbChannelStrip.GraphWiz
                throw this.NewException("Expected end of file.");
             }
          }
-      }
-
-      internal static CGwGraph NewTestGraph(Action<string> aDebugPrint) => CGwDiagramBuilder.NewTestDiagramBuilder(aDebugPrint).GwGraph;
+      }      
 
       internal readonly IEnumerable<CGwNode> Nodes;
+      internal readonly IEnumerable<CGwEdge> Edges;
    }
 
 
@@ -359,7 +475,7 @@ namespace CbChannelStrip.GraphWiz
       private int Indent;
       private void AddLine(string aCode) => this.CodeWithoutCoords.Add(new string(' ', this.Indent) + aCode);
 
-      private void AddLines(CRouting aRouting, string aName, int aLatency, bool aActive = true, string aShape = "")
+      private void AddLines(string aName, int aLatency, bool aActive = true, string aShape = "")
       {
          var aAttributes = new Dictionary<string, string>();
          aAttributes.Add("label", aName + " l=" + aLatency);
@@ -378,6 +494,14 @@ namespace CbChannelStrip.GraphWiz
          //aAttributes.Add("fixedsize", "true");
          var aStringBuilder = new StringBuilder();
          aStringBuilder.Append("\"" + aName + "\"");
+         aStringBuilder.Append(this.GetAttributesCode(aAttributes));
+         aStringBuilder.Append(";");
+         this.AddLine(aStringBuilder.ToString());
+      }
+
+      private string GetAttributesCode(Dictionary<string, string> aAttributes)
+      {
+         var aStringBuilder = new StringBuilder();         
          aStringBuilder.Append("[");
          var aAttributeOpen = false;
          foreach (var aAttribute in aAttributes)
@@ -389,8 +513,7 @@ namespace CbChannelStrip.GraphWiz
             aStringBuilder.Append(aAttribute.Key + "=" + "\"" + aAttribute.Value + "\"");
          }
          aStringBuilder.Append("]");
-         aStringBuilder.Append(";");
-         this.AddLine(aStringBuilder.ToString());
+         return aStringBuilder.ToString();
       }
 
       public override void Visit(CRoutings aRoutings)
@@ -408,12 +531,12 @@ namespace CbChannelStrip.GraphWiz
          {
             if (aRouting.InputIdx == 0)
             {
-               this.AddLines(aRouting, this.GetInName(aRouting), 0, aRouting.IsLinkedToOutput, "invtriangle");
-               this.AddLines(aRouting, this.GetOutName(aRouting), aRouting.FinalOutputLatency, aRouting.IsLinkedToOutput, "triangle");
+               this.AddLines(aRouting.NameForInput, 0, aRouting.IsLinkedToOutput, "invtriangle");
+               this.AddLines(aRouting.NameForOutput, aRouting.FinalOutputLatency, aRouting.IsLinkedToOutput, "triangle");
             }
             else
             {
-               this.AddLines(aRouting, this.GetInName(aRouting), aRouting.OutputLatency, aRouting.IsLinkedToInput && aRouting.IsLinkedToOutput, "Mcircle");
+               this.AddLines(aRouting.NameForInput, aRouting.OutputLatency, aRouting.IsLinkedToInput && aRouting.IsLinkedToOutput, "Mcircle");
             }
          }
 
@@ -422,10 +545,7 @@ namespace CbChannelStrip.GraphWiz
          this.AddLine("}");
       }
 
-      private string GetName(CRouting aRouting) => "R" + aRouting.InputIdx;
 
-      private string GetInName(CRouting aRouting) => aRouting.InputIdx == 0 ? "in" : this.GetName(aRouting);
-      private string GetOutName(CRouting aRouting) => aRouting.InputIdx == 0 ? "out" : this.GetName(aRouting);
 
       private void VisitNonNull(CNonNullRouting aRouting)
       {
@@ -435,7 +555,12 @@ namespace CbChannelStrip.GraphWiz
             {
                if (aOutput.IsLinkedToSomething)
                {
-                  this.AddLine(this.GetInName(aRouting) + " -> " + this.GetOutName(aOutput) + ";");
+                  var aEdge = aRouting.NameForInput + " -> " + aOutput.NameForOutput;
+                  var aAttribs = new Dictionary<string, string>();
+                  var aIsLinked = aRouting.IsLinkedToInput && aOutput.IsLinkedToOutput;
+                  aAttribs.Add("color", aIsLinked ? "black" : "lightgrey");
+                  var aAttributesCode = this.GetAttributesCode(aAttribs);
+                  this.AddLine(aEdge + aAttributesCode + ";");
                }
             }
          }
@@ -463,11 +588,9 @@ namespace CbChannelStrip.GraphWiz
          var aGwGraph = CGwGraph.New(aCodeWithCoords);
       }
 
-      internal static CGwDiagramBuilder NewTestDiagramBuilder(Action<string> aDebugPrint) => CFlowMatrix.NewTestFlowMatrix(aDebugPrint).Routings.GwDiagramBuilder;
-
       internal static void Test(Action<string> aFailAction, Action<string> aDebugPrint)
       {
-         Test("1baa58c2-5e3a-49c4-b762-eceab52cf977", NewTestDiagramBuilder(aDebugPrint), aFailAction);
+         Test("1baa58c2-5e3a-49c4-b762-eceab52cf977", CFlowMatrix.NewTestFlowMatrix5(aDebugPrint).Routings.GwDiagramBuilder, aFailAction);
       }
       #endregion
 

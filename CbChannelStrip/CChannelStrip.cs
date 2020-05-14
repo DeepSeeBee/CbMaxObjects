@@ -16,7 +16,7 @@ namespace CbChannelStrip
    using System.Security.AccessControl;
    using System.Windows.Media.Imaging;
    using CbChannelStrip.Graph;
-   using CbChannelStrip.GraphOverlay;
+   using CbChannelStrip.GraphAnimator;
    using CbChannelStrip.GraphWiz;
    using CbMaxClrAdapter;
    using CbMaxClrAdapter.Jitter;
@@ -48,15 +48,14 @@ namespace CbChannelStrip
          this.Vector2dOut.Support(CMessageTypeEnum.Bang);
          this.Vector2dDumpIn = new CListInlet(this);
          this.FlowMatrix = new CFlowMatrix(this.WriteLogInfoMessage, this.Settings, 2, new bool[] { false, false, false, false });
-         this.GraphOverlay = new CGraphOverlay(this.WriteLogErrorMessage,
-                                               () => this.GwDiagramBuilder.GwGraph,
+         this.GraphOverlay = new CGraphAnimator(this.WriteLogErrorMessage,
+                                               () => this.FlowMatrix.Routings.GwDiagramBuilder.GwGraph,
                                                this.OnGraphAvailable,
                                                this.OnGraphRequestPaint,
                                                this.WriteLogInfoMessage
                                                );
          this.PWindow2InOut = new CListOutlet(this);
          this.PWindow2InOut.Support(CMessageTypeEnum.List);
-         this.PWindow2UpdateEnabledOut = new CIntOutlet(this);
       }
 
       private CGwDiagramBuilder GwDiagramBuilder { get => this.FlowMatrix.Routings.GwDiagramBuilder; }
@@ -71,15 +70,13 @@ namespace CbChannelStrip
       private readonly CListInlet Vector2dDumpIn;
       private readonly CListOutlet PWindow2InOut;
 
-      private readonly CIntOutlet PWindow2UpdateEnabledOut;
-
       private Int32 IoCount;
       private bool RequestRowsPending;
       private Int32 RequestRowIdx;
       private Int32[][] Rows;
       private volatile CFlowMatrix FlowMatrix;
 
-      private readonly CGraphOverlay GraphOverlay;
+      private readonly CGraphAnimator GraphOverlay;
 
       private void OnGraphRequestPaint()
       {
@@ -100,8 +97,6 @@ namespace CbChannelStrip
             this.GraphOverlay.ProcessNewGraph();
          });
       }
-
-      private bool PWindow2UpdateEnabled { get => this.PWindow2UpdateEnabledOut.Message.Value != 0; set { this.PWindow2UpdateEnabledOut.Message.Value = value ? 1 : 0; this.PWindow2UpdateEnabledOut.Send(); } }
 
       private void OnInit(CInlet aInlet, string aFirstItem, CReadonlyListData aParams)
       {
@@ -198,22 +193,17 @@ namespace CbChannelStrip
       {
          var aPainter = new CVector2dPainter(this.Vector2dDumpIn, this.Vector2dOut);
          aPainter.Clear();
-         //this.PWindow2UpdateEnabled = false;
-         //try
-         //{
-            var aGraphOverlay = this.GraphOverlay;            
-            var aSize = aGraphOverlay.Size;
-            var aImageSurfaceSize = new CPoint(1000, 1000); // aPainter.ImageSurfaceSize;
-            var aScale = aImageSurfaceSize / aSize;            
-            this.SendPWindow2Size();
-            aPainter.Scale(aScale);
-            this.GraphOverlay.Paint(aPainter);
-            this.Vector2dOut.Send(CMessageTypeEnum.Bang);
-         //}
-         //finally
-         //{
-         //   this.PWindow2UpdateEnabled = true;
-         //}
+         var aGraphOverlay = this.GraphOverlay;            
+         var aSize = aGraphOverlay.Size;
+         var aBorder = 10.0d;
+         var aDx = 1000;
+         var aDy = 1000;
+         var aImageSurfaceSize = new CPoint(aDx - aBorder, aDy - aBorder); 
+         var aScale = aImageSurfaceSize / aSize;            
+         this.SendPWindow2Size();
+         aPainter.Scale(aScale);
+         this.GraphOverlay.Paint(aPainter);
+         this.Vector2dOut.Send(CMessageTypeEnum.Bang);
       }
 
       private void OnMatrixCtrlRightOutIn(CInlet aInlet, CList aList)

@@ -14,12 +14,21 @@ namespace CbMaxClrAdapter.MGraphics
          this.X = aX;
          this.Y = aY;
       }
+      public CPoint(Tuple<double, double> aTuple):this(aTuple.Item1, aTuple.Item2) { }
       public readonly double X;
       public readonly double Y;
       public static CPoint operator -(CPoint aLhs, CPoint aRhs) => new CPoint(aLhs.X - aRhs.X, aLhs.Y - aRhs.Y);
       public static CPoint operator +(CPoint aLhs, CPoint aRhs) => new CPoint(aLhs.X + aRhs.X, aLhs.Y + aRhs.Y);
       public static CPoint operator *(CPoint aLhs, CPoint aRhs) => new CPoint(aLhs.X * aRhs.X, aLhs.Y * aRhs.Y);
       public static CPoint operator /(CPoint aLhs, CPoint aRhs) => new CPoint(aLhs.X / aRhs.X, aLhs.Y / aRhs.Y);
+      public CPoint Rotate(double aAngle)
+      {
+         double s = Math.Sin(aAngle);
+         double c = Math.Cos(aAngle);
+         double x = this.X * c - this.Y * s;
+         double y = this.X * s + this.Y * c;
+         return new CPoint(x, y);
+      }
    }
    public struct CRectangle
    {
@@ -60,18 +69,20 @@ namespace CbMaxClrAdapter.MGraphics
       private double G(Color aColor) => ColorPart(aColor.G);
       private double B(Color aColor) => ColorPart(aColor.B);
       private double A(Color aColor) => ColorPart(aColor.A);
-      public void SetSourceRgba(Color aColor)=> this.Send("set_source_rgba", R(aColor), G(aColor), B(aColor), A(aColor));
+      public void SetColor(Color aColor)=> this.Send("set_source_rgba", R(aColor), G(aColor), B(aColor), A(aColor));
       public void Paint() => this.Send("paint");
       public void IdentityMatrix() => this.Send("identity_matrix");
       public void MoveTo(double aX, double aY) => this.Send("move_to", aX, aY);
       public void LineTo(double aX, double aY) => this.Send("line_to", aX, aY);
+      public void LineTo(CPoint aPoint) => this.LineTo(aPoint.X, aPoint.Y);
       public void MoveTo(CPoint aPos) => this.MoveTo(aPos.X, aPos.Y);
+      public void SetLineWidth(double aD) => this.Send("set_line_width", aD); 
       public void Clear() => this.Clear(Color.White, Color.Black);
       public void Clear(Color aBackground, Color aForeground)
       {
-         this.SetSourceRgba(aBackground);         
+         this.SetColor(aBackground);         
          this.Paint();
-         this.SetSourceRgba(aForeground);
+         this.SetColor(aForeground);
          this.IdentityMatrix();
          this.MoveTo(0, 0);
       }

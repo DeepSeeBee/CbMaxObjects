@@ -297,7 +297,8 @@ namespace CbChannelStrip.Graph
          }
       }
 
-      internal static CFlowMatrix NewTestFlowMatrix(Action<string> aDebugPrint) => new CFlowMatrix(aDebugPrint, new CSettings(), 7,
+
+      internal static CFlowMatrix NewTestFlowMatrix1(Action<string> aDebugPrint) => new CFlowMatrix(aDebugPrint, new CSettings(), 7,
                                                                       0, 1, 1, 0, 0, 0, 0,
                                                                       0, 0, 0, 0, 0, 0, 1,
                                                                       0, 0, 0, 1, 1, 0, 0,
@@ -306,6 +307,43 @@ namespace CbChannelStrip.Graph
                                                                       0, 0, 0, 0, 0, 0, 1,
                                                                       1, 0, 0, 0, 0, 0, 0
                                                                       );
+      internal static CFlowMatrix NewTestFlowMatrix2(Action<string> aDebugPrint) => new CFlowMatrix(aDebugPrint, new CSettings(), 7,
+                                                                1, 1, 0, 0, 0, 0, 0,
+                                                                1, 0, 0, 0, 0, 0, 0,
+                                                                0, 0, 0, 0, 0, 0, 0,
+                                                                0, 0, 0, 0, 0, 0, 0,
+                                                                0, 0, 0, 0, 0, 0, 0,
+                                                                0, 0, 0, 0, 0, 0, 0,
+                                                                0, 0, 0, 0, 0, 0, 0
+                                                                );
+
+      internal static CFlowMatrix NewTestFlowMatrix3(Action<string> aDebugPrint) => new CFlowMatrix(aDebugPrint, new CSettings(), 7,
+                                                                1, 1, 0, 0, 0, 0, 0,
+                                                                0, 0, 0, 0, 0, 0, 0,
+                                                                0, 0, 0, 0, 0, 0, 0,
+                                                                0, 0, 0, 0, 0, 0, 0,
+                                                                0, 0, 0, 0, 0, 0, 0,
+                                                                0, 0, 0, 0, 0, 0, 0,
+                                                                0, 0, 0, 0, 0, 0, 0
+                                                                );
+      internal static CFlowMatrix NewTestFlowMatrix4(Action<string> aDebugPrint) => new CFlowMatrix(aDebugPrint, new CSettings(), 7,
+                                                                1, 1, 0, 0, 0, 1, 0,
+                                                                1, 0, 0, 1, 0, 0, 0,
+                                                                0, 0, 0, 0, 0, 0, 1,
+                                                                1, 0, 0, 0, 0, 1, 0,
+                                                                1, 0, 0, 0, 0, 0, 1,
+                                                                1, 0, 0, 0, 0, 0, 0,
+                                                                1, 0, 0, 0, 0, 0, 0
+                                                                );
+      internal static CFlowMatrix NewTestFlowMatrix5(Action<string> aDebugPrint) => new CFlowMatrix(aDebugPrint, new CSettings(), 7,
+                                                                1, 1, 0, 0, 1, 1, 0,
+                                                                1, 0, 0, 1, 0, 0, 0,
+                                                                0, 0, 0, 0, 0, 0, 0,
+                                                                0, 0, 0, 0, 0, 0, 0,
+                                                                0, 0, 0, 0, 0, 0, 0,
+                                                                0, 0, 0, 0, 0, 0, 0,
+                                                                1, 0, 0, 0, 0, 0, 0
+                                                                );
    }
 
 
@@ -412,6 +450,10 @@ namespace CbChannelStrip.Graph
             return this.OutputsM;
          }
       }
+
+      internal string Name { get => "R" + this.InputIdx; }
+      internal string NameForInput { get => this.InputIdx == 0 ? "in" : this.Name; }
+      internal string NameForOutput { get => this.InputIdx == 0 ? "out" : this.Name; }
 
       internal int NodeLatency { get => this.InputIdx; } // TODO.
 
