@@ -1,5 +1,5 @@
 ﻿using CbChannelStrip.Graph;
-using CbChannelStrip.GraphAnimator;
+using CbChannelStrip.GaAnimator;
 using CbMaxClrAdapter;
 using CbMaxClrAdapter.Jitter;
 using CbMaxClrAdapter.MGraphics;
@@ -465,7 +465,6 @@ namespace CbChannelStrip.GraphWiz
             if(!(this.GwGraphM is object))
             {
                var aGraph = CGwGraph.New(this.CodeWithCoords.JoinString(" "));
-               this.DebugPrint("CGwGraph.New: NodeCount: " + aGraph.Nodes.Count());
                this.GwGraphM = aGraph;
             }
             return this.GwGraphM;

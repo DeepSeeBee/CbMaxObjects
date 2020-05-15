@@ -16,7 +16,7 @@ namespace CbChannelStrip
    using System.Security.AccessControl;
    using System.Windows.Media.Imaging;
    using CbChannelStrip.Graph;
-   using CbChannelStrip.GraphAnimator;
+   using CbChannelStrip.GaAnimator;
    using CbChannelStrip.GraphWiz;
    using CbMaxClrAdapter;
    using CbMaxClrAdapter.Jitter;
@@ -48,7 +48,7 @@ namespace CbChannelStrip
          this.Vector2dOut.Support(CMessageTypeEnum.Bang);
          this.Vector2dDumpIn = new CListInlet(this);
          this.FlowMatrix = new CFlowMatrix(this.WriteLogInfoMessage, this.Settings, 2, new bool[] { false, false, false, false });
-         this.GraphOverlay = new CGraphAnimator(this.WriteLogErrorMessage,
+         this.GraphOverlay = new CGaAnimator(this.WriteLogErrorMessage,
                                                () => this.FlowMatrix.Routings.GwDiagramBuilder.GwGraph,
                                                this.OnGraphAvailable,
                                                this.OnGraphRequestPaint,
@@ -76,7 +76,7 @@ namespace CbChannelStrip
       private Int32[][] Rows;
       private volatile CFlowMatrix FlowMatrix;
 
-      private readonly CGraphAnimator GraphOverlay;
+      private readonly CGaAnimator GraphOverlay;
 
       private void OnGraphRequestPaint()
       {
@@ -100,15 +100,17 @@ namespace CbChannelStrip
 
       private void OnInit(CInlet aInlet, string aFirstItem, CReadonlyListData aParams)
       {
-         var aIoCount = Convert.ToInt32(aParams.ElementAt(0));         
+         var aIoCount = Convert.ToInt32(aParams.ElementAt(0));
          var aRows = new Int32[aIoCount][];
          for (var aIdx = 0; aIdx < aIoCount; ++aIdx)
          {
             aRows[aIdx] = new int[aIoCount];
          }
+         aRows[0][0] = 1;
          this.Rows = aRows;
          this.IoCount = aIoCount;
-         this.RequestRows();         
+         this.UpdateMatrix();
+         this.SendCellState();         
       }
       
       private void RequestRows()
@@ -141,11 +143,21 @@ namespace CbChannelStrip
 
       private readonly CSettings Settings = new CSettings();
 
+      private void SendCellState()
+      {
+         foreach (var aRowIdx in Enumerable.Range(0, this.FlowMatrix.IoCount))
+         {
+            foreach (var aColIdx in Enumerable.Range(0, this.FlowMatrix.IoCount))
+            {
+               this.MatrixCtrlLeftInOut.SendValues("set", aColIdx, aRowIdx, this.Rows[aRowIdx][aColIdx]);
+            }
+         }
+      }
+
       private void UpdateMatrix()
       {
          var aMatrix = (from aRow in this.Rows from aCell in aRow select aCell).ToArray();         
          this.FlowMatrix = new CFlowMatrix(this.WriteLogInfoMessage, this.Settings, this.IoCount, aMatrix);
-
          foreach (var aRowIdx in Enumerable.Range(0, this.FlowMatrix.IoCount))
          {
             foreach (var aColIdx in Enumerable.Range(0, this.FlowMatrix.IoCount))
@@ -158,13 +170,13 @@ namespace CbChannelStrip
                this.MatrixCtrlLeftInOut.Send();
             }
          }
-         this.SendGraphBitmap();
+         //this.SendGraphBitmap();
          this.GraphOverlay.NextGraph();
       }
 
       private void SendGraphBitmap()
       { 
-         //return; // TODO
+         //return; // TODO         
          var aBitmap = this.FlowMatrix.Routings.GwDiagramBuilder.Bitmap;
          var aSizeList = this.PWindowInOut.GetMessage<CList>().Value;
          aSizeList.Clear();
@@ -219,10 +231,10 @@ namespace CbChannelStrip
 
       private void OnMatrixCtrlLeftOutIn(CInlet aInlet, CList aList)
       {
-         var aX = Convert.ToInt32(aList.Value.ElementAt(0));
-         var aY = Convert.ToInt32(aList.Value.ElementAt(1));
+         var aY = Convert.ToInt32(aList.Value.ElementAt(0));
+         var aX = Convert.ToInt32(aList.Value.ElementAt(1));
          var aCellState = Convert.ToInt32(aList.Value.ElementAt(2));
-         this.Rows[aY][aX] = aCellState;
+         this.Rows[aX][aY] = aCellState;
          this.UpdateMatrix();
       }
       public static void Test(Action<string> aFailAction, Action<string> aDebugPrint)

@@ -1,5 +1,5 @@
 ﻿using CbChannelStrip;
-using CbChannelStrip.GraphAnimator;
+using CbChannelStrip.GaAnimator;
 using CbMaxClrAdapter;
 using CbMaxClrAdapter.Jitter;
 using System;
@@ -20,7 +20,7 @@ namespace CbChannelStripTest
          CListData.Test(aFailAction);
          CChannelStrip.Test(aFailAction, aDebugPrint);
          CMatrixCellEnumerator.Test(aFailAction);
-         CGraphAnimator.Test(aFailAction, aDebugPrint);
+         CGaAnimator.Test(aFailAction, aDebugPrint);
          System.Console.ReadKey();
       }
 }

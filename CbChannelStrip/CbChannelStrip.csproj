@@ -51,7 +51,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CChannelStrip.cs" />
-    <Compile Include="GraphOverlay\overlay.cs" />
+    <Compile Include="GraphAnimator\ga.cs" />
     <Compile Include="GraphWiz\gw.cs" />
     <Compile Include="Graph\graph.cs" />
     <Compile Include="Program.cs" />
