@@ -543,10 +543,28 @@ namespace CbChannelStrip.GaAnimator
       internal readonly CGaMorph[] ChangedPos;
    }
 
+
+   internal abstract class CGaWorkerResult
+   {
+      internal CGaWorkerResult(CGwGraph aGwGraph)
+      {
+         this.GwGraph = aGwGraph;
+      }
+
+      internal readonly CGwGraph GwGraph;
+   }
+
+   internal sealed class CGaDefaultWorkerResult : CGaWorkerResult
+   {
+      internal CGaDefaultWorkerResult(CGwGraph aGwGraph):base(aGwGraph)
+      {
+      }
+   }
+
    public sealed class CGaAnimator
    {
       internal CGaAnimator(Action<Exception> aOnExc,
-                             Func<CGwGraph> aCalcNewGwGraph,
+                             Func<CGaWorkerResult> aCalcNewGaWorkerResult,
                              Action aNotifyResult,
                              Action aNotifyPaint,
                              Action<string> aDebugPrint)
@@ -555,7 +573,7 @@ namespace CbChannelStrip.GaAnimator
          this.OnExc = aOnExc;      
          this.State = new CState(this, new CGaGraph(this)); 
          this.AnimationThread = new System.Threading.Thread(RunAnimationThread);
-         this.CalcNewGwGraph = aCalcNewGwGraph;
+         this.CalcNewGaWorkerResult = aCalcNewGaWorkerResult;
          this.NotifyResult = aNotifyResult;
          this.NotifyPaint = aNotifyPaint;         
          this.AnimationThread.Start();
@@ -581,20 +599,20 @@ namespace CbChannelStrip.GaAnimator
          var aGaAnimator = default(CGaAnimator);
          var aNotifyResult = new Action(delegate () { aDispatcher.BeginInvoke(new Action(delegate () { aGaAnimator.ProcessNewGraph(); })); });
          var aNotifyPaint = new Action(delegate () { aDispatcher.BeginInvoke(new Action(delegate () { aGaAnimator.OnPaintDone(); })); });
-         var aCalcNewGwGraph = new Func<CGwGraph>(() =>
+         var aCalcNewGwGraph = new Func<CGaWorkerResult>(() =>
          {
             switch (aGraphNr % 5)
             {
                case 0:
-                  return CFlowMatrix.NewTestFlowMatrix1(aDebugPrint).Routings.GwDiagramBuilder.GwGraph;
+                  return new CGaDefaultWorkerResult(CFlowMatrix.NewTestFlowMatrix1(aDebugPrint).Routings.GwDiagramBuilder.GwGraph);
                case 1:
-                  return CFlowMatrix.NewTestFlowMatrix2(aDebugPrint).Routings.GwDiagramBuilder.GwGraph;
+                  return new CGaDefaultWorkerResult(CFlowMatrix.NewTestFlowMatrix2(aDebugPrint).Routings.GwDiagramBuilder.GwGraph);
                case 2:
-                  return CFlowMatrix.NewTestFlowMatrix3(aDebugPrint).Routings.GwDiagramBuilder.GwGraph;
+                  return new CGaDefaultWorkerResult(CFlowMatrix.NewTestFlowMatrix3(aDebugPrint).Routings.GwDiagramBuilder.GwGraph);
                case 3:
-                  return CFlowMatrix.NewTestFlowMatrix4(aDebugPrint).Routings.GwDiagramBuilder.GwGraph;
+                  return new CGaDefaultWorkerResult(CFlowMatrix.NewTestFlowMatrix4(aDebugPrint).Routings.GwDiagramBuilder.GwGraph);
                default:
-                  return CFlowMatrix.NewTestFlowMatrix5(aDebugPrint).Routings.GwDiagramBuilder.GwGraph;
+                  return new CGaDefaultWorkerResult(CFlowMatrix.NewTestFlowMatrix5(aDebugPrint).Routings.GwDiagramBuilder.GwGraph);
             }
          });
          aGaAnimator = new CGaAnimator(aOnExc, aCalcNewGwGraph, aNotifyResult, aNotifyPaint, aDebugPrint);
@@ -626,7 +644,7 @@ namespace CbChannelStrip.GaAnimator
       private Action NotifyResult;
       private Action NotifyPaint;
       private Action<Exception> OnExc;
-      private readonly Func<CGwGraph> CalcNewGwGraph;    
+      private readonly Func<CGaWorkerResult> CalcNewGaWorkerResult;    
       private BackgroundWorker WorkerNullable;
       internal volatile bool PaintIsPending;      
       internal void OnPaintDone()
@@ -688,7 +706,7 @@ namespace CbChannelStrip.GaAnimator
          System.Threading.Thread.CurrentThread.Priority = ThreadPriority.AboveNormal;
          //System.Threading.Thread.Sleep(3000);
          var aOldState = (CState)aArgs.Argument;
-         var aNewGwGraph = this.CalcNewGwGraph();
+         var aNewGwGraph = this.CalcNewGaWorkerResult().GwGraph;
          var aNewGaGraph = new CGaGraph(this, aNewGwGraph);
          var aNewState = new CState(this, aOldState, aNewGaGraph);
          aArgs.Result = aNewState;

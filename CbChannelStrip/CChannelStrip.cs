@@ -21,12 +21,24 @@ namespace CbChannelStrip
    using CbMaxClrAdapter;
    using CbMaxClrAdapter.Jitter;
    using CbMaxClrAdapter.MGraphics;
+   using System.Data.SqlClient;
 
    internal sealed class CSettings
    {
       internal DirectoryInfo GraphWizInstallDir { get =>new DirectoryInfo(@"C:\Program Files (x86)\Graphviz2.38\"); }
    }
 
+
+   internal sealed class CCsWorkerResult : CGaWorkerResult
+   {
+      internal CCsWorkerResult(CChannelStrip aChannelStrip, CGwGraph aGwGraph) : base(aGwGraph)
+      {
+         this.ChannelStrip = aChannelStrip;
+      }
+
+      internal readonly CChannelStrip ChannelStrip;
+
+   }
 
    public sealed class CChannelStrip : CMaxObject
    {
@@ -49,7 +61,7 @@ namespace CbChannelStrip
          this.Vector2dDumpIn = new CListInlet(this);
          this.FlowMatrix = new CFlowMatrix(this.WriteLogInfoMessage, this.Settings, 2, new bool[] { false, false, false, false });
          this.GraphOverlay = new CGaAnimator(this.WriteLogErrorMessage,
-                                               () => this.FlowMatrix.Routings.GwDiagramBuilder.GwGraph,
+                                               () => new CCsWorkerResult(this, this.FlowMatrix.Routings.GwDiagramBuilder.GwGraph),
                                                this.OnGraphAvailable,
                                                this.OnGraphRequestPaint,
                                                this.WriteLogInfoMessage
