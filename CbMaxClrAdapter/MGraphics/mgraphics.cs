@@ -17,6 +17,8 @@ namespace CbMaxClrAdapter.MGraphics
       public CPoint(Tuple<double, double> aTuple):this(aTuple.Item1, aTuple.Item2) { }
       public readonly double X;
       public readonly double Y;
+      public static bool operator ==(CPoint aLhs, CPoint aRhs) => aLhs.X == aRhs.X && aLhs.Y == aRhs.Y;
+      public static bool operator !=(CPoint aLhs, CPoint aRhs) => !(aLhs == aRhs);
       public static CPoint operator -(CPoint aLhs, CPoint aRhs) => new CPoint(aLhs.X - aRhs.X, aLhs.Y - aRhs.Y);
       public static CPoint operator +(CPoint aLhs, CPoint aRhs) => new CPoint(aLhs.X + aRhs.X, aLhs.Y + aRhs.Y);
       public static CPoint operator *(CPoint aLhs, CPoint aRhs) => new CPoint(aLhs.X * aRhs.X, aLhs.Y * aRhs.Y);

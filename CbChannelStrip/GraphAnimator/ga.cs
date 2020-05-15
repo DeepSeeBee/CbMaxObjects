@@ -53,6 +53,10 @@ namespace CbChannelStrip.GaAnimator
       internal abstract CGaMorph NewMorph(CGaTransition aGaTransition, CGaEdge aNewEdge);
       internal abstract CGaMorph AcceptNewMorph(CGaTransition aGaTransition, CGaShape aOldShape);
       internal virtual void Init() { }
+
+      internal virtual void Animate(CGaAnimator.CAnnounceAnimation aAnnounceAnimation)
+      {
+      }
    }
 
    internal sealed class CGaEdge : CGaShape
@@ -134,8 +138,18 @@ namespace CbChannelStrip.GaAnimator
        
       public CPoint Pos { get; set; }
 
-      private volatile object ScaleM = (double)1.0d;
-      internal double Scale { get => (double)this.ScaleM; set => this.ScaleM = value; }
+      private volatile object DisappearScaleM = (double)1.0d;
+      internal double DisappearScale { get => (double)this.DisappearScaleM; set => this.DisappearScaleM = value; }
+
+      private volatile object AppearScaleM = (double)1.0d;
+      internal double AppearScale { get => (double)this.AppearScaleM; set => this.AppearScaleM = value; }
+
+      private volatile object WorkingScaleM = (double)1.0d;
+      internal double WorkingScale { get => (double)this.WorkingScaleM; set => this.WorkingScaleM = value; }
+
+      private volatile object AnnounceScaleM = (double)1.0d;
+      internal double AnnounceScale { get => (double)this.AnnounceScaleM; set => this.AnnounceScaleM = value; }
+      internal double Scale { get { return this.WorkingScale * this.AnnounceScale * this.AppearScale * this.DisappearScale; } }
 
       private object ColorM = default(Color?);
       internal Color? Color { get => (Color?)this.ColorM; set => this.ColorM = value; }
@@ -145,13 +159,13 @@ namespace CbChannelStrip.GaAnimator
       internal override void AnimateAppear(double aPercent)
       {
          base.AnimateAppear(aPercent);
-         this.Scale = aPercent;
+         this.AppearScale = aPercent;
       }
 
       internal override void AnimateDisappear(double aPercent)
       {
          base.AnimateDisappear(aPercent);
-         this.Scale = 1.0d - aPercent;
+         this.DisappearScale = 1.0d - aPercent;
       }
 
       internal override void Paint(CVector2dPainter aOut)
@@ -212,9 +226,15 @@ namespace CbChannelStrip.GaAnimator
       internal override CGaMorph NewMorph(CGaTransition aGaTransition, CGaEdge aNewEdge) => throw new InvalidOperationException();
       internal override CGaMorph NewMorph(CGaTransition aGaTransition, CGaNode aNewNode) => new CGaNodeMorph(aGaTransition, this, aNewNode);
       internal override CGaMorph AcceptNewMorph(CGaTransition aGaTransition, CGaShape aOldShape) => aOldShape.NewMorph(aGaTransition, this);
+
+      internal override void Animate(CGaAnimator.CAnnounceAnimation aAnnounceAnimation)
+      {
+         base.Animate(aAnnounceAnimation);
+         this.AnnounceScale = aAnnounceAnimation.Wobble;
+      }
    }
 
-   internal sealed class CGaGraph : IEnumerable<CGaShape>
+   internal sealed class CGaGraph : IEnumerable<CGaShape> 
    {
       internal CGaGraph(CGaAnimator aGaAnimator, CPoint aSize, IEnumerable<CGaShape> aShapes)
       {
@@ -307,8 +327,7 @@ namespace CbChannelStrip.GaAnimator
       }
       internal TimeSpan GetMoveDuration(CPoint aOldPoint, CPoint aNewPoint)
       {
-         var aDelta = new CPoint(Math.Max(aOldPoint.X, aNewPoint.X) - Math.Min(aOldPoint.X, aNewPoint.X),
-                                 Math.Max(aOldPoint.Y, aNewPoint.Y) - Math.Min(aOldPoint.Y, aNewPoint.Y));
+         var aDelta = CPointUtil.GetDelta(aOldPoint, aNewPoint);
          var aDistance = Math.Sqrt(Math.Pow(aDelta.X, 2) + Math.Pow(aDelta.Y, 2));
          var aMaxDistance = this.MaxDistance;
          var aMaxDuration = this.MaxDuration.TotalMilliseconds;
@@ -337,11 +356,26 @@ namespace CbChannelStrip.GaAnimator
       }
 
       private readonly TimeSpan MaxDuration = new TimeSpan(0, 0, 0,0, 1500);
-
+      internal abstract bool CalcAnnounce();
       internal abstract void Morph();
       internal abstract CGaShape MorphedShape { get; }
-      public abstract TimeSpan Duration { get; }
+      internal abstract TimeSpan Duration { get; }
+      internal abstract CGaShape OldShape { get; }
+
+      internal virtual void Animate(CGaAnimator.CAnnounceAnimation aAnnounceAnimation)
+      {
+         this.MorphedShape.Animate(aAnnounceAnimation);         
+      }
    }
+
+   internal static class CPointUtil
+   {
+      internal static CPoint GetDelta(CPoint a1, CPoint a2) => 
+                           new CPoint(Math.Max(a1.X, a2.X) - Math.Min(a1.X, a2.X),
+                                      Math.Max(a1.Y, a2.Y) - Math.Min(a1.Y, a2.Y));
+
+   }
+
 
    internal sealed class CGaNodeMorph : CGaMorph
    {
@@ -354,6 +388,7 @@ namespace CbChannelStrip.GaAnimator
       internal readonly CGaNode OldNode;
       internal readonly CGaNode NewNode;
       internal readonly CGaNode MorphedNode;
+      internal override CGaShape OldShape => this.OldNode;
       internal override CGaShape MorphedShape => this.MorphedNode;
       internal override void Morph()
       {
@@ -361,8 +396,13 @@ namespace CbChannelStrip.GaAnimator
          this.MorphedNode.Color = this.MorphColor(this.OldNode.Color, this.NewNode.Color);
          this.MorphedNode.FontColor = this.MorphColor(this.OldNode.FontColor, this.NewNode.FontColor);
       }
-      public override TimeSpan Duration => this.GetMoveDuration(this.OldNode.Pos, this.NewNode.Pos);
-
+      internal override TimeSpan Duration => this.GetMoveDuration(this.OldNode.Pos, this.NewNode.Pos);
+      internal override bool CalcAnnounce() => this.OldNode.Pos != this.NewNode.Pos;
+      internal override void Animate(CGaAnimator.CAnnounceAnimation aAnnounceAnimation)
+      {
+         base.Animate(aAnnounceAnimation);
+         this.MorphedNode.Animate(aAnnounceAnimation);         
+      }
    }
    internal sealed class CGaEdgeMorph : CGaMorph
    {
@@ -409,14 +449,15 @@ namespace CbChannelStrip.GaAnimator
       internal readonly CGaEdge NewEdge;
       internal readonly CPoint[] NewPoints;
       internal readonly CGaEdge MorphedEdge;
+      internal override CGaShape OldShape => this.OldEdge;
       internal override CGaShape MorphedShape => this.MorphedEdge;
       internal override void Morph()
       {
          this.MorphedEdge.Splines = this.MorphPoints(this.OldPoints, this.NewPoints);
          this.MorphedEdge.Color = this.MorphColor(this.OldEdge.Color, this.NewEdge.Color);
       }
-      public override TimeSpan Duration => this.GetMoveDuration(this.OldPoints, this.NewPoints);
-
+      internal override TimeSpan Duration => this.GetMoveDuration(this.OldPoints, this.NewPoints);
+      internal override bool CalcAnnounce() => !this.OldPoints.SequenceEqual(this.NewPoints);
    }
 
    internal sealed class CGaTransition
@@ -451,6 +492,9 @@ namespace CbChannelStrip.GaAnimator
             }
          }
          var aMorphDuration = aMorphings.IsEmpty() ? default(TimeSpan) : (from aMorph in aMorphings.Values select aMorph.Duration).Max();
+
+
+
          var aDisappearings = new List<CGaShape>();
          foreach (var aKey in aDisappearingKeys)
          {
@@ -461,6 +505,11 @@ namespace CbChannelStrip.GaAnimator
          {
             aAppearings.Add(aNewGraph.ShapesDic[aKey]);
          }
+
+         var aChangedPos = (from aMorph in aMorphings.Values
+                            where aMorph.CalcAnnounce()
+                            select aMorph).ToArray();
+
          var aMorphShapes1 = (from aMorph in aMorphings.Values select aMorph.MorphedShape);
          var aMorphShapes2 = (aDisappearings.Concat(aAppearings).Concat(aMorphShapes1));
          var aMorpShapes = (from aGroup in aMorphShapes2.GroupBy(aShape => aShape) select aGroup.Key).ToArray();
@@ -480,6 +529,7 @@ namespace CbChannelStrip.GaAnimator
          this.Disappearings = aDisappearings; 
          this.Appearings = aAppearings;
          this.MorphDuration = aMorphDuration;
+         this.ChangedPos = aChangedPos;
       }
 
       internal readonly CGaAnimator.CState GaAnimatorState;
@@ -490,6 +540,7 @@ namespace CbChannelStrip.GaAnimator
       internal readonly List<CGaShape> Disappearings;
       internal readonly List<CGaShape> Appearings;
       internal readonly TimeSpan MorphDuration;
+      internal readonly CGaMorph[] ChangedPos;
    }
 
    public sealed class CGaAnimator
@@ -589,12 +640,13 @@ namespace CbChannelStrip.GaAnimator
          {
             this.GaAnimator = aGaAnimator;
             this.OldGraph = aGraph;
-            this.NewGraph = aGraph;
-            this.GaTransition = new CGaTransition(this, this.Size, aGraph, aGraph);
+            this.NewGraph = aGraph;            
             this.WorkingAnimation = new CWorkingAnimation(this);
+            this.AnnounceAnimation = new CAnnounceAnimation(this);
             this.DisappearAnimation = new CDisappearAnimation(this);
             this.MoveAnimation = new CMoveAnimation(this);
             this.AppearAnimation = new CAppearAnimation(this);
+            this.GaTransition = new CGaTransition(this, this.Size, aGraph, aGraph);
          }
 
          internal CState(CGaAnimator aGaAnimator, CState aOldState, CGaGraph aNewGraph)
@@ -602,12 +654,13 @@ namespace CbChannelStrip.GaAnimator
             this.OldStateNullable = aOldState;
             this.GaAnimator = aGaAnimator;
             this.OldGraph = aOldState.NewGraph;
-            this.NewGraph = aNewGraph;
-            this.GaTransition = new CGaTransition(this, this.Size, this.OldGraph, this.NewGraph);
+            this.NewGraph = aNewGraph;            
             this.WorkingAnimation = new CWorkingAnimation(this);
+            this.AnnounceAnimation = new CAnnounceAnimation(this);
             this.DisappearAnimation = new CDisappearAnimation(this);
             this.MoveAnimation = new CMoveAnimation(this);
-            this.AppearAnimation = new CAppearAnimation(this);            
+            this.AppearAnimation = new CAppearAnimation(this);
+            this.GaTransition = new CGaTransition(this, this.Size, this.OldGraph, this.NewGraph);
          }
 
          internal readonly CState OldStateNullable;
@@ -616,6 +669,7 @@ namespace CbChannelStrip.GaAnimator
          internal readonly CGaGraph NewGraph;
          internal readonly CGaTransition GaTransition;
          internal readonly CWorkingAnimation WorkingAnimation;
+         internal readonly CAnnounceAnimation AnnounceAnimation;
          internal readonly CDisappearAnimation DisappearAnimation;
          internal readonly CMoveAnimation MoveAnimation;
          internal readonly CAppearAnimation AppearAnimation;
@@ -631,6 +685,8 @@ namespace CbChannelStrip.GaAnimator
                   yield return this.OldStateNullable.WorkingAnimation;
                else if (this.WorkingAnimation.IsRunning)
                   yield return this.WorkingAnimation;
+               if (this.AnnounceAnimation.IsRunning)
+                  yield return this.AnnounceAnimation;
                if (this.DisappearAnimation.IsRunning)
                   yield return this.DisappearAnimation;
                if (this.MoveAnimation.IsRunning)
@@ -945,7 +1001,28 @@ namespace CbChannelStrip.GaAnimator
          {
          }
 
-         private double Wobble(long aTime, long aIntervall, double aRange)
+         private readonly long Intervall = 250;
+
+         internal override void OnAnimate(long aFrameLen)
+         {
+            base.OnAnimate(aFrameLen);
+            //this.Wobble(0);
+            if (this.TotalElapsed >= this.Intervall
+            && !object.ReferenceEquals(this.State, this.State.GaAnimator.State))
+            {
+               this.Finish();
+               this.State.GaAnimator.State.AnnounceAnimation.Start();
+            }
+         }
+      }
+
+      internal sealed class CAnnounceAnimation : CAnimation
+      {
+         internal CAnnounceAnimation(CState aState) : base(aState)
+         {
+         }
+
+         private double CalcWobble(long aTime, long aIntervall, double aRange)
          {
             var aCycle = (aTime % aIntervall) / 1000.0d;
             var a1 = (aCycle * Math.PI * 2) + Math.PI / 2.0d;
@@ -956,20 +1033,20 @@ namespace CbChannelStrip.GaAnimator
 
          private readonly long Intervall = 250;
 
-         private double Wobble(long aTime) => this.Wobble(aTime, this.Intervall, 0.075);
-          
-           
+         internal double Wobble { get => this.IsRunning ? this.CalcWobble(this.TotalElapsed, this.Intervall, 0.075) : 1.0d; }
+
          internal override void OnAnimate(long aFrameLen)
          {
             base.OnAnimate(aFrameLen);
-            this.Wobble(0);
-            var aWobble = this.Wobble(this.TotalElapsed);
-            foreach (var aShape in this.State.GaTransition.MorphGraph.ShapesDic.Values.OfType<CGaNode>())
+            foreach (var aMorph in this.State.GaTransition.ChangedPos)
             {
-               aShape.Scale = aWobble;
+               aMorph.Animate(this);
             }
-            if (this.TotalElapsed >= this.Intervall
-            && !object.ReferenceEquals(this.State, this.State.GaAnimator.State))
+            foreach(var aDisappearing in this.State.GaTransition.Disappearings)
+            {
+               aDisappearing.Animate(this);
+            }
+            if (this.TotalElapsed >= this.Intervall)
             {
                this.Finish();
                this.State.GaAnimator.State.DisappearAnimation.Start();
@@ -979,13 +1056,13 @@ namespace CbChannelStrip.GaAnimator
          internal override void OnFinish()
          {
             base.OnFinish();
-            foreach (var aShape in this.State.OldGraph.ShapesDic.Values.OfType<CGaNode>())
+            foreach (var aMorph in this.State.GaTransition.ChangedPos)
             {
-               aShape.Scale = 1.0;
+               aMorph.Animate(this);
             }
          }
-
       }
+
 
       internal sealed class CDisappearAnimation : CAnimation
       {
