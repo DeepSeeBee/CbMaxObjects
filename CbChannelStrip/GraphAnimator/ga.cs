@@ -21,7 +21,7 @@ using System.Windows.Threading;
 
 namespace CbChannelStrip.GaAnimator
 {
-   using CWorkerResult = Tuple<BackgroundWorker, CGaAnimator.CState>;
+   using CWorkerResult = Tuple<BackgroundWorker, CState>;
 
    internal abstract class CGaShape
    {
@@ -54,7 +54,7 @@ namespace CbChannelStrip.GaAnimator
       internal abstract CGaMorph AcceptNewMorph(CGaTransition aGaTransition, CGaShape aOldShape);
       internal virtual void Init() { }
 
-      internal virtual void Animate(CGaAnimator.CAnnounceAnimation aAnnounceAnimation)
+      internal virtual void Animate(CAnnounceAnimation aAnnounceAnimation)
       {
       }
    }
@@ -227,7 +227,7 @@ namespace CbChannelStrip.GaAnimator
       internal override CGaMorph NewMorph(CGaTransition aGaTransition, CGaNode aNewNode) => new CGaNodeMorph(aGaTransition, this, aNewNode);
       internal override CGaMorph AcceptNewMorph(CGaTransition aGaTransition, CGaShape aOldShape) => aOldShape.NewMorph(aGaTransition, this);
 
-      internal override void Animate(CGaAnimator.CAnnounceAnimation aAnnounceAnimation)
+      internal override void Animate(CAnnounceAnimation aAnnounceAnimation)
       {
          base.Animate(aAnnounceAnimation);
          this.AnnounceScale = aAnnounceAnimation.Wobble;
@@ -285,8 +285,8 @@ namespace CbChannelStrip.GaAnimator
       internal CGaMorph(CGaTransition aGaTransition)
       {
          this.GaTransition = aGaTransition;
-         var aOldSize = this.GaTransition.GaAnimatorState.OldGraph.Size;
-         var aNewSize = this.GaTransition.GaAnimatorState.NewGraph.Size;
+         var aOldSize = this.GaTransition.GaState.OldGraph.Size;
+         var aNewSize = this.GaTransition.GaState.NewGraph.Size;
          var aMaxSize = new CPoint(Math.Max(aOldSize.X, aNewSize.X),
                                    Math.Max(aOldSize.Y, aNewSize.Y));
          var aDiag = Math.Sqrt(Math.Pow(aMaxSize.X, 2) + Math.Pow(aMaxSize.Y, 2));
@@ -362,7 +362,7 @@ namespace CbChannelStrip.GaAnimator
       internal abstract TimeSpan Duration { get; }
       internal abstract CGaShape OldShape { get; }
 
-      internal virtual void Animate(CGaAnimator.CAnnounceAnimation aAnnounceAnimation)
+      internal virtual void Animate(CAnnounceAnimation aAnnounceAnimation)
       {
          this.MorphedShape.Animate(aAnnounceAnimation);         
       }
@@ -398,7 +398,7 @@ namespace CbChannelStrip.GaAnimator
       }
       internal override TimeSpan Duration => this.GetMoveDuration(this.OldNode.Pos, this.NewNode.Pos);
       internal override bool CalcAnnounce() => this.OldNode.Pos != this.NewNode.Pos;
-      internal override void Animate(CGaAnimator.CAnnounceAnimation aAnnounceAnimation)
+      internal override void Animate(CAnnounceAnimation aAnnounceAnimation)
       {
          base.Animate(aAnnounceAnimation);
          this.MorphedNode.Animate(aAnnounceAnimation);         
@@ -462,9 +462,9 @@ namespace CbChannelStrip.GaAnimator
 
    internal sealed class CGaTransition
    {
-      internal CGaTransition(CGaAnimator.CState aGaAnimatorState, CPoint aSize, CGaGraph aOldGraph, CGaGraph aNewGraph)
+      internal CGaTransition(CState aGaState, CPoint aSize, CGaGraph aOldGraph, CGaGraph aNewGraph)
       {
-         this.GaAnimatorState = aGaAnimatorState;
+         this.GaState = aGaState;
          var aKeys = aOldGraph.ShapesDic.Keys.Concat(aNewGraph.ShapesDic.Keys);
          var aMorphingKeys = from aKey in aKeys
                            where aOldGraph.ShapesDic.ContainsKey(aKey)
@@ -513,7 +513,7 @@ namespace CbChannelStrip.GaAnimator
          var aMorphShapes1 = (from aMorph in aMorphings.Values select aMorph.MorphedShape);
          var aMorphShapes2 = (aDisappearings.Concat(aAppearings).Concat(aMorphShapes1));
          var aMorpShapes = (from aGroup in aMorphShapes2.GroupBy(aShape => aShape) select aGroup.Key).ToArray();
-         var aMorphGraph = new CGaGraph(this.GaAnimatorState.GaAnimator, aSize, aMorpShapes);
+         var aMorphGraph = new CGaGraph(this.GaState.GaAnimator, aSize, aMorpShapes);
          foreach (var aAppearing in aAppearings)
          {
             aAppearing.AnimateAppear(0.0d);
@@ -532,7 +532,7 @@ namespace CbChannelStrip.GaAnimator
          this.ChangedPos = aChangedPos;
       }
 
-      internal readonly CGaAnimator.CState GaAnimatorState;
+      internal readonly CState GaState;
       internal readonly CGaGraph OldGraph; 
       internal readonly CGaGraph NewGraph;
       internal readonly CGaGraph MorphGraph;
@@ -628,76 +628,10 @@ namespace CbChannelStrip.GaAnimator
       private Action<Exception> OnExc;
       private readonly Func<CGwGraph> CalcNewGwGraph;    
       private BackgroundWorker WorkerNullable;
-      private volatile bool PaintIsPending;      
+      internal volatile bool PaintIsPending;      
       internal void OnPaintDone()
       {
          this.PaintIsPending = false;
-      }
-
-      internal sealed class CState
-      {
-         internal CState(CGaAnimator aGaAnimator, CGaGraph aGraph)
-         {
-            this.GaAnimator = aGaAnimator;
-            this.OldGraph = aGraph;
-            this.NewGraph = aGraph;            
-            this.WorkingAnimation = new CWorkingAnimation(this);
-            this.AnnounceAnimation = new CAnnounceAnimation(this);
-            this.DisappearAnimation = new CDisappearAnimation(this);
-            this.MoveAnimation = new CMoveAnimation(this);
-            this.AppearAnimation = new CAppearAnimation(this);
-            this.GaTransition = new CGaTransition(this, this.Size, aGraph, aGraph);
-         }
-
-         internal CState(CGaAnimator aGaAnimator, CState aOldState, CGaGraph aNewGraph)
-         {
-            this.OldStateNullable = aOldState;
-            this.GaAnimator = aGaAnimator;
-            this.OldGraph = aOldState.NewGraph;
-            this.NewGraph = aNewGraph;            
-            this.WorkingAnimation = new CWorkingAnimation(this);
-            this.AnnounceAnimation = new CAnnounceAnimation(this);
-            this.DisappearAnimation = new CDisappearAnimation(this);
-            this.MoveAnimation = new CMoveAnimation(this);
-            this.AppearAnimation = new CAppearAnimation(this);
-            this.GaTransition = new CGaTransition(this, this.Size, this.OldGraph, this.NewGraph);
-         }
-
-         internal readonly CState OldStateNullable;
-         internal readonly CGaAnimator GaAnimator;
-         internal readonly CGaGraph OldGraph;
-         internal readonly CGaGraph NewGraph;
-         internal readonly CGaTransition GaTransition;
-         internal readonly CWorkingAnimation WorkingAnimation;
-         internal readonly CAnnounceAnimation AnnounceAnimation;
-         internal readonly CDisappearAnimation DisappearAnimation;
-         internal readonly CMoveAnimation MoveAnimation;
-         internal readonly CAppearAnimation AppearAnimation;
-         
-         //internal CAnimState AnimState;
-
-         internal IEnumerable<CAnimation> RunningAnimations
-         {
-            get
-            {
-               if (this.OldStateNullable is object
-               && this.OldStateNullable.WorkingAnimation.IsRunning)
-                  yield return this.OldStateNullable.WorkingAnimation;
-               else if (this.WorkingAnimation.IsRunning)
-                  yield return this.WorkingAnimation;
-               if (this.AnnounceAnimation.IsRunning)
-                  yield return this.AnnounceAnimation;
-               if (this.DisappearAnimation.IsRunning)
-                  yield return this.DisappearAnimation;
-               if (this.MoveAnimation.IsRunning)
-                  yield return this.MoveAnimation;
-               if (this.AppearAnimation.IsRunning)
-                  yield return this.AppearAnimation;
-            }
-         }
-
-         internal CPoint Size { get => new CPoint(Math.Max(this.OldGraph.Size.X, this.NewGraph.Size.X),
-                                                  Math.Max(this.OldGraph.Size.Y, this.NewGraph.Size.Y)); }
       }
 
       internal volatile CState State;
@@ -880,107 +814,7 @@ namespace CbChannelStrip.GaAnimator
          return aBusy;
       }
 
-      internal abstract class CAnimation
-      {
-         internal CAnimation(CState aState)
-         {
-            this.State = aState;
-         }
-         internal readonly CState State;
-         
-         internal bool IsRunning { get; private set; }
-
-         internal virtual void OnStart()
-         {
-         }
-
-         internal void Start()
-         {
-            this.FrameLen = 0;
-            this.Stopwatch.Start();
-            this.IsRunning = true;            
-            this.OnStart();
-         }
-
-         internal void Stop()
-         {
-            this.IsRunning = false;
-         }
-          
-         internal void Finish()
-         {
-          //  this.Animate(0);
-            this.Stop();
-            this.OnFinish();            
-         }
-
-         internal virtual void OnFinish()
-         {
-         }
-
-
-         internal  bool RepaintIsPending { get => this.State.GaAnimator.PaintIsPending; }
-         private Stopwatch Stopwatch = new Stopwatch();
-
-         internal void Paint()
-         {
-            this.State.GaAnimator.Paint();
-         }
-
-         private long FrameLen;
-
-         internal virtual long? MaxDuration { get => default(long?); }
-         internal const long MaxDurationDefault = 1000;
-         internal virtual void OnAnimate(long aFrameLen)
-         {
-         }
-
-         internal virtual long TotalElapsed 
-         {
-            get 
-            {
-               var aMaxDuration = this.MaxDuration;
-               var aElapsed = this.Stopwatch.ElapsedMilliseconds;
-               return aElapsed;
-            }
-         }
-         internal double PercentLin { get => this.MaxDuration.Value == 0 ? 1.0d : ((double)Math.Min(this.MaxDuration.Value, this.TotalElapsed)) / ((double)this.MaxDuration.Value); }
-         internal double PercentExp { get => 1.0d - Math.Pow((1.0d - this.PercentLin) * 10, 2) / 100.0d; }
-         internal double Percent { get => this.PercentExp; }
-         internal void Animate(long aElapsed)
-         {
-            this.FrameLen += aElapsed;
-            if (!this.RepaintIsPending)
-            {
-               var aMaxDuration = this.MaxDuration;
-               var aTotalElapsed = this.TotalElapsed;
-               bool aDone;
-               long aFrameLen2;
-               if (aMaxDuration.HasValue
-               && aTotalElapsed > aMaxDuration)
-               {
-                  aFrameLen2 = aTotalElapsed - aMaxDuration.Value;
-                  aDone = true;
-               }
-               else
-               {
-                  aFrameLen2 = this.FrameLen;
-                  aDone = false;
-               }
-               this.OnAnimate(aFrameLen2);
-               this.FrameLen = 0;
-               this.Paint();
-
-               if(aDone)
-               {
-                  this.Finish();
-               }
-            }
-
-         }
-      }
-
-      private void Paint()
+      internal void Paint()
       {         
          this.PaintIsPending = true;
          this.NotifyPaint();
@@ -995,153 +829,321 @@ namespace CbChannelStrip.GaAnimator
          }
       }
 
-      internal sealed class CWorkingAnimation : CAnimation
+   }
+
+   internal abstract class CAnimation
+   {
+      internal CAnimation(CState aState)
       {
-         internal CWorkingAnimation(CState aState) : base(aState)
-         {
-         }
+         this.State = aState;
+      }
+      internal readonly CState State;
 
-         private readonly long Intervall = 250;
+      internal bool IsRunning { get; private set; }
 
-         internal override void OnAnimate(long aFrameLen)
-         {
-            base.OnAnimate(aFrameLen);
-            //this.Wobble(0);
-            if (this.TotalElapsed >= this.Intervall
-            && !object.ReferenceEquals(this.State, this.State.GaAnimator.State))
-            {
-               this.Finish();
-               this.State.GaAnimator.State.AnnounceAnimation.Start();
-            }
-         }
+      internal virtual void OnStart()
+      {
       }
 
-      internal sealed class CAnnounceAnimation : CAnimation
+      internal void Start()
       {
-         internal CAnnounceAnimation(CState aState) : base(aState)
-         {
-         }
+         this.FrameLen = 0;
+         this.Stopwatch.Start();
+         this.IsRunning = true;
+         this.OnStart();
+      }
 
-         private double CalcWobble(long aTime, long aIntervall, double aRange)
-         {
-            var aCycle = (aTime % aIntervall) / 1000.0d;
-            var a1 = (aCycle * Math.PI * 2) + Math.PI / 2.0d;
-            var aWobble1 = Math.Sin(a1);
-            var aWobble2 = (aWobble1 * aRange) + 1.0d;
-            return aWobble2;
-         }
+      internal void Stop()
+      {
+         this.IsRunning = false;
+      }
 
-         private readonly long Intervall = 250;
+      internal void Finish()
+      {
+         //  this.Animate(0);
+         this.Stop();
+         this.OnFinish();
+      }
 
-         internal double Wobble { get => this.IsRunning ? this.CalcWobble(this.TotalElapsed, this.Intervall, 0.075) : 1.0d; }
-
-         internal override void OnAnimate(long aFrameLen)
-         {
-            base.OnAnimate(aFrameLen);
-            foreach (var aMorph in this.State.GaTransition.ChangedPos)
-            {
-               aMorph.Animate(this);
-            }
-            foreach(var aDisappearing in this.State.GaTransition.Disappearings)
-            {
-               aDisappearing.Animate(this);
-            }
-            if (this.TotalElapsed >= this.Intervall)
-            {
-               this.Finish();
-               this.State.GaAnimator.State.DisappearAnimation.Start();
-            }
-         }
-
-         internal override void OnFinish()
-         {
-            base.OnFinish();
-            foreach (var aMorph in this.State.GaTransition.ChangedPos)
-            {
-               aMorph.Animate(this);
-            }
-         }
+      internal virtual void OnFinish()
+      {
       }
 
 
-      internal sealed class CDisappearAnimation : CAnimation
-      {
-         internal CDisappearAnimation(CState aState) : base(aState)
-         {
-         }
+      internal bool RepaintIsPending { get => this.State.GaAnimator.PaintIsPending; }
+      private Stopwatch Stopwatch = new Stopwatch();
 
-         internal override long? MaxDuration => 333;
-         internal override void OnAnimate(long aFrameLen)
+      internal void Paint()
+      {
+         this.State.GaAnimator.Paint();
+      }
+
+      private long FrameLen;
+
+      internal virtual long? MaxDuration { get => default(long?); }
+      internal const long MaxDurationDefault = 1000;
+      internal virtual void OnAnimate(long aFrameLen)
+      {
+      }
+
+      internal virtual long TotalElapsed
+      {
+         get
          {
-            var aShapes = this.State.GaTransition.Disappearings;
-            if (aShapes.IsEmpty())
+            var aMaxDuration = this.MaxDuration;
+            var aElapsed = this.Stopwatch.ElapsedMilliseconds;
+            return aElapsed;
+         }
+      }
+      internal double PercentLin { get => this.MaxDuration.Value == 0 ? 1.0d : ((double)Math.Min(this.MaxDuration.Value, this.TotalElapsed)) / ((double)this.MaxDuration.Value); }
+      internal double PercentExp { get => 1.0d - Math.Pow((1.0d - this.PercentLin) * 10, 2) / 100.0d; }
+      internal double Percent { get => this.PercentExp; }
+      internal void Animate(long aElapsed)
+      {
+         this.FrameLen += aElapsed;
+         if (!this.RepaintIsPending)
+         {
+            var aMaxDuration = this.MaxDuration;
+            var aTotalElapsed = this.TotalElapsed;
+            bool aDone;
+            long aFrameLen2;
+            if (aMaxDuration.HasValue
+            && aTotalElapsed > aMaxDuration)
             {
-               this.Finish();
+               aFrameLen2 = aTotalElapsed - aMaxDuration.Value;
+               aDone = true;
             }
             else
             {
-               var aPercent = this.Percent;
-               foreach (var aShape in aShapes)
-               {
-                  aShape.AnimateDisappear(aPercent);
-               }
+               aFrameLen2 = this.FrameLen;
+               aDone = false;
             }
-         }
-         internal override void OnFinish()
-         {
-            base.OnFinish();
-            this.State.MoveAnimation.Start();
-         }
-      }
+            this.OnAnimate(aFrameLen2);
+            this.FrameLen = 0;
+            this.Paint();
 
-      internal sealed class CMoveAnimation : CAnimation
-      {
-         internal CMoveAnimation(CState aState) : base(aState)
-         {
-         }
-
-
-         internal override long? MaxDuration => (long)this.State.GaTransition.MorphDuration.TotalMilliseconds;
-         internal override void OnAnimate(long aElapsedMilliseconds)
-         {
-            var aProgress = this.Percent;
-            foreach (var aMatrixMorph in this.State.GaTransition.Morphings.Values)
-            {
-               aMatrixMorph.MorphPercent = aProgress;
-               aMatrixMorph.Morph();
-            }            
-         }
-         internal override void OnFinish()
-         {
-            base.OnFinish();
-            this.State.AppearAnimation.Start();
-         }
-      }
-
-      internal sealed class CAppearAnimation : CAnimation
-      {
-         internal CAppearAnimation(CState aState) : base(aState)
-         {
-         }
-
-         internal override long? MaxDuration => 333;
-
-         internal override void OnAnimate(long aFrameLen)
-         {             
-            var aShapes = this.State.GaTransition.Appearings;
-            if(aShapes.IsEmpty())
+            if (aDone)
             {
                this.Finish();
             }
-            else
+         }
+
+      }
+   }
+
+   internal sealed class CWorkingAnimation : CAnimation
+   {
+      internal CWorkingAnimation(CState aState) : base(aState)
+      {
+      }
+
+      private readonly long Intervall = 250;
+
+      internal override void OnAnimate(long aFrameLen)
+      {
+         base.OnAnimate(aFrameLen);
+         //this.Wobble(0);
+         if (this.TotalElapsed >= this.Intervall
+         && !object.ReferenceEquals(this.State, this.State.GaAnimator.State))
+         {
+            this.Finish();
+            this.State.GaAnimator.State.AnnounceAnimation.Start();
+         }
+      }
+   }
+
+   internal sealed class CAnnounceAnimation : CAnimation
+   {
+      internal CAnnounceAnimation(CState aState) : base(aState)
+      {
+      }
+
+      private double CalcWobble(long aTime, long aIntervall, double aRange)
+      {
+         var aCycle = (aTime % aIntervall) / 1000.0d;
+         var a1 = (aCycle * Math.PI * 2) + Math.PI / 2.0d;
+         var aWobble1 = Math.Sin(a1);
+         var aWobble2 = (aWobble1 * aRange) + 1.0d;
+         return aWobble2;
+      }
+
+      private readonly long Intervall = 250;
+
+      internal double Wobble { get => this.IsRunning ? this.CalcWobble(this.TotalElapsed, this.Intervall, 0.075) : 1.0d; }
+
+      internal override void OnAnimate(long aFrameLen)
+      {
+         base.OnAnimate(aFrameLen);
+         foreach (var aMorph in this.State.GaTransition.ChangedPos)
+         {
+            aMorph.Animate(this);
+         }
+         foreach (var aDisappearing in this.State.GaTransition.Disappearings)
+         {
+            aDisappearing.Animate(this);
+         }
+         if (this.TotalElapsed >= this.Intervall)
+         {
+            this.Finish();
+            this.State.GaAnimator.State.DisappearAnimation.Start();
+         }
+      }
+
+      internal override void OnFinish()
+      {
+         base.OnFinish();
+         foreach (var aMorph in this.State.GaTransition.ChangedPos)
+         {
+            aMorph.Animate(this);
+         }
+      }
+   }
+
+   internal sealed class CDisappearAnimation : CAnimation
+   {
+      internal CDisappearAnimation(CState aState) : base(aState)
+      {
+      }
+
+      internal override long? MaxDuration => 333;
+      internal override void OnAnimate(long aFrameLen)
+      {
+         var aShapes = this.State.GaTransition.Disappearings;
+         if (aShapes.IsEmpty())
+         {
+            this.Finish();
+         }
+         else
+         {
+            var aPercent = this.Percent;
+            foreach (var aShape in aShapes)
             {
-               var aPercent = this.Percent;
-               foreach (var aShape in aShapes)
-               {
-                  aShape.AnimateAppear(aPercent);
-               }
+               aShape.AnimateDisappear(aPercent);
             }
          }
+      }
+      internal override void OnFinish()
+      {
+         base.OnFinish();
+         this.State.MoveAnimation.Start();
+      }
+   }
+
+   internal sealed class CMoveAnimation : CAnimation
+   {
+      internal CMoveAnimation(CState aState) : base(aState)
+      {
+      }
+
+
+      internal override long? MaxDuration => (long)this.State.GaTransition.MorphDuration.TotalMilliseconds;
+      internal override void OnAnimate(long aElapsedMilliseconds)
+      {
+         var aProgress = this.Percent;
+         foreach (var aMatrixMorph in this.State.GaTransition.Morphings.Values)
+         {
+            aMatrixMorph.MorphPercent = aProgress;
+            aMatrixMorph.Morph();
+         }
+      }
+      internal override void OnFinish()
+      {
+         base.OnFinish();
+         this.State.AppearAnimation.Start();
+      }
+   }
+
+   internal sealed class CAppearAnimation : CAnimation
+   {
+      internal CAppearAnimation(CState aState) : base(aState)
+      {
+      }
+
+      internal override long? MaxDuration => 333;
+
+      internal override void OnAnimate(long aFrameLen)
+      {
+         var aShapes = this.State.GaTransition.Appearings;
+         if (aShapes.IsEmpty())
+         {
+            this.Finish();
+         }
+         else
+         {
+            var aPercent = this.Percent;
+            foreach (var aShape in aShapes)
+            {
+               aShape.AnimateAppear(aPercent);
+            }
+         }
+      }
+   }
+   internal sealed class CState
+   {
+      internal CState(CGaAnimator aGaAnimator, CGaGraph aGraph)
+      {
+         this.GaAnimator = aGaAnimator;
+         this.OldGraph = aGraph;
+         this.NewGraph = aGraph;
+         this.WorkingAnimation = new CWorkingAnimation(this);
+         this.AnnounceAnimation = new CAnnounceAnimation(this);
+         this.DisappearAnimation = new CDisappearAnimation(this);
+         this.MoveAnimation = new CMoveAnimation(this);
+         this.AppearAnimation = new CAppearAnimation(this);
+         this.GaTransition = new CGaTransition(this, this.Size, aGraph, aGraph);
+      }
+
+      internal CState(CGaAnimator aGaAnimator, CState aOldState, CGaGraph aNewGraph)
+      {
+         this.OldStateNullable = aOldState;
+         this.GaAnimator = aGaAnimator;
+         this.OldGraph = aOldState.NewGraph;
+         this.NewGraph = aNewGraph;
+         this.WorkingAnimation = new CWorkingAnimation(this);
+         this.AnnounceAnimation = new CAnnounceAnimation(this);
+         this.DisappearAnimation = new CDisappearAnimation(this);
+         this.MoveAnimation = new CMoveAnimation(this);
+         this.AppearAnimation = new CAppearAnimation(this);
+         this.GaTransition = new CGaTransition(this, this.Size, this.OldGraph, this.NewGraph);
+      }
+
+      internal readonly CState OldStateNullable;
+      internal readonly CGaAnimator GaAnimator;
+      internal readonly CGaGraph OldGraph;
+      internal readonly CGaGraph NewGraph;
+      internal readonly CGaTransition GaTransition;
+      internal readonly CWorkingAnimation WorkingAnimation;
+      internal readonly CAnnounceAnimation AnnounceAnimation;
+      internal readonly CDisappearAnimation DisappearAnimation;
+      internal readonly CMoveAnimation MoveAnimation;
+      internal readonly CAppearAnimation AppearAnimation;
+
+      //internal CAnimState AnimState;
+
+      internal IEnumerable<CAnimation> RunningAnimations
+      {
+         get
+         {
+            if (this.OldStateNullable is object
+            && this.OldStateNullable.WorkingAnimation.IsRunning)
+               yield return this.OldStateNullable.WorkingAnimation;
+            else if (this.WorkingAnimation.IsRunning)
+               yield return this.WorkingAnimation;
+            if (this.AnnounceAnimation.IsRunning)
+               yield return this.AnnounceAnimation;
+            if (this.DisappearAnimation.IsRunning)
+               yield return this.DisappearAnimation;
+            if (this.MoveAnimation.IsRunning)
+               yield return this.MoveAnimation;
+            if (this.AppearAnimation.IsRunning)
+               yield return this.AppearAnimation;
+         }
+      }
+
+      internal CPoint Size
+      {
+         get => new CPoint(Math.Max(this.OldGraph.Size.X, this.NewGraph.Size.X),
+                           Math.Max(this.OldGraph.Size.Y, this.NewGraph.Size.Y));
       }
    }
 }
