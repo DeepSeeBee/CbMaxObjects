@@ -329,11 +329,7 @@ namespace CbChannelStrip.GaAnimator
          var aDistance = Math.Sqrt(Math.Pow(aDelta.X, 2) + Math.Pow(aDelta.Y, 2));
          var aMaxDistance = this.MaxDistance;
          var aMaxDuration = this.MaxDuration.TotalMilliseconds;
-         // aDistance         aDuration 
-         // -------------- =  --------------
-         // aMaxDistance      aMaxDuration
-         // aDistance * aMaxDuration = aMaxDistance * aDuration
-         var aDuration = (aDistance * aMaxDuration) / aMaxDistance;
+         var aDuration = aDistance / aMaxDistance * aMaxDuration;
          return new TimeSpan(0, 0, 0, 0, (int) aDuration);
       }
 
@@ -504,7 +500,7 @@ namespace CbChannelStrip.GaAnimator
             aAppearings.Add(aNewGraph.ShapesDic[aKey]);
          }
 
-         var aChangedPos = (from aMorph in aMorphings.Values
+         var aAnnouncers = (from aMorph in aMorphings.Values
                             where aMorph.CalcAnnounce()
                             select aMorph).ToArray();
 
@@ -527,7 +523,7 @@ namespace CbChannelStrip.GaAnimator
          this.Disappearings = aDisappearings; 
          this.Appearings = aAppearings;
          this.MorphDuration = aMorphDuration;
-         this.ChangedPos = aChangedPos;
+         this.Announcers = aAnnouncers;
       }
 
       internal readonly CGaState GaState;
@@ -538,7 +534,7 @@ namespace CbChannelStrip.GaAnimator
       internal readonly List<CGaShape> Disappearings;
       internal readonly List<CGaShape> Appearings;
       internal readonly TimeSpan MorphDuration;
-      internal readonly CGaMorph[] ChangedPos;
+      internal readonly CGaMorph[] Announcers;
    }
 
 
@@ -599,10 +595,12 @@ namespace CbChannelStrip.GaAnimator
          this.ExternDebugPrint = aDebugPrint;
          this.OnExc = aOnExc;      
          this.State = new CGaState(this, new CGaGraph(this)); 
-         this.AnimationThread = new System.Threading.Thread(RunAnimationThread);
+         this.AnimationThread = new System.Threading.Thread(RunAnimationThread);         
          this.NotifyResult = aNotifyResult;
-         this.NotifyPaint = aNotifyPaint;         
+         this.NotifyPaint = aNotifyPaint;
+
          this.AnimationThread.Start();
+         this.AnimationStartedEvent.WaitOne();
       }
 
       internal sealed class CGaTestWorkerArgs : CGaWorkerArgs
@@ -687,6 +685,7 @@ namespace CbChannelStrip.GaAnimator
       internal void OnPaintDone()
       {
          this.PaintIsPending = false;
+         this.RunAnimationStep();
       }
 
       internal volatile CGaState State;
@@ -817,40 +816,65 @@ namespace CbChannelStrip.GaAnimator
       internal void Shutdown()
       {
          this.CancelWorkerOnDemand();
-         this.StopAnimationThread = true;
+         this.AnimationStartedEvent.Set();
+         this.AnimationThreadDispatcherFrame.Continue = false;
          this.AnimationThread.Join();
       }
 
-      private bool StopAnimationThread;
+      private readonly AutoResetEvent AnimationStartedEvent = new AutoResetEvent(false);
+
+      internal void OnAnimationStarted()
+      {
+         this.RunAnimationStep();
+      }
 
       internal CPoint Size => this.State.Size;
 
-      private void RunAnimationThread(object aObj)
+      private Dispatcher AnimationThreadDispatcher;
+      private AutoResetEvent AnimationThreadStartedEvent = new AutoResetEvent(false);
+      private Stopwatch AnimationThreadStopWatch = new Stopwatch();
+
+      private void InvokeInAnimationThread(Action aAction)
       {
-         System.Threading.Thread.CurrentThread.Priority = ThreadPriority.AboveNormal;
-         var aStopWatch = new Stopwatch();
-         aStopWatch.Start();
-         while (!this.StopAnimationThread)
+         this.AnimationThreadDispatcher.BeginInvoke(new Action(delegate ()
          {
             try
             {
-               System.Threading.Thread.Sleep(100);
-               if (!this.PaintIsPending)
-               {
-                  var aElapsed = aStopWatch.ElapsedMilliseconds;
-                  aStopWatch.Stop();
-                  aStopWatch.Start();
-                  if (this.Animate(aStopWatch.ElapsedMilliseconds))
-                  {
-                     this.Paint();
-                  }
-               }
+               aAction();
             }
-            catch (Exception aExc)
+            catch(Exception aExc)
             {
-               this.DebugPrint("AnimationThread: " + aExc.Message);
+               this.OnExc(new Exception("Exception in AnimationThread. " + aExc.Message));
             }
-         }
+         }));
+      }
+
+      private void RunAnimationStep()
+      {
+         this.InvokeInAnimationThread(delegate ()
+         {
+            var aStopWatch = this.AnimationThreadStopWatch;
+            var aElapsed = aStopWatch.ElapsedMilliseconds;            
+            aStopWatch.Start();
+            if (this.Animate(aElapsed))
+            {               
+               this.Paint();
+            }
+            else
+            {
+               aStopWatch.Reset();
+            }
+         });
+      }
+
+      private DispatcherFrame AnimationThreadDispatcherFrame;
+      private void RunAnimationThread(object aObj)
+      {
+         System.Threading.Thread.CurrentThread.Priority = ThreadPriority.AboveNormal;
+         this.AnimationThreadDispatcher = Dispatcher.CurrentDispatcher;
+         this.AnimationThreadDispatcherFrame = new DispatcherFrame();
+         this.AnimationStartedEvent.Set();         
+         Dispatcher.PushFrame(this.AnimationThreadDispatcherFrame);        
       }
 
       private bool Animate(long aElapsedMilliseconds)
@@ -858,15 +882,17 @@ namespace CbChannelStrip.GaAnimator
          var aBusy = false;
          var aState = this.State;
          foreach(var aAnimation in aState.RunningAnimations)
-         {
-            aAnimation.Animate(aElapsedMilliseconds);
-            aBusy = true;
+         {            
+            if(aAnimation.Animate(aElapsedMilliseconds))
+            {
+               aBusy = true;
+            }           
          }
          return aBusy;
       }
 
       internal void Paint()
-      {         
+      {
          this.PaintIsPending = true;
          this.NotifyPaint();
       }
@@ -903,6 +929,7 @@ namespace CbChannelStrip.GaAnimator
          this.Stopwatch.Start();
          this.IsRunning = true;
          this.OnStart();
+         this.State.GaAnimator.OnAnimationStarted();
       }
 
       internal void Stop()
@@ -920,7 +947,6 @@ namespace CbChannelStrip.GaAnimator
       internal virtual void OnFinish()
       {
       }
-
 
       internal bool RepaintIsPending { get => this.State.GaAnimator.PaintIsPending; }
       private Stopwatch Stopwatch = new Stopwatch();
@@ -950,8 +976,9 @@ namespace CbChannelStrip.GaAnimator
       internal double PercentLin { get => this.MaxDuration.Value == 0 ? 1.0d : ((double)Math.Min(this.MaxDuration.Value, this.TotalElapsed)) / ((double)this.MaxDuration.Value); }
       internal double PercentExp { get => 1.0d - Math.Pow((1.0d - this.PercentLin) * 10, 2) / 100.0d; }
       internal double Percent { get => this.PercentExp; }
-      internal void Animate(long aElapsed)
+      internal bool Animate(long aElapsed)
       {
+         var aPaint = false;
          this.FrameLen += aElapsed;
          if (!this.RepaintIsPending)
          {
@@ -972,14 +999,14 @@ namespace CbChannelStrip.GaAnimator
             }
             this.OnAnimate(aFrameLen2);
             this.FrameLen = 0;
-            this.Paint();
+            aPaint = true;
 
             if (aDone)
             {
                this.Finish();
             }
          }
-
+         return aPaint;
       }
    }
 
@@ -1026,7 +1053,7 @@ namespace CbChannelStrip.GaAnimator
       internal override void OnAnimate(long aFrameLen)
       {
          base.OnAnimate(aFrameLen);
-         foreach (var aMorph in this.State.GaTransition.ChangedPos)
+         foreach (var aMorph in this.State.GaTransition.Announcers)
          {
             aMorph.Animate(this);
          }
@@ -1044,7 +1071,7 @@ namespace CbChannelStrip.GaAnimator
       internal override void OnFinish()
       {
          base.OnFinish();
-         foreach (var aMorph in this.State.GaTransition.ChangedPos)
+         foreach (var aMorph in this.State.GaTransition.Announcers)
          {
             aMorph.Animate(this);
          }
