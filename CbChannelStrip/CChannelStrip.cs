@@ -74,7 +74,7 @@ namespace CbChannelStrip
             return this.FlowMatrixM;
          }
       }
-      internal override CGwGraph NewGwGraph() => this.ChannelStrip.FlowMatrix.Routings.GwDiagramBuilder.GwGraph;
+      internal override CGwGraph NewGwGraph() => this.FlowMatrix.Routings.GwDiagramBuilder.GwGraph;
       internal override CGaWorkerResult NewWorkerResult(BackgroundWorker aBackgroundWorker) => new CCsWorkerResult(this.ChannelStrip, this.FlowMatrix, aBackgroundWorker, this.NewGaState());
    }
 

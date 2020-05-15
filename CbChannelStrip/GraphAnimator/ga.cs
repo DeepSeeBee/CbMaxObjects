@@ -898,6 +898,7 @@ namespace CbChannelStrip.GaAnimator
 
       internal void Start()
       {
+         //this.State.GaAnimator.DebugPrint(this.GetType().Name + ".Start");
          this.FrameLen = 0;
          this.Stopwatch.Start();
          this.IsRunning = true;
