@@ -23,6 +23,7 @@ namespace CbChannelStrip
    using CbMaxClrAdapter.MGraphics;
    using System.Data.SqlClient;
    using System.ComponentModel;
+   using System.Threading;
 
    internal sealed class CSettings
    {
@@ -32,19 +33,49 @@ namespace CbChannelStrip
 
    internal sealed class CCsWorkerResult : CGaWorkerResult
    {
-      internal CCsWorkerResult(CChannelStrip aChannelStrip, BackgroundWorker aBackgroundWorker, CGaState aNewState) : base(aBackgroundWorker, aNewState)
+      internal CCsWorkerResult(CChannelStrip aChannelStrip, CFlowMatrix aFlowMatrix, BackgroundWorker aBackgroundWorker, CGaState aNewState) : base(aBackgroundWorker, aNewState)
       {
          this.ChannelStrip = aChannelStrip;
+         this.FlowMatrix = aFlowMatrix;
       }
       internal readonly CChannelStrip ChannelStrip;
+      internal readonly CFlowMatrix FlowMatrix;
+      internal override void ReceiveResult()
+      {
+         base.ReceiveResult();
+         this.ChannelStrip.FlowMatrix = this.FlowMatrix;
+         this.ChannelStrip.SendEnabledStates();
+         this.ChannelStrip.SendRoutingMatrix();
+      }
    }
 
    internal sealed class CCsWorkerArgs : CGaWorkerArgs
    {
-      internal CCsWorkerArgs(CChannelStrip aChannelStrip, CGaState aOldState) : base(aOldState) { this.ChannelStrip = aChannelStrip; }
+      internal CCsWorkerArgs(CChannelStrip aChannelStrip, CGaState aOldState) : base(aOldState) 
+      { 
+         this.ChannelStrip = aChannelStrip;
+         this.Matrix = (from aRow in aChannelStrip.Rows from aCell in aRow select aCell).ToArray();
+         this.Settings = aChannelStrip.Settings;
+         this.IoCount = aChannelStrip.IoCount;
+      }
       internal readonly CChannelStrip ChannelStrip;
+      private readonly int[] Matrix;
+      private readonly CSettings Settings;
+      private readonly int IoCount;
+      private CFlowMatrix FlowMatrixM;
+      private CFlowMatrix FlowMatrix
+      {
+         get
+         {
+            if(!(this.FlowMatrixM is object))
+            {
+               this.FlowMatrixM = new CFlowMatrix(this.ChannelStrip.WriteLogInfoMessage, this.Settings, this.IoCount, this.Matrix);
+            }
+            return this.FlowMatrixM;
+         }
+      }
       internal override CGwGraph NewGwGraph() => this.ChannelStrip.FlowMatrix.Routings.GwDiagramBuilder.GwGraph;
-      internal override CGaWorkerResult NewWorkerResult(BackgroundWorker aBackgroundWorker) => new CCsWorkerResult(this.ChannelStrip, aBackgroundWorker, this.NewGaState());
+      internal override CGaWorkerResult NewWorkerResult(BackgroundWorker aBackgroundWorker) => new CCsWorkerResult(this.ChannelStrip, this.FlowMatrix, aBackgroundWorker, this.NewGaState());
    }
 
 
@@ -89,10 +120,10 @@ namespace CbChannelStrip
       private readonly CListInlet Vector2dDumpIn;
       private readonly CListOutlet PWindow2InOut;
 
-      private Int32 IoCount;
+      internal Int32 IoCount;
       private bool RequestRowsPending;
       private Int32 RequestRowIdx;
-      private Int32[][] Rows;
+      internal Int32[][] Rows;
       internal volatile CFlowMatrix FlowMatrix;
 
       private readonly CGaAnimator GraphOverlay;
@@ -129,7 +160,8 @@ namespace CbChannelStrip
          this.Rows = aRows;
          this.IoCount = aIoCount;
          this.UpdateMatrix();
-         this.SendCellState();         
+         this.SendRoutingMatrix();
+         this.SendEnabledStates();
       }
       
       private void RequestRows()
@@ -160,9 +192,9 @@ namespace CbChannelStrip
          }
       }
 
-      private readonly CSettings Settings = new CSettings();
+      internal readonly CSettings Settings = new CSettings();
 
-      private void SendCellState()
+      internal void SendRoutingMatrix()
       {
          foreach (var aRowIdx in Enumerable.Range(0, this.FlowMatrix.IoCount))
          {
@@ -175,22 +207,23 @@ namespace CbChannelStrip
 
       private void UpdateMatrix()
       {
-         var aMatrix = (from aRow in this.Rows from aCell in aRow select aCell).ToArray();         
-         this.FlowMatrix = new CFlowMatrix(this.WriteLogInfoMessage, this.Settings, this.IoCount, aMatrix);
+         this.NextGraph();
+      }
+
+      internal void SendEnabledStates()
+      {
          foreach (var aRowIdx in Enumerable.Range(0, this.FlowMatrix.IoCount))
          {
             foreach (var aColIdx in Enumerable.Range(0, this.FlowMatrix.IoCount))
             {
                var aEnabled = this.FlowMatrix.Enables[this.FlowMatrix.GetCellIdx(aColIdx, aRowIdx)];
                this.MatrixCtrlLeftInOut.Message.Value.Clear();
-               this.MatrixCtrlLeftInOut.Message.Value.Add(aEnabled ? "enablecell" : "disablecell");               
+               this.MatrixCtrlLeftInOut.Message.Value.Add(aEnabled ? "enablecell" : "disablecell");
                this.MatrixCtrlLeftInOut.Message.Value.Add(aColIdx);
                this.MatrixCtrlLeftInOut.Message.Value.Add(aRowIdx);
                this.MatrixCtrlLeftInOut.Send();
             }
          }
-         //this.SendGraphBitmap();
-         this.NextGraph();
       }
 
       private void NextGraph()

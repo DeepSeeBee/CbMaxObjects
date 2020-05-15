@@ -551,6 +551,10 @@ namespace CbChannelStrip.GaAnimator
       }
       internal readonly BackgroundWorker BackgroundWorker;
       internal readonly CGaState NewState;
+      internal virtual void ReceiveResult()
+      {
+         this.NewState.GaAnimator.State = this.NewState;
+      }
    }
 
    internal abstract class CGaWorkerArgs
@@ -804,9 +808,7 @@ namespace CbChannelStrip.GaAnimator
          {
             this.WorkerNullable = default;
             this.RemoveWorkerCallbacks(aResult.BackgroundWorker);
-            //this.State.WorkingAnimation.Finish();
-            this.State = aResult.NewState;
-            //this.State.FadeOutAnimationNullable.Start();
+            aResult.ReceiveResult();
          }
       }
 
