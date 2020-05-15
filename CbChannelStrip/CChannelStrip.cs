@@ -22,6 +22,7 @@ namespace CbChannelStrip
    using CbMaxClrAdapter.Jitter;
    using CbMaxClrAdapter.MGraphics;
    using System.Data.SqlClient;
+   using System.ComponentModel;
 
    internal sealed class CSettings
    {
@@ -31,14 +32,21 @@ namespace CbChannelStrip
 
    internal sealed class CCsWorkerResult : CGaWorkerResult
    {
-      internal CCsWorkerResult(CChannelStrip aChannelStrip, CGwGraph aGwGraph) : base(aGwGraph)
+      internal CCsWorkerResult(CChannelStrip aChannelStrip, BackgroundWorker aBackgroundWorker, CGaState aNewState) : base(aBackgroundWorker, aNewState)
       {
          this.ChannelStrip = aChannelStrip;
       }
-
       internal readonly CChannelStrip ChannelStrip;
-
    }
+
+   internal sealed class CCsWorkerArgs : CGaWorkerArgs
+   {
+      internal CCsWorkerArgs(CChannelStrip aChannelStrip, CGaState aOldState) : base(aOldState) { this.ChannelStrip = aChannelStrip; }
+      internal readonly CChannelStrip ChannelStrip;
+      internal override CGwGraph NewGwGraph() => this.ChannelStrip.FlowMatrix.Routings.GwDiagramBuilder.GwGraph;
+      internal override CGaWorkerResult NewWorkerResult(BackgroundWorker aBackgroundWorker) => new CCsWorkerResult(this.ChannelStrip, aBackgroundWorker, this.NewGaState());
+   }
+
 
    public sealed class CChannelStrip : CMaxObject
    {
@@ -61,7 +69,6 @@ namespace CbChannelStrip
          this.Vector2dDumpIn = new CListInlet(this);
          this.FlowMatrix = new CFlowMatrix(this.WriteLogInfoMessage, this.Settings, 2, new bool[] { false, false, false, false });
          this.GraphOverlay = new CGaAnimator(this.WriteLogErrorMessage,
-                                               () => new CCsWorkerResult(this, this.FlowMatrix.Routings.GwDiagramBuilder.GwGraph),
                                                this.OnGraphAvailable,
                                                this.OnGraphRequestPaint,
                                                this.WriteLogInfoMessage
@@ -86,7 +93,7 @@ namespace CbChannelStrip
       private bool RequestRowsPending;
       private Int32 RequestRowIdx;
       private Int32[][] Rows;
-      private volatile CFlowMatrix FlowMatrix;
+      internal volatile CFlowMatrix FlowMatrix;
 
       private readonly CGaAnimator GraphOverlay;
 
@@ -183,7 +190,13 @@ namespace CbChannelStrip
             }
          }
          //this.SendGraphBitmap();
-         this.GraphOverlay.NextGraph();
+         this.NextGraph();
+      }
+
+      private void NextGraph()
+      {
+         var aWorkerArgs = new CCsWorkerArgs(this, this.GraphOverlay.State);
+         this.GraphOverlay.NextGraph(aWorkerArgs);
       }
 
       private void SendGraphBitmap()

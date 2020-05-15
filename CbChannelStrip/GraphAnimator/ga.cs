@@ -21,8 +21,6 @@ using System.Windows.Threading;
 
 namespace CbChannelStrip.GaAnimator
 {
-   using CWorkerResult = Tuple<BackgroundWorker, CState>;
-
    internal abstract class CGaShape
    {
       internal static readonly Color DefaultColor = Color.Black;
@@ -462,7 +460,7 @@ namespace CbChannelStrip.GaAnimator
 
    internal sealed class CGaTransition
    {
-      internal CGaTransition(CState aGaState, CPoint aSize, CGaGraph aOldGraph, CGaGraph aNewGraph)
+      internal CGaTransition(CGaState aGaState, CPoint aSize, CGaGraph aOldGraph, CGaGraph aNewGraph)
       {
          this.GaState = aGaState;
          var aKeys = aOldGraph.ShapesDic.Keys.Concat(aNewGraph.ShapesDic.Keys);
@@ -532,7 +530,7 @@ namespace CbChannelStrip.GaAnimator
          this.ChangedPos = aChangedPos;
       }
 
-      internal readonly CState GaState;
+      internal readonly CGaState GaState;
       internal readonly CGaGraph OldGraph; 
       internal readonly CGaGraph NewGraph;
       internal readonly CGaGraph MorphGraph;
@@ -546,17 +544,43 @@ namespace CbChannelStrip.GaAnimator
 
    internal abstract class CGaWorkerResult
    {
-      internal CGaWorkerResult(CGwGraph aGwGraph)
+      internal CGaWorkerResult(BackgroundWorker aBackgroundWorker, CGaState aNewState)
       {
-         this.GwGraph = aGwGraph;
+         this.BackgroundWorker = aBackgroundWorker;
+         this.NewState = aNewState;
+      }
+      internal readonly BackgroundWorker BackgroundWorker;
+      internal readonly CGaState NewState;
+   }
+
+   internal abstract class CGaWorkerArgs
+   {
+      internal CGaWorkerArgs(CGaState aOldState)
+      {
+         this.OldState = aOldState;
       }
 
-      internal readonly CGwGraph GwGraph;
+      internal readonly CGaState OldState;
+
+      internal abstract CGwGraph NewGwGraph();
+
+      internal CGaState NewGaState()
+      {
+         var aGaWorkerArgs = this;
+         var aOldState = aGaWorkerArgs.OldState;
+         var aNewGwGraph = this.NewGwGraph(); // this.CalcNewGaWorkerArgs().GwGraph;
+         var aNewGaGraph = new CGaGraph(aOldState.GaAnimator, aNewGwGraph);
+         var aNewState = new CGaState(aOldState.GaAnimator, aOldState, aNewGaGraph);
+         return aNewState;
+      }
+      internal abstract CGaWorkerResult NewWorkerResult(BackgroundWorker aWorker);
    }
+
+
 
    internal sealed class CGaDefaultWorkerResult : CGaWorkerResult
    {
-      internal CGaDefaultWorkerResult(CGwGraph aGwGraph):base(aGwGraph)
+      internal CGaDefaultWorkerResult(BackgroundWorker aBackgroundWorker, CGaState aNewState):base(aBackgroundWorker, aNewState)
       {
       }
    }
@@ -564,20 +588,48 @@ namespace CbChannelStrip.GaAnimator
    public sealed class CGaAnimator
    {
       internal CGaAnimator(Action<Exception> aOnExc,
-                             Func<CGaWorkerResult> aCalcNewGaWorkerResult,
                              Action aNotifyResult,
                              Action aNotifyPaint,
                              Action<string> aDebugPrint)
       {
          this.ExternDebugPrint = aDebugPrint;
          this.OnExc = aOnExc;      
-         this.State = new CState(this, new CGaGraph(this)); 
+         this.State = new CGaState(this, new CGaGraph(this)); 
          this.AnimationThread = new System.Threading.Thread(RunAnimationThread);
-         this.CalcNewGaWorkerResult = aCalcNewGaWorkerResult;
          this.NotifyResult = aNotifyResult;
          this.NotifyPaint = aNotifyPaint;         
          this.AnimationThread.Start();
       }
+
+      internal sealed class CGaTestWorkerArgs : CGaWorkerArgs
+      {
+         internal CGaTestWorkerArgs(int aTestCaseNr, Action<string> aDebugPrint, CGaState aOldState):base(aOldState)
+         {
+            this.TestCaseNr = aTestCaseNr;
+            this.DebugPrint = aDebugPrint;
+         }
+
+         private readonly int TestCaseNr;
+         private readonly Action<string> DebugPrint;
+         internal override CGwGraph NewGwGraph()
+         {
+            switch (this.TestCaseNr % 5)
+            {
+               case 0:
+                  return CFlowMatrix.NewTestFlowMatrix1(this.DebugPrint).Routings.GwDiagramBuilder.GwGraph;
+               case 1:
+                  return CFlowMatrix.NewTestFlowMatrix2(this.DebugPrint).Routings.GwDiagramBuilder.GwGraph;
+               case 2:
+                  return CFlowMatrix.NewTestFlowMatrix3(this.DebugPrint).Routings.GwDiagramBuilder.GwGraph;
+               case 3:
+                  return CFlowMatrix.NewTestFlowMatrix4(this.DebugPrint).Routings.GwDiagramBuilder.GwGraph;
+               default:
+                  return CFlowMatrix.NewTestFlowMatrix5(this.DebugPrint).Routings.GwDiagramBuilder.GwGraph;
+            }
+         }
+         internal override CGaWorkerResult NewWorkerResult(BackgroundWorker aBackgroundWorker) => new CGaDefaultWorkerResult(aBackgroundWorker, this.NewGaState());
+      }
+
 
       public static void Test(Action<string> aFailAction, Action<string> aDebugPrint)
       {
@@ -594,39 +646,21 @@ namespace CbChannelStrip.GaAnimator
          });
          aBackgroundWorker.RunWorkerAsync();
          aBackgroundWorkerReady.WaitOne();
-         var aGraphNr = 0;
          var aOnExc = new Action<Exception>(delegate (Exception aExc) { aDebugPrint(aExc.ToString()); });
          var aGaAnimator = default(CGaAnimator);
          var aNotifyResult = new Action(delegate () { aDispatcher.BeginInvoke(new Action(delegate () { aGaAnimator.ProcessNewGraph(); })); });
          var aNotifyPaint = new Action(delegate () { aDispatcher.BeginInvoke(new Action(delegate () { aGaAnimator.OnPaintDone(); })); });
-         var aCalcNewGwGraph = new Func<CGaWorkerResult>(() =>
-         {
-            switch (aGraphNr % 5)
-            {
-               case 0:
-                  return new CGaDefaultWorkerResult(CFlowMatrix.NewTestFlowMatrix1(aDebugPrint).Routings.GwDiagramBuilder.GwGraph);
-               case 1:
-                  return new CGaDefaultWorkerResult(CFlowMatrix.NewTestFlowMatrix2(aDebugPrint).Routings.GwDiagramBuilder.GwGraph);
-               case 2:
-                  return new CGaDefaultWorkerResult(CFlowMatrix.NewTestFlowMatrix3(aDebugPrint).Routings.GwDiagramBuilder.GwGraph);
-               case 3:
-                  return new CGaDefaultWorkerResult(CFlowMatrix.NewTestFlowMatrix4(aDebugPrint).Routings.GwDiagramBuilder.GwGraph);
-               default:
-                  return new CGaDefaultWorkerResult(CFlowMatrix.NewTestFlowMatrix5(aDebugPrint).Routings.GwDiagramBuilder.GwGraph);
-            }
-         });
-         aGaAnimator = new CGaAnimator(aOnExc, aCalcNewGwGraph, aNotifyResult, aNotifyPaint, aDebugPrint);
+         aGaAnimator = new CGaAnimator(aOnExc, aNotifyResult, aNotifyPaint, aDebugPrint);
          var aDone = false;
          do
          {
             System.Console.WriteLine("CGaAnimatorTest: press nr or anything else to exit.");
             var aKey = System.Console.ReadKey();
             var aKeyText = aKey.KeyChar.ToString();
-            int aNr = 0;
-            if (int.TryParse(aKeyText, out aNr))
+            int aTestCaseNr = 0;
+            if (int.TryParse(aKeyText, out aTestCaseNr))
             {
-               aGraphNr = aNr;
-               aGaAnimator.NextGraph();
+               aGaAnimator.NextGraph(new CGaTestWorkerArgs(aTestCaseNr, aDebugPrint, aGaAnimator.State));
             }
             else
             {
@@ -644,7 +678,6 @@ namespace CbChannelStrip.GaAnimator
       private Action NotifyResult;
       private Action NotifyPaint;
       private Action<Exception> OnExc;
-      private readonly Func<CGaWorkerResult> CalcNewGaWorkerResult;    
       private BackgroundWorker WorkerNullable;
       internal volatile bool PaintIsPending;      
       internal void OnPaintDone()
@@ -652,7 +685,7 @@ namespace CbChannelStrip.GaAnimator
          this.PaintIsPending = false;
       }
 
-      internal volatile CState State;
+      internal volatile CGaState State;
 
       private void CancelWorkerOnDemand()
       {
@@ -668,14 +701,14 @@ namespace CbChannelStrip.GaAnimator
          return object.ReferenceEquals(this.WorkerNullable, aWorker);
       }
 
-      private void StartWorker()
+      private void StartWorker(CGaWorkerArgs aGaWorkerArgs)
       {
          this.CancelWorkerOnDemand();
          var aWorker = new BackgroundWorker();
          this.WorkerNullable = aWorker;
          this.AddWorkerCallbacks(aWorker);         
          this.State.WorkingAnimation.Start();
-         aWorker.RunWorkerAsync(this.State);
+         aWorker.RunWorkerAsync(aGaWorkerArgs);
       }
 
       private void AddWorkerCallbacks(BackgroundWorker aWorker)
@@ -696,52 +729,50 @@ namespace CbChannelStrip.GaAnimator
          }
       }
 
-      internal void NextGraph()
+      internal void NextGraph(CGaWorkerArgs aGaWorkerArgs)
       {
-         this.StartWorker();
+         this.StartWorker(aGaWorkerArgs);
       }
 
       private void BackgroundWorkerDoWork(object aSender, DoWorkEventArgs aArgs)
       {
          System.Threading.Thread.CurrentThread.Priority = ThreadPriority.AboveNormal;
          //System.Threading.Thread.Sleep(3000);
-         var aOldState = (CState)aArgs.Argument;
-         var aNewGwGraph = this.CalcNewGaWorkerResult().GwGraph;
-         var aNewGaGraph = new CGaGraph(this, aNewGwGraph);
-         var aNewState = new CState(this, aOldState, aNewGaGraph);
-         aArgs.Result = aNewState;
+         var aBackgroundWorker = (BackgroundWorker)aSender;
+         var aGaWorkerArgs = (CGaWorkerArgs)aArgs.Argument;
+         var aNewWorkerResult = aGaWorkerArgs.NewWorkerResult(aBackgroundWorker);
+         aArgs.Result = aNewWorkerResult;
       }
-
 
       private void BackgroundWorkerRunWorkerCompleted(object aSender, RunWorkerCompletedEventArgs aArgs)
       {
-         CState aNewState;
+         CGaWorkerResult aGaWorkerResult;
          var aWorker = (BackgroundWorker)aSender;
          if(aArgs.Error is object)
          {
             this.OnExc(new Exception("Error calculating GraphMorph.NewGraph. " + aArgs.Error.Message, aArgs.Error));
-            aNewState = default;
+            aGaWorkerResult = default;
          }
          else if(aArgs.Cancelled)
          {
             // nix.
-            aNewState = default;
+            aGaWorkerResult = default;
          }
          else if(aArgs.Result is object)
          {
-            aNewState = (CState)aArgs.Result;               
+            aGaWorkerResult = (CGaWorkerResult)aArgs.Result;               
          }
          else
          {
             //this.OnExc(new Exception("No result when calculating GraphMorph.NewGraph."));
-            aNewState = default;
+            aGaWorkerResult = default;
          }
-         if(aNewState is object)
+         if(aGaWorkerResult is object)
          {
-            this.AddWorkerResult(new CWorkerResult(aWorker, aNewState));
+            this.AddWorkerResult(aGaWorkerResult);
          }
       }
-      private void AddWorkerResult(CWorkerResult aWorkerResult)
+      private void AddWorkerResult(CGaWorkerResult aWorkerResult)
       {
          lock (this.WorkerResults)
          {
@@ -751,8 +782,8 @@ namespace CbChannelStrip.GaAnimator
       }
 
 
-      private readonly List<CWorkerResult> WorkerResults = new List<Tuple<BackgroundWorker, CState>>();
-      private CWorkerResult PeekWorkerResultNullable()
+      private readonly List<CGaWorkerResult> WorkerResults = new List<CGaWorkerResult>();
+      private CGaWorkerResult PeekWorkerResultNullable()
       {
          lock (this.WorkerResults)
          {
@@ -769,12 +800,12 @@ namespace CbChannelStrip.GaAnimator
       {
          var aResult = this.PeekWorkerResultNullable();
          if(aResult is object
-         && this.IsCurrentWorker(aResult.Item1))
+         && this.IsCurrentWorker(aResult.BackgroundWorker))
          {
             this.WorkerNullable = default;
-            this.RemoveWorkerCallbacks(aResult.Item1);
+            this.RemoveWorkerCallbacks(aResult.BackgroundWorker);
             //this.State.WorkingAnimation.Finish();
-            this.State = aResult.Item2;
+            this.State = aResult.NewState;
             //this.State.FadeOutAnimationNullable.Start();
          }
       }
@@ -851,11 +882,11 @@ namespace CbChannelStrip.GaAnimator
 
    internal abstract class CAnimation
    {
-      internal CAnimation(CState aState)
+      internal CAnimation(CGaState aState)
       {
          this.State = aState;
       }
-      internal readonly CState State;
+      internal readonly CGaState State;
 
       internal bool IsRunning { get; private set; }
 
@@ -951,7 +982,7 @@ namespace CbChannelStrip.GaAnimator
 
    internal sealed class CWorkingAnimation : CAnimation
    {
-      internal CWorkingAnimation(CState aState) : base(aState)
+      internal CWorkingAnimation(CGaState aState) : base(aState)
       {
       }
 
@@ -972,7 +1003,7 @@ namespace CbChannelStrip.GaAnimator
 
    internal sealed class CAnnounceAnimation : CAnimation
    {
-      internal CAnnounceAnimation(CState aState) : base(aState)
+      internal CAnnounceAnimation(CGaState aState) : base(aState)
       {
       }
 
@@ -1019,7 +1050,7 @@ namespace CbChannelStrip.GaAnimator
 
    internal sealed class CDisappearAnimation : CAnimation
    {
-      internal CDisappearAnimation(CState aState) : base(aState)
+      internal CDisappearAnimation(CGaState aState) : base(aState)
       {
       }
 
@@ -1049,7 +1080,7 @@ namespace CbChannelStrip.GaAnimator
 
    internal sealed class CMoveAnimation : CAnimation
    {
-      internal CMoveAnimation(CState aState) : base(aState)
+      internal CMoveAnimation(CGaState aState) : base(aState)
       {
       }
 
@@ -1073,7 +1104,7 @@ namespace CbChannelStrip.GaAnimator
 
    internal sealed class CAppearAnimation : CAnimation
    {
-      internal CAppearAnimation(CState aState) : base(aState)
+      internal CAppearAnimation(CGaState aState) : base(aState)
       {
       }
 
@@ -1096,9 +1127,9 @@ namespace CbChannelStrip.GaAnimator
          }
       }
    }
-   internal sealed class CState
+   internal sealed class CGaState
    {
-      internal CState(CGaAnimator aGaAnimator, CGaGraph aGraph)
+      internal CGaState(CGaAnimator aGaAnimator, CGaGraph aGraph)
       {
          this.GaAnimator = aGaAnimator;
          this.OldGraph = aGraph;
@@ -1111,7 +1142,7 @@ namespace CbChannelStrip.GaAnimator
          this.GaTransition = new CGaTransition(this, this.Size, aGraph, aGraph);
       }
 
-      internal CState(CGaAnimator aGaAnimator, CState aOldState, CGaGraph aNewGraph)
+      internal CGaState(CGaAnimator aGaAnimator, CGaState aOldState, CGaGraph aNewGraph)
       {
          this.OldStateNullable = aOldState;
          this.GaAnimator = aGaAnimator;
@@ -1125,7 +1156,7 @@ namespace CbChannelStrip.GaAnimator
          this.GaTransition = new CGaTransition(this, this.Size, this.OldGraph, this.NewGraph);
       }
 
-      internal readonly CState OldStateNullable;
+      internal readonly CGaState OldStateNullable;
       internal readonly CGaAnimator GaAnimator;
       internal readonly CGaGraph OldGraph;
       internal readonly CGaGraph NewGraph;
