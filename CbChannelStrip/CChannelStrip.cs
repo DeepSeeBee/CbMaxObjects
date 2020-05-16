@@ -66,16 +66,6 @@ namespace CbChannelStrip
       internal readonly CFlowMatrix FlowMatrix;
 
       internal override CGwGraph GwGraph => this.FlowMatrix.Routings.GwDiagramBuilder.GwGraph;
-
-      internal override bool GetAnnounce(CGaNodeMorph aNodeMorph)
-      {
-         return base.GetAnnounce(aNodeMorph);
-      }
-
-      //private CRouting GetRouting(CGaNode aNode)
-      //{
-      //}
-
    }
 
    internal sealed class CCsWorkerArgs : CGaWorkerArgs
