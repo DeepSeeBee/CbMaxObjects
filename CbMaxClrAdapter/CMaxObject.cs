@@ -990,17 +990,18 @@ namespace CbMaxClrAdapter
       {
          this.WriteLogErrorMessage(aExc.ToString());
       }
-      public void WriteLogInfoMessage(string aMsg)
+      private string GetObjMsg(object aObj) => aObj is object ? aObj.ToString() : "<Null>";
+      public void WriteLogInfoMessage(object aObj)
       {
-         this.Marshal.Max_Log_Write(this.PrependDebugTime(aMsg), false);
+         this.Marshal.Max_Log_Write(this.PrependDebugTime(GetObjMsg(aObj)), false);
       }
-      public void WriteLogInfoMessage(string aVarName, string aVarValue)
+      public void WriteLogInfoMessage(string aVarName, object aVarValue)
       {
-         this.WriteLogInfoMessage(aVarName + "=" + aVarValue);
+         this.WriteLogInfoMessage(aVarName + "=" + GetObjMsg(aVarValue));
       }
-      public void WriteLogInfoMessage(string aVarName, IEnumerable<object> aVals)
+      public void WriteLogInfoMessageWithItems(string aVarName, IEnumerable aVals)
       {
-         this.WriteLogInfoMessage(aVarName, "[" + (from aVal in aVals select Convert.ToString(aVal)).JoinString(", ") + "]");
+         this.WriteLogInfoMessage(aVarName, "[" + (from aVal in aVals.Cast<object>() select GetObjMsg(aVal)).JoinString(", ") + "]");
       }
       internal Exception NewDoesNotUnderstandExc(CConnector aConnector, string aWhat) => new Exception(aConnector.GetType().Name + " does not understand " + aWhat);
       internal Exception NewDoesNotUnderstandExc(CConnector aConnector, CMessageTypeEnum aMessageTypeEnum) => this.NewDoesNotUnderstandExc(aConnector, aMessageTypeEnum.ToString());
@@ -1012,7 +1013,7 @@ namespace CbMaxClrAdapter
       /// Can be called from any thread.
       /// Uses Max::QElem mechanism.
       /// </summary>
-      protected void RequestMainTaskActivity(Action aAction)
+      protected void InvokeInMainTask(Action aAction)
       {
          lock(this.MainTaskActivity)
          {
@@ -1067,6 +1068,18 @@ namespace CbMaxClrAdapter
          this.OnShutdown();
       }
       #endregion
+
+      public static bool GetBool(object aNr)
+      {
+         var aInt = Convert.ToInt32(aNr);
+         if (aInt == 0)
+            return false;
+         else if (aInt == 1)
+            return true;
+         else
+            throw new ArgumentException("Does not understand '" + aInt.ToString() + "' as boolean.");
+      }
+
    }
 
    public static class CStringExtensions

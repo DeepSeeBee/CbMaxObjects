@@ -14,6 +14,10 @@ namespace CbMaxClrAdapter.MGraphics
          this.X = aX;
          this.Y = aY;
       }
+      public CPoint(double aXy) : this(aXy, aXy)
+      {
+      }
+
       public CPoint(Tuple<double, double> aTuple):this(aTuple.Item1, aTuple.Item2) { }
       public readonly double X;
       public readonly double Y;
@@ -31,6 +35,7 @@ namespace CbMaxClrAdapter.MGraphics
          double y = this.X * s + this.Y * c;
          return new CPoint(x, y);
       }
+      public override string ToString() => this.X.ToString() + ", " + this.Y.ToString();
    }
    public struct CRectangle
    {
@@ -92,6 +97,8 @@ namespace CbMaxClrAdapter.MGraphics
       public void Fill() => this.Send("fill");
       public void Scale(double aXScale, double aYScale) => this.Send("scale", aXScale, aYScale);
       public void Scale(CPoint aScale) => this.Scale(aScale.X, aScale.Y);
+      public void Translate(double aX, double aY) => this.Send("translate", aX, aY);
+      public void Translate(CPoint aTransform) => this.Translate(aTransform.X, aTransform.Y);
       public CPoint TextMeasure(string aString)
       {
          var aIn = this.DumpIn.Message.Value;

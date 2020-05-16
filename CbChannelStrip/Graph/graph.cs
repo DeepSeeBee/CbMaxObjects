@@ -23,7 +23,7 @@ namespace CbChannelStrip.Graph
             throw new ArgumentException("Can not understand this list. Length must be IoCount^2.");
          this.Settings = aSettings;
          this.IoCount = aIoCount;
-         this.Matrix = aMatrix;
+         this.Actives = aMatrix;
       }
       internal static CFlowMatrix New(Action<string> aDebugPrint, CSettings aSettings, IEnumerable<object> aSpec)
       {
@@ -42,11 +42,11 @@ namespace CbChannelStrip.Graph
       internal readonly CSettings Settings;
       internal readonly Int32 IoCount;
       internal Int32 CellCount { get => this.IoCount * this.IoCount; }
-      internal readonly bool[] Matrix;
+      internal readonly bool[] Actives;
 
       internal int GetCellIdx(int aColumn, int aRow) => aRow * this.IoCount + aColumn;
 
-      public bool this[int aColumn, int aRow] { get => this.Matrix[this.GetCellIdx(aColumn, aRow)]; }
+      public bool this[int aColumn, int aRow] { get => this.Actives[this.GetCellIdx(aColumn, aRow)]; }
 
       internal IEnumerable<int[]> GetFeedbackLoops(int aColumn, int aRow)
       {
@@ -120,7 +120,7 @@ namespace CbChannelStrip.Graph
          var aCoerced = new bool[aCellCount];
          var aNeedsCoerce = false;
          var aEnables = this.Enables;
-         var aMatrix = this.Matrix;
+         var aMatrix = this.Actives;
          for (var aCellIdx = 0; aCellIdx < aCellCount; ++aCellIdx)
          {
             if (aMatrix[aCellIdx]

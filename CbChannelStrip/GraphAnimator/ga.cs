@@ -598,7 +598,6 @@ namespace CbChannelStrip.GaAnimator
       }
    }
 
-
    internal abstract class CGaWorkerResult
    {
       internal CGaWorkerResult(BackgroundWorker aBackgroundWorker, CGaState aNewState)
@@ -751,6 +750,9 @@ namespace CbChannelStrip.GaAnimator
          aDispatcherFrame.Continue = false;
       }
       #endregion
+
+
+      internal Action NotifyEndAnimation = new Action(delegate () { });
 
       private Action<string> ExternDebugPrint;
       internal void DebugPrint(string aMsg) => this.ExternDebugPrint(aMsg); // System.Diagnostics.Debug.Print(aMsg);
@@ -1254,6 +1256,7 @@ namespace CbChannelStrip.GaAnimator
          {
             aShape.Announcing = false;
          }
+         this.State.GaAnimator.NotifyEndAnimation();
       }
    }
    internal abstract class CGaState
