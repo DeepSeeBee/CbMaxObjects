@@ -24,6 +24,7 @@ namespace CbChannelStrip
    using System.Data.SqlClient;
    using System.ComponentModel;
    using System.Threading;
+   using CbChannelStripTest;
 
    internal sealed class CSettings
    {
@@ -33,53 +34,75 @@ namespace CbChannelStrip
 
    internal sealed class CCsWorkerResult : CGaWorkerResult
    {
-      internal CCsWorkerResult(CChannelStrip aChannelStrip, CFlowMatrix aFlowMatrix, BackgroundWorker aBackgroundWorker, CGaState aNewState) : base(aBackgroundWorker, aNewState)
+      internal CCsWorkerResult(CChannelStrip aChannelStrip, BackgroundWorker aBackgroundWorker, CCsState aNewState) : base(aBackgroundWorker, aNewState)
       {
          this.ChannelStrip = aChannelStrip;
-         this.FlowMatrix = aFlowMatrix;
+         this.NewState = aNewState;
       }
+      internal readonly new CCsState NewState;
       internal readonly CChannelStrip ChannelStrip;
-      internal readonly CFlowMatrix FlowMatrix;
       internal override void ReceiveResult()
       {
          base.ReceiveResult();
-         this.ChannelStrip.FlowMatrix = this.FlowMatrix;
+         this.ChannelStrip.CsState = this.NewState;
          this.ChannelStrip.SendEnabledStates();
          this.ChannelStrip.SendRoutingMatrix();
       }
    }
 
+   internal sealed class CCsState : CGaState
+   {
+      internal CCsState(CGaAnimator aGaAnimator, CFlowMatrix aFlowMatrix) : base(aGaAnimator)
+      {
+         this.FlowMatrix = aFlowMatrix;
+         this.Init();
+      }
+      internal CCsState(CGaAnimator aGaAnimator, CCsState aOldState, CFlowMatrix aFlowMatrix):base(aGaAnimator, aOldState)
+      {
+         this.FlowMatrix = aFlowMatrix;
+         this.Init();
+      }
+
+      internal readonly CFlowMatrix FlowMatrix;
+
+      internal override CGwGraph GwGraph => this.FlowMatrix.Routings.GwDiagramBuilder.GwGraph;
+
+      internal override bool GetAnnounce(CGaNodeMorph aNodeMorph)
+      {
+         return base.GetAnnounce(aNodeMorph);
+      }
+
+      //private CRouting GetRouting(CGaNode aNode)
+      //{
+      //}
+
+   }
+
    internal sealed class CCsWorkerArgs : CGaWorkerArgs
    {
-      internal CCsWorkerArgs(CChannelStrip aChannelStrip, CGaState aOldState) : base(aOldState) 
+      internal CCsWorkerArgs(CChannelStrip aChannelStrip, CCsState aOldState) : base(aOldState) 
       { 
          this.ChannelStrip = aChannelStrip;
-         this.Matrix = (from aRow in aChannelStrip.Rows from aCell in aRow select aCell).ToArray();
+         this.OldState = aOldState;
+         this.NewMatrix = (from aRow in aChannelStrip.Rows from aCell in aRow select aCell).ToArray();
          this.Settings = aChannelStrip.Settings;
          this.IoCount = aChannelStrip.IoCount;
       }
+
+      internal readonly new CCsState OldState;
+
       internal readonly CChannelStrip ChannelStrip;
-      private readonly int[] Matrix;
+      private readonly int[] NewMatrix;
       private readonly CSettings Settings;
       private readonly int IoCount;
       private CFlowMatrix FlowMatrixM;
-      private CFlowMatrix FlowMatrix
-      {
-         get
-         {
-            if(!(this.FlowMatrixM is object))
-            {
-               this.FlowMatrixM = new CFlowMatrix(this.ChannelStrip.WriteLogInfoMessage, this.Settings, this.IoCount, this.Matrix);
-            }
-            return this.FlowMatrixM;
-         }
-      }
-      internal override CGwGraph NewGwGraph() => this.FlowMatrix.Routings.GwDiagramBuilder.GwGraph;
-      internal override CGaWorkerResult NewWorkerResult(BackgroundWorker aBackgroundWorker) => new CCsWorkerResult(this.ChannelStrip, this.FlowMatrix, aBackgroundWorker, this.NewGaState());
+      private CFlowMatrix FlowMatrix { get => CLazyLoad.Get(ref this.FlowMatrixM, () => new CFlowMatrix(this.ChannelStrip.WriteLogInfoMessage, this.Settings, this.IoCount, this.NewMatrix)); }
+      private CCsState NewStateM;
+      private CCsState NewState { get => CLazyLoad.Get(ref this.NewStateM, () => new CCsState(this.OldState.GaAnimator, this.OldState, this.FlowMatrix)); }
+      internal override CGaWorkerResult NewWorkerResult(BackgroundWorker aBackgroundWorker) => new CCsWorkerResult(this.ChannelStrip, aBackgroundWorker, this.NewState);  
    }
 
-
-   public sealed class CChannelStrip : CMaxObject
+    public sealed class CChannelStrip : CMaxObject
    {
       public CChannelStrip() 
       {
@@ -98,14 +121,24 @@ namespace CbChannelStrip
          this.Vector2dOut.Support(CMessageTypeEnum.List);
          this.Vector2dOut.Support(CMessageTypeEnum.Bang);
          this.Vector2dDumpIn = new CListInlet(this);
-         this.FlowMatrix = new CFlowMatrix(this.WriteLogInfoMessage, this.Settings, 2, new bool[] { false, false, false, false });
+         //this.FlowMatrix = new CFlowMatrix(this.WriteLogInfoMessage, this.Settings, 2, new bool[] { false, false, false, false });
          this.GraphOverlay = new CGaAnimator(this.WriteLogErrorMessage,
                                                this.OnGraphAvailable,
                                                this.OnGraphRequestPaint,
+                                               aAnimator=>this.SetNewState(aAnimator),
                                                this.WriteLogInfoMessage
                                                );
          this.PWindow2InOut = new CListOutlet(this);
          this.PWindow2InOut.Support(CMessageTypeEnum.List);
+      }
+
+      internal volatile CCsState CsState;
+
+      private CCsState SetNewState(CGaAnimator aAnimator)
+      {
+         var aFlowMatrix = new CFlowMatrix(this.WriteLogInfoMessage, this.Settings, 2, new bool[] { false, false, false, false });
+         this.CsState = new CCsState(aAnimator, aFlowMatrix);
+         return this.CsState;
       }
 
       private CGwDiagramBuilder GwDiagramBuilder { get => this.FlowMatrix.Routings.GwDiagramBuilder; }
@@ -124,7 +157,7 @@ namespace CbChannelStrip
       private bool RequestRowsPending;
       private Int32 RequestRowIdx;
       internal Int32[][] Rows;
-      internal volatile CFlowMatrix FlowMatrix;
+      internal CFlowMatrix FlowMatrix { get => this.CsState.FlowMatrix; }
 
       private readonly CGaAnimator GraphOverlay;
 
@@ -228,7 +261,7 @@ namespace CbChannelStrip
 
       private void NextGraph()
       {
-         var aWorkerArgs = new CCsWorkerArgs(this, this.GraphOverlay.State);
+         var aWorkerArgs = new CCsWorkerArgs(this, this.CsState);
          this.GraphOverlay.NextGraph(aWorkerArgs);
       }
 

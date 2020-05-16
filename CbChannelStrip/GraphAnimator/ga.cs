@@ -1,5 +1,6 @@
 ﻿using CbChannelStrip.Graph;
 using CbChannelStrip.GraphWiz;
+using CbChannelStripTest;
 using CbMaxClrAdapter;
 using CbMaxClrAdapter.Jitter;
 using CbMaxClrAdapter.MGraphics;
@@ -351,15 +352,16 @@ namespace CbChannelStrip.GaAnimator
 
       private readonly TimeSpan MaxDuration = new TimeSpan(0, 0, 0,0, 1500);
       internal abstract bool CalcAnnounce();
-      internal abstract void Morph();
+      internal abstract void Morph();      
       internal abstract CGaShape MorphedShape { get; }
       internal abstract TimeSpan Duration { get; }
       internal abstract CGaShape OldShape { get; }
-
+      internal abstract CGaShape NewShape { get; }
       internal virtual void Animate(CAnnounceAnimation aAnnounceAnimation)
       {
          this.MorphedShape.Animate(aAnnounceAnimation);         
       }
+      internal bool IsAppear;      
    }
 
    internal static class CPointUtil
@@ -383,6 +385,7 @@ namespace CbChannelStrip.GaAnimator
       internal readonly CGaNode NewNode;
       internal readonly CGaNode MorphedNode;
       internal override CGaShape OldShape => this.OldNode;
+      internal override CGaShape NewShape => this.NewNode;
       internal override CGaShape MorphedShape => this.MorphedNode;
       internal override void Morph()
       {
@@ -391,7 +394,7 @@ namespace CbChannelStrip.GaAnimator
          this.MorphedNode.FontColor = this.MorphColor(this.OldNode.FontColor, this.NewNode.FontColor);
       }
       internal override TimeSpan Duration => this.GetMoveDuration(this.OldNode.Pos, this.NewNode.Pos);
-      internal override bool CalcAnnounce() => this.OldNode.Pos != this.NewNode.Pos;
+      internal override bool CalcAnnounce() => this.GaTransition.GaState.GetAnnounce(this); //=> this.OldNode.Pos != this.NewNode.Pos;
       internal override void Animate(CAnnounceAnimation aAnnounceAnimation)
       {
          base.Animate(aAnnounceAnimation);
@@ -444,6 +447,7 @@ namespace CbChannelStrip.GaAnimator
       internal readonly CPoint[] NewPoints;
       internal readonly CGaEdge MorphedEdge;
       internal override CGaShape OldShape => this.OldEdge;
+      internal override CGaShape NewShape => this.NewEdge;
       internal override CGaShape MorphedShape => this.MorphedEdge;
       internal override void Morph()
       {
@@ -451,14 +455,19 @@ namespace CbChannelStrip.GaAnimator
          this.MorphedEdge.Color = this.MorphColor(this.OldEdge.Color, this.NewEdge.Color);
       }
       internal override TimeSpan Duration => this.GetMoveDuration(this.OldPoints, this.NewPoints);
-      internal override bool CalcAnnounce() => !this.OldPoints.SequenceEqual(this.NewPoints);
+      internal override bool CalcAnnounce() => this.GaTransition.GaState.GetAnnounce(this); //  !this.OldPoints.SequenceEqual(this.NewPoints);
    }
 
    internal sealed class CGaTransition
    {
-      internal CGaTransition(CGaState aGaState, CPoint aSize, CGaGraph aOldGraph, CGaGraph aNewGraph)
+      internal CGaTransition(CGaState aGaState)
       {
          this.GaState = aGaState;
+         var aSize = aGaState.Size;
+
+         var aOldGraph = aGaState.OldGraph;
+         var aNewGraph = aGaState.NewGraph;
+
          var aKeys = aOldGraph.ShapesDic.Keys.Concat(aNewGraph.ShapesDic.Keys);
          var aMorphingKeys = from aKey in aKeys
                            where aOldGraph.ShapesDic.ContainsKey(aKey)
@@ -488,7 +497,6 @@ namespace CbChannelStrip.GaAnimator
          var aMorphDuration = aMorphings.IsEmpty() ? default(TimeSpan) : (from aMorph in aMorphings.Values select aMorph.Duration).Max();
 
 
-
          var aDisappearings = new List<CGaShape>();
          foreach (var aKey in aDisappearingKeys)
          {
@@ -499,11 +507,10 @@ namespace CbChannelStrip.GaAnimator
          {
             aAppearings.Add(aNewGraph.ShapesDic[aKey]);
          }
-
-         var aAnnouncers = (from aMorph in aMorphings.Values
-                            where aMorph.CalcAnnounce()
-                            select aMorph).ToArray();
-
+         foreach(var aMorph in aMorphings.Values)
+         {
+            aMorph.IsAppear = aAppearings.Contains(aMorph.NewShape);
+         }
          var aMorphShapes1 = (from aMorph in aMorphings.Values select aMorph.MorphedShape);
          var aMorphShapes2 = (aDisappearings.Concat(aAppearings).Concat(aMorphShapes1));
          var aMorpShapes = (from aGroup in aMorphShapes2.GroupBy(aShape => aShape) select aGroup.Key).ToArray();
@@ -523,6 +530,11 @@ namespace CbChannelStrip.GaAnimator
          this.Disappearings = aDisappearings; 
          this.Appearings = aAppearings;
          this.MorphDuration = aMorphDuration;
+
+         // Nachdem alle daten verfügbar sind:
+         var aAnnouncers = (from aMorph in aMorphings.Values
+                            where aMorph.CalcAnnounce()
+                            select aMorph).ToArray();
          this.Announcers = aAnnouncers;
       }
 
@@ -551,6 +563,7 @@ namespace CbChannelStrip.GaAnimator
       {
          this.NewState.GaAnimator.State = this.NewState;
       }
+      
    }
 
    internal abstract class CGaWorkerArgs
@@ -560,23 +573,9 @@ namespace CbChannelStrip.GaAnimator
          this.OldState = aOldState;
       }
 
-      internal readonly CGaState OldState;
-
-      internal abstract CGwGraph NewGwGraph();
-
-      internal CGaState NewGaState()
-      {
-         var aGaWorkerArgs = this;
-         var aOldState = aGaWorkerArgs.OldState;
-         var aNewGwGraph = this.NewGwGraph(); // this.CalcNewGaWorkerArgs().GwGraph;
-         var aNewGaGraph = new CGaGraph(aOldState.GaAnimator, aNewGwGraph);
-         var aNewState = new CGaState(aOldState.GaAnimator, aOldState, aNewGaGraph);
-         return aNewState;
-      }
-      internal abstract CGaWorkerResult NewWorkerResult(BackgroundWorker aWorker);
+      internal readonly CGaState OldState;  
+      internal abstract CGaWorkerResult NewWorkerResult(BackgroundWorker aWorker);      
    }
-
-
 
    internal sealed class CGaDefaultWorkerResult : CGaWorkerResult
    {
@@ -590,30 +589,53 @@ namespace CbChannelStrip.GaAnimator
       internal CGaAnimator(Action<Exception> aOnExc,
                              Action aNotifyResult,
                              Action aNotifyPaint,
+                             Func<CGaAnimator, CGaState> aNewState,
                              Action<string> aDebugPrint)
       {
          this.ExternDebugPrint = aDebugPrint;
-         this.OnExc = aOnExc;      
-         this.State = new CGaState(this, new CGaGraph(this)); 
+         this.OnExc = aOnExc;
+         this.State = aNewState(this); // new CGaState(this, new CGaGraph(this)); 
          this.AnimationThread = new System.Threading.Thread(RunAnimationThread);         
          this.NotifyResult = aNotifyResult;
          this.NotifyPaint = aNotifyPaint;
 
          this.AnimationThread.Start();
-         this.AnimationStartedEvent.WaitOne();
+         this.AnimationThreadStartedEvent.WaitOne();
       }
 
-      internal sealed class CGaTestWorkerArgs : CGaWorkerArgs
+      #region Test
+      internal sealed class CTestState :  CGaState
       {
-         internal CGaTestWorkerArgs(int aTestCaseNr, Action<string> aDebugPrint, CGaState aOldState):base(aOldState)
+         internal CTestState(CGaAnimator aAnimator) : base(aAnimator)
          {
-            this.TestCaseNr = aTestCaseNr;
-            this.DebugPrint = aDebugPrint;
+            this.GwGraphM = new CGwGraph();
+            this.Init();
          }
 
+         internal CTestState(CGaAnimator aAnimator, CTestState aOldState, CGwGraph aGwGraph) : base(aAnimator, aOldState)
+         {
+            this.GwGraphM = aGwGraph;
+            this.Init();
+         }
+
+         private CGwGraph GwGraphM;
+         internal override CGwGraph GwGraph { get; }
+      }
+      internal sealed class CGaTestWorkerArgs : CGaWorkerArgs
+      {
+         internal CGaTestWorkerArgs(int aTestCaseNr, Action<string> aDebugPrint, CTestState aOldState):base(aOldState)
+         {
+            this.OldTestState = aOldState;            
+            this.TestCaseNr = aTestCaseNr;
+            this.DebugPrint = aDebugPrint;
+            this.NewTestState = new CTestState(aOldState.GaAnimator, aOldState, this.NewGwGraph());
+         }
+
+         private readonly CTestState OldTestState;
+         private readonly CTestState NewTestState;
          private readonly int TestCaseNr;
          private readonly Action<string> DebugPrint;
-         internal override CGwGraph NewGwGraph()
+         private CGwGraph NewGwGraph()
          {
             switch (this.TestCaseNr % 5)
             {
@@ -629,7 +651,7 @@ namespace CbChannelStrip.GaAnimator
                   return CFlowMatrix.NewTestFlowMatrix5(this.DebugPrint).Routings.GwDiagramBuilder.GwGraph;
             }
          }
-         internal override CGaWorkerResult NewWorkerResult(BackgroundWorker aBackgroundWorker) => new CGaDefaultWorkerResult(aBackgroundWorker, this.NewGaState());
+         internal override CGaWorkerResult NewWorkerResult(BackgroundWorker aBackgroundWorker) => new CGaDefaultWorkerResult(aBackgroundWorker, this.NewTestState);
       }
 
 
@@ -652,8 +674,14 @@ namespace CbChannelStrip.GaAnimator
          var aGaAnimator = default(CGaAnimator);
          var aNotifyResult = new Action(delegate () { aDispatcher.BeginInvoke(new Action(delegate () { aGaAnimator.ProcessNewGraph(); })); });
          var aNotifyPaint = new Action(delegate () { aDispatcher.BeginInvoke(new Action(delegate () { aGaAnimator.OnPaintDone(); })); });
-         aGaAnimator = new CGaAnimator(aOnExc, aNotifyResult, aNotifyPaint, aDebugPrint);
+         var aTestState = default(CTestState);
+         aGaAnimator = new CGaAnimator(aOnExc, 
+                                       aNotifyResult, 
+                                       aNotifyPaint, 
+                                       aAnimator=> { aTestState = new CTestState(aAnimator); return aTestState; }, 
+                                       aDebugPrint);
          var aDone = false;
+         
          do
          {
             System.Console.WriteLine("CGaAnimatorTest: press nr or anything else to exit.");
@@ -662,7 +690,7 @@ namespace CbChannelStrip.GaAnimator
             int aTestCaseNr = 0;
             if (int.TryParse(aKeyText, out aTestCaseNr))
             {
-               aGaAnimator.NextGraph(new CGaTestWorkerArgs(aTestCaseNr, aDebugPrint, aGaAnimator.State));
+               aGaAnimator.NextGraph(new CGaTestWorkerArgs(aTestCaseNr, aDebugPrint, aTestState));
             }
             else
             {
@@ -673,6 +701,7 @@ namespace CbChannelStrip.GaAnimator
          aGaAnimator.Shutdown();
          aDispatcherFrame.Continue = false;
       }
+      #endregion
 
       private Action<string> ExternDebugPrint;
       internal void DebugPrint(string aMsg) => this.ExternDebugPrint(aMsg); // System.Diagnostics.Debug.Print(aMsg);
@@ -816,12 +845,9 @@ namespace CbChannelStrip.GaAnimator
       internal void Shutdown()
       {
          this.CancelWorkerOnDemand();
-         this.AnimationStartedEvent.Set();
          this.AnimationThreadDispatcherFrame.Continue = false;
          this.AnimationThread.Join();
       }
-
-      private readonly AutoResetEvent AnimationStartedEvent = new AutoResetEvent(false);
 
       internal void OnAnimationStarted()
       {
@@ -873,7 +899,7 @@ namespace CbChannelStrip.GaAnimator
          System.Threading.Thread.CurrentThread.Priority = ThreadPriority.AboveNormal;
          this.AnimationThreadDispatcher = Dispatcher.CurrentDispatcher;
          this.AnimationThreadDispatcherFrame = new DispatcherFrame();
-         this.AnimationStartedEvent.Set();         
+         this.AnimationThreadStartedEvent.Set();         
          Dispatcher.PushFrame(this.AnimationThreadDispatcherFrame);        
       }
 
@@ -1157,47 +1183,62 @@ namespace CbChannelStrip.GaAnimator
          }
       }
    }
-   internal sealed class CGaState
+   internal abstract class CGaState
    {
-      internal CGaState(CGaAnimator aGaAnimator, CGaGraph aGraph)
+      internal CGaState(CGaAnimator aGaAnimator)
       {
-         this.GaAnimator = aGaAnimator;
-         this.OldGraph = aGraph;
-         this.NewGraph = aGraph;
+         this.GaAnimator = aGaAnimator;         
          this.WorkingAnimation = new CWorkingAnimation(this);
          this.AnnounceAnimation = new CAnnounceAnimation(this);
          this.DisappearAnimation = new CDisappearAnimation(this);
          this.MoveAnimation = new CMoveAnimation(this);
          this.AppearAnimation = new CAppearAnimation(this);
-         this.GaTransition = new CGaTransition(this, this.Size, aGraph, aGraph);
       }
 
-      internal CGaState(CGaAnimator aGaAnimator, CGaState aOldState, CGaGraph aNewGraph)
+      internal CGaState(CGaAnimator aGaAnimator, CGaState aOldState)
       {
          this.OldStateNullable = aOldState;
          this.GaAnimator = aGaAnimator;
          this.OldGraph = aOldState.NewGraph;
-         this.NewGraph = aNewGraph;
          this.WorkingAnimation = new CWorkingAnimation(this);
          this.AnnounceAnimation = new CAnnounceAnimation(this);
          this.DisappearAnimation = new CDisappearAnimation(this);
          this.MoveAnimation = new CMoveAnimation(this);
-         this.AppearAnimation = new CAppearAnimation(this);
-         this.GaTransition = new CGaTransition(this, this.Size, this.OldGraph, this.NewGraph);
+         this.AppearAnimation = new CAppearAnimation(this);         
+      }
+
+      protected virtual void Init()
+      {
+         this.GaTransition = new CGaTransition(this);
       }
 
       internal readonly CGaState OldStateNullable;
       internal readonly CGaAnimator GaAnimator;
-      internal readonly CGaGraph OldGraph;
-      internal readonly CGaGraph NewGraph;
-      internal readonly CGaTransition GaTransition;
+      private CGaGraph OldGraphM;
+      internal CGaGraph OldGraph 
+      { 
+         get => CLazyLoad.Get(ref this.OldGraphM, () => this.NewGraph);
+         private set
+         {
+            if (this.OldGraphM is object)
+               throw new InvalidOperationException();
+            this.OldGraphM = value;
+         }
+      }
+
+
+      internal CGaTransition GaTransition;
       internal readonly CWorkingAnimation WorkingAnimation;
       internal readonly CAnnounceAnimation AnnounceAnimation;
       internal readonly CDisappearAnimation DisappearAnimation;
       internal readonly CMoveAnimation MoveAnimation;
       internal readonly CAppearAnimation AppearAnimation;
+      internal virtual bool GetAnnounce(CGaNodeMorph aNodeMorph) => false;
+      internal virtual bool GetAnnounce(CGaEdgeMorph aEdgeMorph) => false;
 
-      //internal CAnimState AnimState;
+      internal abstract CGwGraph GwGraph { get; }
+      private CGaGraph GaGraphM;
+      internal CGaGraph NewGraph { get => CLazyLoad.Get(ref this.GaGraphM, () => new CGaGraph(this.GaAnimator, this.GwGraph)); }
 
       internal IEnumerable<CAnimation> RunningAnimations
       {

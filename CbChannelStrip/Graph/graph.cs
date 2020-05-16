@@ -386,7 +386,7 @@ namespace CbChannelStrip.Graph
 
       private readonly CFlowMatrix FlowMatrix;
 
-      private readonly CRouting[] Routings;
+      internal readonly CRouting[] Routings;
 
       public IEnumerator<CRouting> GetEnumerator() => this.Routings.AsEnumerable().GetEnumerator();
       IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
@@ -423,6 +423,24 @@ namespace CbChannelStrip.Graph
             return this.GwDiagramBuilderM;
          }
       }
+
+      internal enum CRoutingUseCase
+      {
+         In,
+         Out,
+         Channel
+      }
+
+      internal Tuple<CRoutingUseCase, CRouting> GetByName(string aName)
+      {
+         if (aName == CRouting.InName)
+            return new Tuple<CRoutingUseCase, CRouting>(CRoutingUseCase.In, this.Routings[0]);
+         else if (aName == CRouting.OutName)
+            return new Tuple<CRoutingUseCase, CRouting>(CRoutingUseCase.Out, this.Routings[0]);
+         else
+            return new Tuple<CRoutingUseCase, CRouting>(CRoutingUseCase.Channel, this.Routings[int.Parse(aName.TrimStart(CRouting.ChannelNamePrefix))]);
+      }
+
    }
 
    internal abstract class CRouting
@@ -451,9 +469,12 @@ namespace CbChannelStrip.Graph
          }
       }
 
-      internal string Name { get => "R" + this.InputIdx; }
-      internal string NameForInput { get => this.InputIdx == 0 ? "in" : this.Name; }
-      internal string NameForOutput { get => this.InputIdx == 0 ? "out" : this.Name; }
+      internal const char ChannelNamePrefix = 'C';
+      internal const string InName = "in";
+      internal const string OutName = "out";
+      internal string Name { get => ChannelNamePrefix + this.InputIdx.ToString(); }
+      internal string NameForInput { get => this.InputIdx == 0 ? InName : this.Name; }
+      internal string NameForOutput { get => this.InputIdx == 0 ? OutName : this.Name; }
 
       internal int NodeLatency { get => this.InputIdx; } // TODO.
 

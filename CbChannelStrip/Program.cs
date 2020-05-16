@@ -8,6 +8,22 @@ using System.Threading.Tasks;
 
 namespace CbChannelStripTest
 {
+   internal static class CLazyLoad
+   {
+      internal static T Get<T>(ref T aVar, Func<T> aLoad) where T : class
+      {
+         if(!(aVar is object))
+            aVar = aLoad();
+         return aVar;
+      }
+      internal static T Get<T>(ref T? aVar, Func<T> aLoad) where T : struct
+      {
+         if (!(aVar.HasValue))
+            aVar = aLoad();
+         return aVar.Value;
+      }
+   }
+
     class Program
     {
         static void Main(string[] args)
