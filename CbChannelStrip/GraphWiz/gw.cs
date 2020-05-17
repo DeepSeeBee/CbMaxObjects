@@ -521,18 +521,19 @@ namespace CbChannelStrip.GraphWiz
          this.AddLine("{");
          ++this.Indent;
          var aWithOutputs = from aTest in aRoutings
-                            where aTest.InputIdx == 0
+                            where aTest.IoIdx == 0
                                || this.DiagramLayout.GetIncludeInDiagram(aTest)
                             select aTest;
 
          foreach (var aRouting in aWithOutputs)
          {
-            if (aRouting.InputIdx == 0)
+            if (aRouting.IoIdx == 0)
             {
                this.AddLines(aRouting.NameForInput, 0, aRouting.IsLinkedToOutput, "invtriangle");
-               this.AddLines(aRouting.NameForOutput, aRouting.InternalInputLatency, aRouting.IsLinkedToOutput, "triangle");
+               this.AddLines(aRouting.NameForOutput, aRouting.OutLatency, aRouting.IsLinkedToOutput, "triangle");
             }
             else
+
             {
                this.AddLines(aRouting.NameForInput, aRouting.OutLatency, aRouting.IsLinkedToInput && aRouting.IsLinkedToOutput, "Mcircle");
             }
@@ -551,7 +552,8 @@ namespace CbChannelStrip.GraphWiz
          {
             foreach (var aOutput in aRouting.Outputs)
             {
-               if (aOutput.IsLinkedToSomething)
+               if (aOutput.IsLinkedToSomething
+               && ! aOutput.IsMainOut)
                {
                   var aEdge = aRouting.NameForInput + " -> " + aOutput.NameForOutput;
                   var aAttribs = new Dictionary<string, string>();
@@ -575,6 +577,9 @@ namespace CbChannelStrip.GraphWiz
       }
 
       public override void Visit(CNullRouting aNullRouting)
+      {
+      }
+      public override void Visit(CMainOut aMainOut)
       {
       }
 

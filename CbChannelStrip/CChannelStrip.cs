@@ -452,14 +452,12 @@ namespace CbChannelStrip
       #region NodeLatencyMs
       private void SendNodeLatencyMs(double aLatency)
       {
-         this.ChannelStrip.WriteLogInfoMessage(nameof(this.SendNodeLatencyMs), this.Number);
          this.SendToChannel("latency", "node", "ms", aLatency);
          this.NodeLatencyMsSent = aLatency;
       }
       private double? NodeLatencyMsSent;
       private void SendNodeLatencyMsOnDemand()
       {
-         this.ChannelStrip.WriteLogInfoMessage(nameof(this.SendNodeLatencyMsOnDemand), this.Number);
          var aLatency = this.SamplesToMs(this.Routing.NodeLatency);
          if (!this.NodeLatencyMsSent.HasValue
          || this.NodeLatencyMsSent.Value != aLatency)
@@ -628,10 +626,7 @@ namespace CbChannelStrip
                }
             }
          }
-      }
-
-      public IEnumerable<int> OutputLatencies { get=>from aConnector in this.Connectors select aConnector.Routing.OutLatency; }
-
+      }     
       internal void UpdateRoutings()
       {
          foreach(var aChannel in this.Connectors)
@@ -683,7 +678,7 @@ namespace CbChannelStrip
          this.FocusedRouting = aFocusedRouting;
       }
       private readonly int? FocusedRouting;
-      internal override bool GetIncludeInDiagram(CRouting aRouting) => base.GetIncludeInDiagram(aRouting) || this.FocusedRouting == aRouting.InputIdx;
+      internal override bool GetIncludeInDiagram(CRouting aRouting) => base.GetIncludeInDiagram(aRouting) || this.FocusedRouting == aRouting.IoIdx;
    }
 
    public sealed class CChannelStrip : CMaxObject
@@ -726,7 +721,7 @@ namespace CbChannelStrip
          this.TimerThread = new CTimerThread(this);
          { // InitLatencyUpdateTimer
             var aRunInMainThread = true;
-            var aInterval = new TimeSpan(0, 0, 0, 0, 3000);
+            var aInterval = new TimeSpan(0, 0, 0, 0, 500);
             var aPriority = System.Windows.Threading.DispatcherPriority.Background;
             this.LatencyUpdateTimer = new CTimer(this.TimerThread, 
                                                  aInterval, aPriority,
@@ -1266,10 +1261,8 @@ namespace CbChannelStrip
       }
       private void OnSampleRate(CInlet aInlet, string aPrefix, CReadonlyListData aList)
       {
-         this.WriteLogInfoMessage(nameof(this.OnSampleRate));
          var aSampleRate = Convert.ToInt32(aList.ElementAt(0));
          this.SampleRate = aSampleRate;
-         this.WriteLogInfoMessage("ChannelStrip.SampleRate", this.SampleRate);
          this.UpdateFlowMatrixSampleRate();
          this.SendLatenciesOnDemand();
       }
@@ -1289,21 +1282,14 @@ namespace CbChannelStrip
             foreach(var aConnector in aConnectors.Connectors)
             {
                aConnector.RequestNewLatency();
-
-               //this.WriteLogInfoMessage("Channel", aConnector.Number);
-               //this.WriteLogInfoMessage("NewNodeLatency", aConnector.NewNodeLatency);
-               //this.WriteLogInfoMessage("NodeLatency", aConnector.NodeLatency);
                if (aConnector.NewNodeLatency.HasValue
                && aConnector.NewNodeLatency.Value != aConnector.NodeLatency)
                {
-                  //this.WriteLogInfoMessage(">>>>>>>>>>>>>>>>>>>>>>>> LatencyChanged");
                   aLatencyChanged = true;
                }
             }
-
             if(aLatencyChanged)
             {
-               this.WriteLogInfoMessage("LatencyChanged");
                this.Connectors.CommitNewNodeLatencies(); 
                this.SendLatenciesOnDemand();
             }
