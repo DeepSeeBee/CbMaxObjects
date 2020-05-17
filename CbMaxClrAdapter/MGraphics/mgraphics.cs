@@ -21,6 +21,7 @@ namespace CbMaxClrAdapter.MGraphics
       public CPoint(Tuple<double, double> aTuple):this(aTuple.Item1, aTuple.Item2) { }
       public readonly double X;
       public readonly double Y;
+      public double Hypothenuse { get => Math.Sqrt((this.X * this.X) + (this.Y * this.Y)); }
       public static bool operator ==(CPoint aLhs, CPoint aRhs) => aLhs.X == aRhs.X && aLhs.Y == aRhs.Y;
       public static bool operator !=(CPoint aLhs, CPoint aRhs) => !(aLhs == aRhs);
       public static CPoint operator -(CPoint aLhs, CPoint aRhs) => new CPoint(aLhs.X - aRhs.X, aLhs.Y - aRhs.Y);
@@ -36,7 +37,40 @@ namespace CbMaxClrAdapter.MGraphics
          return new CPoint(x, y);
       }
       public override string ToString() => this.X.ToString() + ", " + this.Y.ToString();
+      public CPoint Min(CPoint aRhs) => new CPoint(Math.Min(this.X, aRhs.X), Math.Min(this.Y, aRhs.Y));
+      public CPoint Max(CPoint aRhs) => new CPoint(Math.Max(this.X, aRhs.X), Math.Max(this.Y, aRhs.Y));
    }
+
+   public struct CTriangle
+   {
+      public CTriangle(CPoint p1, CPoint p2, CPoint p3)
+      {
+         this.P1 = p1;
+         this.P2 = p2;
+         this.P3 = p3;
+      }
+
+      public readonly CPoint P1;
+      public readonly CPoint P2;
+      public readonly CPoint P3;
+
+      private double sign(CPoint p1, CPoint p2, CPoint p3)
+      {
+         return (p1.X - p3.X) * (p2.Y - p3.Y) - (p2.X - p3.X) * (p1.Y - p3.Y);
+      }
+
+      public bool Contains(CPoint pt)
+      {
+         var d1 = sign(pt, this.P1, this.P2);
+         var d2 = sign(pt, this.P2, this.P3);
+         var d3 = sign(pt, this.P3, this.P1);
+         var n = (d1 < 0) || (d2 < 0) || (d3 < 0);
+         var p = (d1 > 0) || (d2 > 0) || (d3 > 0);
+         var aContains = !(n && p);
+         return aContains;
+      }
+   }
+
    public struct CRectangle
    {
       public CRectangle(double aX, double aY, double aDx, double aDy)
@@ -46,17 +80,30 @@ namespace CbMaxClrAdapter.MGraphics
          this.Dx = aDx;
          this.Dy = aDy;
       }
+      public CRectangle (CPoint aPos, CPoint aSize) : this(aPos.X, aPos.Y, aSize.X, aSize.Y) { }
       public readonly double X;
       public readonly double Y;
       public readonly double Dx;
       public readonly double Dy;
-
-      public CRectangle Center(CPoint aSize) => new CRectangle(this.X + (this.Dx - aSize.X) / 2.0d,
+      public CPoint TopLeft { get => new CPoint(this.X, this.Y); }
+      public CPoint TopRight { get => new CPoint(this.X + this.Dx, this.Y); }
+      public CPoint BottomLeft { get => new CPoint(this.X, this.Y + this.Dy); }
+      public CPoint BottomRight { get => new CPoint(this.X + this.Dx, this.Y + this.Dy); }
+      public double Diagonale { get => new CPoint(this.Dx, this.Dy).Hypothenuse; }
+      public CRectangle CenterRect(CPoint aSize) => new CRectangle(this.X + (this.Dx - aSize.X) / 2.0d,
                                                                this.Y + (this.Dy - aSize.Y) / 2.0d,
                                                                aSize.X,
                                                                aSize.Y
                                                                );
       public CPoint Pos { get => new CPoint(this.X, this.Y); }
+
+      public bool Contains(CPoint aPoint) => this.X <= aPoint.X
+                                          && this.Y <= aPoint.Y
+                                          && this.X + this.Dx >= aPoint.X
+                                          && this.Y + this.Dy >= aPoint.Y
+                                          ;
+      public CPoint CenterPoint { get => new CPoint(this.X + this.Dx / 2.0d, this.Y + this.Dy / 2.0d); }
+      public override string ToString() => "CRectangle: " + this.X + ";" + this.Y + ";" + this.Dx + ";" + this.Dy;
    }
 
    public class CVector2dPainter 
@@ -121,13 +168,12 @@ namespace CbMaxClrAdapter.MGraphics
        
       public void Text(string aText)
       {
-         //this.DumpIn.MaxObject.WriteLogInfoMessage("CVector2dPainter.Text(\"" + aText  + "\")");
          this.Send("show_text", aText);
       }
       public void Text(string aText, CRectangle aRect)
       {
          var aSize = this.TextMeasure(aText);
-         var aPos = aRect.Center(aSize).Pos;
+         var aPos = aRect.CenterRect(aSize).Pos;
          this.MoveTo(aPos);
          this.Text(aText);
       }

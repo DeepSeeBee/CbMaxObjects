@@ -26,9 +26,10 @@ namespace CbChannelStrip
    using System.Threading;
    using CbChannelStripTest;
 
-   internal sealed class CSettings
+   internal abstract class CGwDiagramLayout
    {
       internal DirectoryInfo GraphWizInstallDir { get =>new DirectoryInfo(@"C:\Program Files (x86)\Graphviz2.38\"); }
+      internal virtual bool GetIncludeInDiagram(CRouting aRouting) => aRouting.IsLinkedToSomething;
    }
 
 
@@ -50,20 +51,37 @@ namespace CbChannelStrip
 
    internal sealed class CCsState : CGaState
    {
-      internal CCsState(CGaAnimator aGaAnimator, CFlowMatrix aFlowMatrix) : base(aGaAnimator)
+      internal CCsState(CGaAnimator aGaAnimator, CChannelStrip aChannelStrip, CFlowMatrix aFlowMatrix) : base(aGaAnimator)
       {
-         this.FlowMatrix = aFlowMatrix;
+         this.ChannelStrip = aChannelStrip;
+         this.FlowMatrix = aFlowMatrix;         
          this.Init();
       }
-      internal CCsState(CGaAnimator aGaAnimator, CCsState aOldState, CFlowMatrix aFlowMatrix):base(aGaAnimator, aOldState)
+      internal CCsState(CGaAnimator aGaAnimator, CChannelStrip aChannelStrip, CCsState aOldState, CFlowMatrix aFlowMatrix):base(aGaAnimator, aOldState)
       {
+         this.ChannelStrip = aChannelStrip;
          this.FlowMatrix = aFlowMatrix;
          this.Init();
       }
 
       internal readonly CFlowMatrix FlowMatrix;
+      internal readonly CChannelStrip ChannelStrip;
 
       internal override CGwGraph GwGraph => this.FlowMatrix.Routings.GwDiagramBuilder.GwGraph;
+      internal override bool GetIsFocused(CGaShape aShape)
+      {
+         var aFocusedConnector = this.ChannelStrip.Connectors.FocusedConnector;
+         if (aShape is CGaNode
+         && aFocusedConnector is object)
+         {          
+            var aRouting = aFocusedConnector.Routing;
+            var aFocused = aShape.Name == aRouting.NameForInput
+                        || aShape.Name == aRouting.NameForOutput
+                         ;
+            return aFocused;
+         }
+         return base.GetIsFocused(aShape);
+      }
    }
 
    internal sealed class CCsWorkerArgs : CGaWorkerArgs
@@ -73,7 +91,7 @@ namespace CbChannelStrip
          this.ChannelStrip = aChannelStrip;
          this.OldState = aOldState;
          this.NewMatrix = (from aRow in aChannelStrip.Rows from aCell in aRow select aCell).ToArray();
-         this.Settings = aChannelStrip.Settings;
+         this.DiagramLayout = this.ChannelStrip.NewDiagramLayout();
          this.IoCount = aChannelStrip.IoCount;
       }
 
@@ -81,12 +99,18 @@ namespace CbChannelStrip
 
       internal readonly CChannelStrip ChannelStrip;
       private readonly int[] NewMatrix;
-      private readonly CSettings Settings;
+      private readonly CGwDiagramLayout DiagramLayout;
       private readonly int IoCount;
+
+      private CFlowMatrix NewFlowMatrix()
+      {
+         var aFlowMatrix = new CFlowMatrix(this.ChannelStrip.WriteLogInfoMessage, this.DiagramLayout, this.IoCount, this.NewMatrix);
+         return aFlowMatrix;
+      }
       private CFlowMatrix FlowMatrixM;
-      private CFlowMatrix FlowMatrix { get => CLazyLoad.Get(ref this.FlowMatrixM, () => new CFlowMatrix(this.ChannelStrip.WriteLogInfoMessage, this.Settings, this.IoCount, this.NewMatrix)); }
+      private CFlowMatrix FlowMatrix { get => CLazyLoad.Get(ref this.FlowMatrixM, () => this.NewFlowMatrix()); }
       private CCsState NewStateM;
-      private CCsState NewState { get => CLazyLoad.Get(ref this.NewStateM, () => new CCsState(this.OldState.GaAnimator, this.OldState, this.FlowMatrix)); }
+      private CCsState NewState { get => CLazyLoad.Get(ref this.NewStateM, () => new CCsState(this.OldState.GaAnimator, this.ChannelStrip, this.OldState, this.FlowMatrix)); }
       internal override CGaWorkerResult NewWorkerResult(BackgroundWorker aBackgroundWorker) => new CCsWorkerResult(this.ChannelStrip, aBackgroundWorker, this.NewState);  
    }
 
@@ -94,13 +118,13 @@ namespace CbChannelStrip
    {
       internal CCsConnector(CCsConnectors aConnectors, int aNumber)
       {
-         this.Connctors = aConnectors;
+         this.Conncectors = aConnectors;
          this.Number = aNumber;
          this.InMatrix = new CCsChannelInMatrx(this);
          this.OutMatrix = new CCsChannelOutMatrx(this);
       }
          
-      internal readonly CCsConnectors Connctors;
+      internal readonly CCsConnectors Conncectors;
 
       /// <summary>
       /// 0            = Input
@@ -109,7 +133,7 @@ namespace CbChannelStrip
       /// </summary>
       internal readonly int Number;
 
-      private COutlet Outlet { get => this.Connctors.ChannelStrip.ToChannelsOut; }
+      private COutlet Outlet { get => this.Conncectors.ChannelStrip.ToChannelsOut; }
 
       internal void SendToChannel(params object[] aValues)
       {
@@ -118,7 +142,6 @@ namespace CbChannelStrip
       }
 
       internal void Receive(CList aList)=>this.Receive(aList.Value.ToArray());
-      
       internal void Receive(params object[] aValues)
       {
          if(aValues.Length >= 3)
@@ -129,11 +152,11 @@ namespace CbChannelStrip
                switch(aValues[2].ToString())
                {
                   case "from":
-                     this.Connctors.FocusedConnector = this;
+                     this.Conncectors.FocusedConnector = this;
                      break;
 
                   case "to":
-                     this.Connctors.FocusedConnector.ConnectTo(this);
+                     this.Conncectors.FocusedConnector.ConnectTo(this);
                      break;
 
                   case "inputs":
@@ -187,10 +210,10 @@ namespace CbChannelStrip
          }
       }
 
-      private bool GetOutputActive(int aOutputIdx) => this.ChannelStrip.GetOutputActive(this.Number, aOutputIdx);
-      private void SetOutputActive(int aOutputIdx, bool aActive) => this.ChannelStrip.SetOutputActive(this.Number, aOutputIdx, aActive);
-
-      private void SetInputActive(int aInputIdx, bool aActive)=> this.ChannelStrip.SetInputActive(this.Number, aInputIdx, aActive);
+      internal bool GetOutputActive(int aOutputIdx) => this.ChannelStrip.GetOutputActive(this.Number, aOutputIdx);
+      internal void SetOutputActive(int aOutputIdx, bool aActive) => this.ChannelStrip.SetOutputActive(this.Number, aOutputIdx, aActive);
+      internal bool GetInputActive(int aOutputIdx) => this.ChannelStrip.GetInputActive(this.Number, aOutputIdx);
+      internal void SetInputActive(int aInputIdx, bool aActive)=> this.ChannelStrip.SetInputActive(this.Number, aInputIdx, aActive);
 
 
       private Int32 FocusPanelBorder
@@ -204,6 +227,7 @@ namespace CbChannelStrip
       internal void Focus()
       {
          this.FocusPanelBorder = 4;
+         this.ChannelStrip.Paint();
       }
 
       internal void Unfocus()
@@ -229,7 +253,7 @@ namespace CbChannelStrip
          }
       }
 
-      internal CChannelStrip ChannelStrip { get => this.Connctors.ChannelStrip; }
+      internal CChannelStrip ChannelStrip { get => this.Conncectors.ChannelStrip; }
       internal bool IsOutput { get => this.Number == this.ChannelStrip.IoCount; }
       internal CFlowMatrix FlowMatrix { get => this.ChannelStrip.FlowMatrix; }
       internal CRoutings Routings { get => this.FlowMatrix.Routings; }
@@ -407,15 +431,14 @@ namespace CbChannelStrip
          this.Channels = aChannels.ToArray();   
 
          foreach (var aConnector in this.Connectors)
-            aConnector.SendInitialValues();
-
-         this.FocusedConnector = this.MainIo;
+            aConnector.SendInitialValues();        
       }
 
       internal readonly CChannelStrip ChannelStrip;
       internal readonly CCsMainIo MainIo;
       internal readonly CCsChannel[] Channels;
 
+      internal CCsConnector GetConnectorByIdx(int aIdx) => this.Connectors.ElementAt(aIdx);
       internal IEnumerable<CCsConnector> Connectors
       {
          get
@@ -426,6 +449,15 @@ namespace CbChannelStrip
          }
       }
 
+      internal int? FocusedConnectorIdx
+      {
+         get
+         {
+            var aFocused = this.FocusedConnector;
+            var aIdx = aFocused is object ? new int?(aFocused.Number) : default(int?);
+            return aIdx;
+         }
+      }
       private CCsConnector FocusedConnectorM;
       internal CCsConnector FocusedConnector
       {
@@ -434,14 +466,23 @@ namespace CbChannelStrip
          {
             if (!object.ReferenceEquals(this.FocusedConnectorM, value))
             {
+               bool aNextGraph = false;
                if(this.FocusedConnectorM is object)
                {
+                  if (!this.FocusedConnectorM.Routing.IsLinkedToSomething)
+                     aNextGraph = true;
                   this.FocusedConnectorM.Unfocus();
                }
                if(value is object)
                {
                   this.FocusedConnectorM = value;
                   this.FocusedConnectorM.Focus();
+                  if (!this.FocusedConnectorM.Routing.IsLinkedToSomething)
+                     aNextGraph = true;
+               }
+               if(aNextGraph)
+               {
+                  this.ChannelStrip.NextGraph();
                }
             }
          }
@@ -460,8 +501,19 @@ namespace CbChannelStrip
          foreach (var aConnector in this.Connectors)
             aConnector.Receive(aList);
       }
+
+      internal CCsConnector GetConnectorByName(string aName) => (from aTest in this.Connectors where aTest.Routing.NameForInput == aName || aTest.Routing.NameForOutput == aName select aTest).Single();
    }
 
+   internal sealed class CCsDiagramLayout : CGwDiagramLayout
+   {
+      internal CCsDiagramLayout(int? aFocusedRouting)
+      {
+         this.FocusedRouting = aFocusedRouting;
+      }
+      private readonly int? FocusedRouting;
+      internal override bool GetIncludeInDiagram(CRouting aRouting) => base.GetIncludeInDiagram(aRouting) || this.FocusedRouting == aRouting.InputIdx;
+   }
 
    public sealed class CChannelStrip : CMaxObject
    {
@@ -493,8 +545,10 @@ namespace CbChannelStrip
          this.PWindow2InOut.Support(CMessageTypeEnum.List);
          this.FromChannelsIn = new CListInlet(this);
          this.FromChannelsIn.Action = this.OnFromChannelsIn;
-         this.ToChannelsOut = new CListOutlet(this);
-         this.Connectors = new CCsConnectors(this);
+         this.ToChannelsOut = new CListOutlet(this);         
+         this.ControlIn = new CListInlet(this);
+         this.ControlIn.SetPrefixedListAction("mouse", this.OnMouseIn);
+         this.ControlIn.SetPrefixedListAction("key", this.OnKeyIn);
       }
 
       private volatile CCsState CsState;
@@ -516,8 +570,9 @@ namespace CbChannelStrip
       private CCsState SetNewState(CGaAnimator aAnimator, int aIoCount)
       {
          var aMatrix = new bool[aIoCount * aIoCount];
-         var aFlowMatrix = new CFlowMatrix(this.WriteLogInfoMessage, this.Settings, aIoCount, aMatrix);
-         this.CsState = new CCsState(aAnimator, aFlowMatrix);
+         var aDiagramLayout = this.NewDiagramLayout();
+         var aFlowMatrix = new CFlowMatrix(this.WriteLogInfoMessage, aDiagramLayout, aIoCount, aMatrix);
+         this.CsState = new CCsState(aAnimator, this, aFlowMatrix);
          return this.CsState;
       }
 
@@ -535,8 +590,10 @@ namespace CbChannelStrip
 
       private readonly CListInlet FromChannelsIn;
       internal readonly CListOutlet ToChannelsOut;
+      private readonly CListInlet ControlIn;
 
-      private CCsConnectors Connectors;
+      private CCsConnectors ConnectorsM;
+      internal CCsConnectors Connectors { get => CLazyLoad.Get(ref this.ConnectorsM, () => new CCsConnectors(this)); private set { this.ConnectorsM = value; } }
 
       internal Int32 IoCount;
       private bool RequestRowsPending;
@@ -550,7 +607,7 @@ namespace CbChannelStrip
       {
          this.InvokeInMainTask(delegate ()
          {
-            this.SendGraphOverlay();
+            this.Paint();
             this.GaAnimator.OnPaintDone();
          });
       }
@@ -580,6 +637,7 @@ namespace CbChannelStrip
          this.SendRoutingMatrix();
          this.SendMatrixEnabledStates();
          this.Connectors.UpdateRoutings();
+         this.Connectors.FocusedConnector = this.Connectors.MainIo;
       }
       
       private void RequestRows()
@@ -609,8 +667,6 @@ namespace CbChannelStrip
             this.UpdateMatrix();
          }
       }
-
-      internal readonly CSettings Settings = new CSettings();
 
       internal void SendRoutingMatrix()
       {
@@ -643,8 +699,7 @@ namespace CbChannelStrip
             }
          }
       }
-
-      private void NextGraph()
+      internal void NextGraph()
       {
          var aWorkerArgs = new CCsWorkerArgs(this, this.CsState);
          this.GaAnimator.NextGraph(aWorkerArgs);
@@ -665,7 +720,7 @@ namespace CbChannelStrip
       }
 
       private CPoint ImageSize { get => this.GaAnimator.Size; }
-      private CPoint CanvasSize = new CPoint(900, 900);
+      private CPoint CanvasSize = new CPoint(1000, 1000);
 
       private void SendPWindow2Size()
       {
@@ -681,7 +736,7 @@ namespace CbChannelStrip
 
       private CPoint Translate { get => new CPoint(10,10); }
       private CPoint Scale { get => this.CanvasSize / this.ImageSize; } 
-      private void SendGraphOverlay()
+      internal void Paint()
       {
          var aPainter = new CVector2dPainter(this.Vector2dDumpIn, this.Vector2dOut);
          aPainter.Clear();
@@ -730,11 +785,8 @@ namespace CbChannelStrip
             this.UpdateMatrix();
          }
       }
-      internal bool GetOutputActive(int aChannelNr, int aOutputIdx)
-      {
-         return this.Rows[aChannelNr][aOutputIdx] == 1;
-      }
-
+      internal bool GetOutputActive(int aChannelNr, int aOutputIdx)=> this.Rows[aChannelNr][aOutputIdx] == 1;
+      internal bool GetInputActive(int aChannelNr, int aInputIdx) => this.Rows[aInputIdx][aChannelNr] == 1;
 
       private void OnFromChannelsIn(CInlet aInlet, CList aList)
       {
@@ -755,6 +807,106 @@ namespace CbChannelStrip
       }
 
       internal bool GetRoutingEnabled(int aInput, int aOutput) => this.FlowMatrix.Enables[this.FlowMatrix.GetCellIdx(aOutput, aInput)];
+
+      private CPoint MousePos;
+
+      private IEnumerable<CGaShape> GetShapes(CPoint aPoint)=> this.GaAnimator.State.GaTransition.MorphGraph.GetShapes(aPoint);
+
+      CPoint CursorPos { get => this.GaAnimator.CursorPos; set => this.GaAnimator.CursorPos = value; }
+
+      private void OnKeyIn(CInlet aInlet, string aFirstItem, CReadonlyListData aRemainingItems)
+      {
+         var aValues = aRemainingItems.ToArray();
+         this.InvokeInMainTask(delegate ()
+         {
+         if (aValues.Length >= 1)
+         {
+            var aEvent = aValues[0];
+            switch (aEvent)
+            {
+               case "press":
+                  if (aValues.Length >= 3)
+                  {
+                        var aModifier = Convert.ToInt32(aValues[1]);
+                        var aInputOrOutput = (aModifier & 512) > 0;
+                        var aKey = Convert.ToInt32(aValues[2]);
+                        var aNorm0 = 48;
+                        var aNorm9 = 57;
+                        var aPad0 = -33;
+                        var aPad9 = -42;
+                        var aIsNorm = aKey >= aNorm0 && aKey <= aNorm9;
+                        var aIsPad = aKey <= aPad0 && aKey >= aPad9;
+                        var aOffset = aIsNorm
+                                    ? new int?(aNorm0)
+                                    : aIsPad
+                                    ? new int?(aPad0)
+                                    : new int?()
+                                    ;
+                        if (aOffset.HasValue)
+                        {
+                           var aIoIdx = aKey - aOffset.Value;
+                           var aConnectors = this.Connectors;
+                           var aFocused = aConnectors.GetConnectorByIdx(aIoIdx);
+                           aConnectors.FocusedConnector = aFocused;                  
+                        }              
+                     }
+                     break;
+               }
+            }
+         });
+      }
+      private void OnMouseIn(CInlet aInlet, string aFirstItem, CReadonlyListData aRemainingItems)
+      {
+         var aValues = aRemainingItems.ToArray();
+         this.InvokeInMainTask(delegate ()
+         {
+            if (aValues.Length >= 1)
+            {
+               if (aValues[0].Equals("move")
+                  && aValues.Length >= 3)
+               {
+                  var aX = Convert.ToDouble(aValues[1]);
+                  var aY = Convert.ToDouble(aValues[2]);
+                  this.MousePos = new CPoint(aX, aY);
+                  this.GaAnimator.CursorPos = this.MousePos;
+                  this.Paint();
+               }
+               else if (aValues[0].Equals("button")
+                     && aValues.Length >= 3)
+               {
+                  var aButton = Convert.ToInt32(aValues[1]);
+                  var aEvent = (CMouseButtonEventEnum)Enum.Parse(typeof(CMouseButtonEventEnum), aValues[2].ToString(), true);
+                  switch (aEvent)
+                  {
+                     case CMouseButtonEventEnum.Down:
+                        {
+                           var aShapes = this.GetShapes(this.MousePos);
+                           if(!aShapes.IsEmpty())
+                           {
+                              var aShape = aShapes.Last();
+                              if (aShape is CGaNode)
+                              {
+                                 this.Connectors.FocusedConnector = this.Connectors.GetConnectorByName(aShape.Name);
+                              }
+                           }
+                        }
+                        break;
+
+                     case CMouseButtonEventEnum.Up:
+                        break;
+                  }
+               }
+            }
+         });
+      }
+
+      internal CGwDiagramLayout NewDiagramLayout() => new CCsDiagramLayout(this.ConnectorsM is object ? this.Connectors.FocusedConnectorIdx : default(int?));
+
+      private enum CMouseButtonEventEnum
+      {
+         Up,
+         Down
+      }
    }
 
    public sealed class CTestObject : CMaxObject

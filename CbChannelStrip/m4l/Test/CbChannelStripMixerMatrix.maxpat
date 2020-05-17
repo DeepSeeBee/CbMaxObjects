@@ -55,7 +55,7 @@
 					"outlettype" : [ "multichannelsignal", "" ],
 					"patching_rect" : [ 1664.0, 109.0, 185.0, 234.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 1200.0, 1.0, 169.0, 213.0 ],
+					"presentation_rect" : [ 1200.0, 1.0, 169.0, 152.0 ],
 					"viewvisibility" : 1
 				}
 
@@ -101,7 +101,7 @@
 					"outlettype" : [ "multichannelsignal", "" ],
 					"patching_rect" : [ 124.0, 111.0, 179.0, 248.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 3.0, 1.0, 169.0, 211.0 ],
+					"presentation_rect" : [ 3.0, 1.0, 169.0, 150.0 ],
 					"viewvisibility" : 1
 				}
 
@@ -171,7 +171,7 @@
 					"outlettype" : [ "multichannelsignal", "" ],
 					"patching_rect" : [ 1474.0, 111.0, 185.0, 234.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 1029.0, 1.0, 169.0, 213.0 ],
+					"presentation_rect" : [ 1029.0, 1.0, 169.0, 152.0 ],
 					"viewvisibility" : 1
 				}
 
@@ -194,7 +194,7 @@
 					"outlettype" : [ "multichannelsignal", "" ],
 					"patching_rect" : [ 1243.0, 115.0, 193.0, 230.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 858.0, 1.0, 169.0, 213.0 ],
+					"presentation_rect" : [ 858.0, 1.0, 169.0, 152.0 ],
 					"viewvisibility" : 1
 				}
 
@@ -217,7 +217,7 @@
 					"outlettype" : [ "multichannelsignal", "" ],
 					"patching_rect" : [ 1025.666666666666515, 115.0, 175.0, 230.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 687.0, 1.0, 169.0, 213.0 ],
+					"presentation_rect" : [ 687.0, 1.0, 169.0, 152.0 ],
 					"viewvisibility" : 1
 				}
 
@@ -240,7 +240,7 @@
 					"outlettype" : [ "multichannelsignal", "" ],
 					"patching_rect" : [ 805.000000000000114, 115.0, 173.0, 230.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 516.0, 1.0, 169.0, 211.0 ],
+					"presentation_rect" : [ 516.0, 1.0, 169.0, 150.0 ],
 					"viewvisibility" : 1
 				}
 
@@ -263,7 +263,7 @@
 					"outlettype" : [ "multichannelsignal", "" ],
 					"patching_rect" : [ 574.666666666666515, 111.0, 177.0, 230.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 345.0, 1.0, 169.0, 211.0 ],
+					"presentation_rect" : [ 345.0, 1.0, 169.0, 150.0 ],
 					"viewvisibility" : 1
 				}
 
@@ -286,7 +286,7 @@
 					"outlettype" : [ "multichannelsignal", "" ],
 					"patching_rect" : [ 351.666666666666629, 111.0, 173.0, 230.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 174.0, 1.0, 169.0, 211.0 ],
+					"presentation_rect" : [ 174.0, 1.0, 169.0, 150.0 ],
 					"viewvisibility" : 1
 				}
 
@@ -681,7 +681,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-24", 1 ],
-					"order" : 2,
+					"order" : 1,
 					"source" : [ "obj-26", 0 ]
 				}
 
@@ -697,7 +697,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-30", 1 ],
-					"order" : 1,
+					"order" : 2,
 					"source" : [ "obj-26", 0 ]
 				}
 

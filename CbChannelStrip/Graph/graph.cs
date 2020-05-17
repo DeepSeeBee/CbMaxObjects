@@ -13,33 +13,20 @@ namespace CbChannelStrip.Graph
    internal sealed class CFlowMatrix
    {
       internal readonly Action<string> DebugPrint;
-      internal CFlowMatrix(Action<string> aDebugPrint, CSettings aSettings, Int32 aIoCount, params int[] aMatrix) : this(aDebugPrint, aSettings, aIoCount, (from aItem in aMatrix select aItem != 0).ToArray())
+      internal CFlowMatrix(Action<string> aDebugPrint, CGwDiagramLayout aSettings, Int32 aIoCount, params int[] aMatrix) : this(aDebugPrint, aSettings, aIoCount, (from aItem in aMatrix select aItem != 0).ToArray())
       {
          this.DebugPrint = aDebugPrint;
       }
-      internal CFlowMatrix(Action<string> aDebugPrint, CSettings aSettings, Int32 aIoCount, params bool[] aMatrix)
+      internal CFlowMatrix(Action<string> aDebugPrint, CGwDiagramLayout aSettings, Int32 aIoCount, params bool[] aMatrix)
       {
+         this.DebugPrint = aDebugPrint;
          if (aMatrix.Length != aIoCount * aIoCount)
             throw new ArgumentException("Can not understand this list. Length must be IoCount^2.");
          this.Settings = aSettings;
          this.IoCount = aIoCount;
          this.Actives = aMatrix;
       }
-      internal static CFlowMatrix New(Action<string> aDebugPrint, CSettings aSettings, IEnumerable<object> aSpec)
-      {
-         try
-         {
-            var aIoCount = Convert.ToInt32(aSpec.ElementAt(0));
-            var aMatrix = from aItem in aSpec.Skip(1) select Convert.ToInt32(aItem);
-            return new CFlowMatrix(aDebugPrint, aSettings, aIoCount, aMatrix.ToArray());
-         }
-         catch (Exception aExc)
-         {
-            throw new Exception("Can not understand this list. " + aExc.Message);
-         }
-      }
-
-      internal readonly CSettings Settings;
+      internal readonly CGwDiagramLayout Settings;
       internal readonly Int32 IoCount;
       internal Int32 CellCount { get => this.IoCount * this.IoCount; }
       internal readonly bool[] Actives;
@@ -228,9 +215,13 @@ namespace CbChannelStrip.Graph
             aFail(aTestId);
          }
       }
+      private sealed class CTestDiagramLayout  : CGwDiagramLayout
+      {
+         internal CTestDiagramLayout() { }
+      }
       public static void Test(Action<string> aFailTest, Action<string> aDebugPrint)
       {
-         var aSettings = new CSettings();
+         var aSettings = new CTestDiagramLayout();
          Test("c6090373-ca31-409c-968b-cc954900d29f", new CFlowMatrix(aDebugPrint, aSettings, 5,
                                                                      0, 0, 0, 0, 0,
                                                                      0, 0, 0, 0, 0,
@@ -298,7 +289,7 @@ namespace CbChannelStrip.Graph
       }
 
 
-      internal static CFlowMatrix NewTestFlowMatrix1(Action<string> aDebugPrint) => new CFlowMatrix(aDebugPrint, new CSettings(), 7,
+      internal static CFlowMatrix NewTestFlowMatrix1(Action<string> aDebugPrint) => new CFlowMatrix(aDebugPrint, new CTestDiagramLayout(), 7,
                                                                       0, 1, 1, 0, 0, 0, 0,
                                                                       0, 0, 0, 0, 0, 0, 1,
                                                                       0, 0, 0, 1, 1, 0, 0,
@@ -307,7 +298,7 @@ namespace CbChannelStrip.Graph
                                                                       0, 0, 0, 0, 0, 0, 1,
                                                                       1, 0, 0, 0, 0, 0, 0
                                                                       );
-      internal static CFlowMatrix NewTestFlowMatrix2(Action<string> aDebugPrint) => new CFlowMatrix(aDebugPrint, new CSettings(), 7,
+      internal static CFlowMatrix NewTestFlowMatrix2(Action<string> aDebugPrint) => new CFlowMatrix(aDebugPrint, new CTestDiagramLayout(), 7,
                                                                 1, 1, 0, 0, 0, 0, 0,
                                                                 1, 0, 0, 0, 0, 0, 0,
                                                                 0, 0, 0, 0, 0, 0, 0,
@@ -317,7 +308,7 @@ namespace CbChannelStrip.Graph
                                                                 0, 0, 0, 0, 0, 0, 0
                                                                 );
 
-      internal static CFlowMatrix NewTestFlowMatrix3(Action<string> aDebugPrint) => new CFlowMatrix(aDebugPrint, new CSettings(), 7,
+      internal static CFlowMatrix NewTestFlowMatrix3(Action<string> aDebugPrint) => new CFlowMatrix(aDebugPrint, new CTestDiagramLayout(), 7,
                                                                 1, 1, 0, 0, 0, 0, 0,
                                                                 0, 0, 0, 0, 0, 0, 0,
                                                                 0, 0, 0, 0, 0, 0, 0,
@@ -326,7 +317,7 @@ namespace CbChannelStrip.Graph
                                                                 0, 0, 0, 0, 0, 0, 0,
                                                                 0, 0, 0, 0, 0, 0, 0
                                                                 );
-      internal static CFlowMatrix NewTestFlowMatrix4(Action<string> aDebugPrint) => new CFlowMatrix(aDebugPrint, new CSettings(), 7,
+      internal static CFlowMatrix NewTestFlowMatrix4(Action<string> aDebugPrint) => new CFlowMatrix(aDebugPrint, new CTestDiagramLayout(), 7,
                                                                 1, 1, 0, 0, 0, 1, 0,
                                                                 1, 0, 0, 1, 0, 0, 0,
                                                                 0, 0, 0, 0, 0, 0, 1,
@@ -335,7 +326,7 @@ namespace CbChannelStrip.Graph
                                                                 1, 0, 0, 0, 0, 0, 0,
                                                                 1, 0, 0, 0, 0, 0, 0
                                                                 );
-      internal static CFlowMatrix NewTestFlowMatrix5(Action<string> aDebugPrint) => new CFlowMatrix(aDebugPrint, new CSettings(), 7,
+      internal static CFlowMatrix NewTestFlowMatrix5(Action<string> aDebugPrint) => new CFlowMatrix(aDebugPrint, new CTestDiagramLayout(), 7,
                                                                 1, 1, 0, 0, 1, 1, 0,
                                                                 1, 0, 0, 1, 0, 0, 0,
                                                                 0, 0, 0, 0, 0, 0, 0,

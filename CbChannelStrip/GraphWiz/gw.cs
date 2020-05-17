@@ -443,17 +443,17 @@ namespace CbChannelStrip.GraphWiz
       internal readonly IEnumerable<CGwEdge> Edges;
    }
 
-
    internal sealed class CGwDiagramBuilder : CRoutingVisitor
    {
       private Action<string> DebugPrint;
-      internal CGwDiagramBuilder(Action<string> aDebugPrint, CSettings aSettings)
+      internal CGwDiagramBuilder(Action<string> aDebugPrint,
+                                 CGwDiagramLayout aLayout)
       {
          this.DebugPrint = aDebugPrint;
-         this.Settings = aSettings;
+         this.DiagramLayout = aLayout;
       }
 
-      private CSettings Settings;
+      internal readonly CGwDiagramLayout DiagramLayout;
 
       private readonly List<string> CodeWithoutCoords = new List<string>();
 
@@ -520,10 +520,9 @@ namespace CbChannelStrip.GraphWiz
          this.AddLine("digraph G");
          this.AddLine("{");
          ++this.Indent;
-
          var aWithOutputs = from aTest in aRoutings
                             where aTest.InputIdx == 0
-                               || aTest.IsLinkedToSomething
+                               || this.DiagramLayout.GetIncludeInDiagram(aTest)
                             select aTest;
 
          foreach (var aRouting in aWithOutputs)
@@ -617,7 +616,7 @@ namespace CbChannelStrip.GraphWiz
          {
             var aErmGraphNodeVm = this;
             var aDotProcess = new ProcessStartInfo();
-            var aInstallDir = this.Settings.GraphWizInstallDir;
+            var aInstallDir = this.DiagramLayout.GraphWizInstallDir;
             var aBinDir = new DirectoryInfo(Path.Combine(aInstallDir.FullName, "bin"));
             var aDir = aBinDir;
             aDotProcess.FileName = Path.Combine(aDir.FullName, "dot.exe");
