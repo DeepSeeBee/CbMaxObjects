@@ -22,9 +22,22 @@ using System.Windows.Threading;
 
 namespace CbChannelStrip.GaAnimator
 {
+   internal enum CDropEffectEnum
+   {
+      Remove,
+      Add,
+      Focus,
+      None
+   }
+
    internal abstract class CGaShape
    {
       internal static readonly Color DefaultColor = Color.Black;
+      internal static readonly System.Drawing.Color AnnouncingColor = System.Drawing.Color.Magenta;
+      internal static readonly System.Drawing.Color FocusedColor = System.Drawing.Color.Green;
+      internal static readonly System.Drawing.Color HoveringColorAdd = System.Drawing.Color.LimeGreen;
+      internal static readonly System.Drawing.Color HoveringColorRemove = System.Drawing.Color.Red;
+      internal static readonly System.Drawing.Color HoveringColorFocus = System.Drawing.Color.LimeGreen;
 
       internal readonly CGaGraph GaGraph;
       internal readonly CGaAnimator GaAnimator;
@@ -58,15 +71,28 @@ namespace CbChannelStrip.GaAnimator
       internal abstract CGaMorph AcceptNewMorph(CGaTransition aGaTransition, CGaShape aOldShape);
       internal virtual void Init() { }
       internal bool Announcing;
-
-      internal static readonly System.Drawing.Color AnnouncingColor = System.Drawing.Color.Red;
-      internal static readonly System.Drawing.Color FocusedColor = System.Drawing.Color.Green;
-
+      internal CDropEffectEnum? DropEffectEnum;
+      internal virtual System.Drawing.Color HoveringColor { get => DefaultColor; }
+      internal abstract bool HitTestEnabled { get; }
       internal System.Drawing.Color? ResolveColor(System.Drawing.Color? aColor)
       {
          if (this.Announcing)
             return AnnouncingColor;
-         else if (this.IsFocused)
+         else if (this.DropEffectEnum.HasValue)
+            switch(this.DropEffectEnum.Value)
+            {
+               case CDropEffectEnum.Add:
+                  return HoveringColorAdd;
+               case CDropEffectEnum.Remove:
+                  return HoveringColorRemove;
+               case CDropEffectEnum.Focus:
+                  return HoveringColorFocus;
+               case CDropEffectEnum.None:
+                  break;
+               default:
+                  throw new ArgumentException("DropEffectEnumOutOfRange: " + this.DropEffectEnum.Value.ToString());               
+            }
+         if (this.IsFocused)
             return FocusedColor;
          return aColor;
       }
@@ -83,7 +109,153 @@ namespace CbChannelStrip.GaAnimator
       internal bool ContainsPoint(CPoint aPoint) => this.Rect.Contains(aPoint) && this.ContainsPointExact(aPoint);
    }
 
-   internal sealed class CGaEdge : CGaShape
+   internal abstract class CGaEdgeBase : CGaShape
+   {
+      internal CGaEdgeBase(CGaGraph aGraph):base(aGraph)
+      {
+      }
+
+      private volatile CPoint[] SplinesM;
+      internal virtual CPoint[] Splines 
+      {
+         get
+         {
+            if (!(this.SplinesM is object))
+            {
+               this.SplinesM = new CPoint[] { new CPoint(), new CPoint() };
+            }
+            return this.SplinesM;
+         }
+         set => this.SplinesM = value; 
+      }
+      internal virtual CPoint P0 { get => this.Splines.First(); }
+      internal virtual CPoint P1 { get => this.Splines.Skip(1).First(); }      
+      internal virtual CPoint P2 { get => this.Splines.Last(); }
+      private object ColorM = default(Color?);
+      internal Color? Color { get => (Color?)this.ColorM; set => this.ColorM = value; }
+      internal virtual bool P2TipIsVisible { get => true; }
+      internal virtual bool IsVisible { get => true; }
+      internal override void Paint(CVector2dPainter aOut)
+      {
+         if (this.IsVisible)
+         {
+            var aBezier = this.Splines;
+            var aSplines = aBezier.Skip(1);
+            var aBaseColor1 = this.Color;
+            var aBaseColor2 = this.ResolveColor(aBaseColor1);
+            var aBaseColor = aBaseColor2.GetValueOrDefault(DefaultColor);
+            var aOpacity = this.Opacity;
+            var aAlpha = 1.0d - aOpacity;
+            var aColor = System.Drawing.Color.FromArgb((int)(aAlpha * 255.0d), aBaseColor);
+            aOut.NewPath();
+            aOut.SetColor(aColor);
+            var aFirst = true;
+            foreach (var aPoint in aSplines)
+            {
+               if (aFirst)
+                  aOut.MoveTo(aPoint);
+               else
+                  aOut.LineTo(aPoint);
+               aFirst = false;
+            }
+            aOut.Stroke();
+
+            if (this.P2TipIsVisible)
+            { // DrawArrowTip
+               var aTip = this.P2Tip;
+               aOut.NewPath();
+               aOut.MoveTo(aTip.P1);
+               aOut.LineTo(aTip.P2);
+               aOut.LineTo(aTip.P3);
+               aOut.ClosePath();
+               aOut.Fill();
+            }
+         }
+      }
+      internal CTriangle P2Tip
+      {
+         get
+         {
+            //var aBezier = this.Splines;
+            var aTip = this.P0;
+            var aP1 = this.P2;
+            var aP2 = aTip - aP1;
+            var a90 = Math.PI / 2.0d;
+            var aLen = new CPoint(0.75d, 0.75d);
+            var aC1 = aP2.Rotate(a90) * aLen + aP1;
+            var aC2 = aP2.Rotate(-a90) * aLen + aP1;
+            var aTriangle = new CTriangle(aTip, aC1, aC2);
+            return aTriangle;
+         }
+      }
+
+      internal double HitTestWidth = 16;
+
+      internal override bool ContainsPointExact(CPoint aPoint)
+      {
+         if(this.IsVisible)
+         {
+            this.GaAnimator.DebugPrint("ContainsPointExact");            
+            bool aContains = false;
+            var aSplines = this.Splines;
+            var aP2TipIsVisible = this.P2TipIsVisible;
+            this.GaAnimator.DebugPrint("aP2TipIsVisible=" + aP2TipIsVisible.ToString());
+            if (aP2TipIsVisible
+            && this.P2Tip.Contains(aPoint))
+            {
+               return true;
+            }
+            else
+            {
+               var aWidth2 = this.HitTestWidth / 2.0d;
+               for (var aIdx = 1; aIdx < aSplines.Length - 1 && !aContains; ++aIdx)
+               {
+                  //var p1 = this.P1;
+                  //var p2 = this.P2;
+                  var p1 = aSplines[aIdx];
+                  var p2 = aSplines[aIdx + 1];
+                  this.GaAnimator.DebugPrint("P1=" + p1.ToString());
+                  this.GaAnimator.DebugPrint("P2=" + p2.ToString());
+                  var aLine0 = new CLine(p1, p2);
+                  var aLine1 = aLine0.Paralell(aWidth2);
+                  var aLine2 = aLine0.Paralell(-aWidth2);
+                  var aP1 = aLine1.P1;
+                  var aP2 = aLine1.P2;
+                  var aP3 = aLine2.P2;
+                  var aP4 = aLine2.P1;
+                  var aT1 = new CTriangle(aP1, aP2, aP4);
+                  var aT2 = new CTriangle(aP2, aP3, aP4);
+                  aContains = aContains
+                           || aT1.Contains(aPoint)
+                           || aT2.Contains(aPoint)
+                           ;
+               }
+               return aContains;
+            }
+         }
+         else
+         {
+            return false;
+         }
+      }
+      internal override CRectangle Rect
+      {
+         get
+         {
+            var aPoint1 = this.P1;
+            var aPoint2 = this.P2;
+            var aTopLeft = aPoint1.Min(aPoint2);
+            var aBottomRight = aPoint2.Max(aPoint2);
+            var aWidth = this.LineWidth;
+            var aP1 = new CPoint(aTopLeft.X - aWidth / 2.0f, aTopLeft.Y);
+            var aP2 = new CPoint(aBottomRight.X + aWidth / 2.0f, aBottomRight.Y);
+            var aRect = new CRectangle(aP1, aP2 - aP1);
+            return aRect;
+         }
+      }
+   }
+
+   internal sealed class CGaEdge : CGaEdgeBase
    {
       internal CGaEdge(CGaGraph aGaGraph, CGwEdge aGwEdge, CGaNode aGaNode1, CGaNode aGaNode2) :base(aGaGraph)
       {
@@ -99,101 +271,19 @@ namespace CbChannelStrip.GaAnimator
 
       internal readonly CGaNode GaNode1;
       internal readonly CGaNode GaNode2;
-      private object ColorM = default(Color?);
-      internal Color? Color { get => (Color?)this.ColorM; set => this.ColorM = value; }
-      internal override void Paint(CVector2dPainter aOut)
-      {
-         var aBezier = this.Splines;
-         var aSplines = aBezier.Skip(1);
-         var aBaseColor1 = this.Color;
-         var aBaseColor2 = this.ResolveColor(aBaseColor1);
-         var aBaseColor = aBaseColor2.GetValueOrDefault(DefaultColor);
-         var aOpacity = this.Opacity;
-         var aAlpha = 1.0d - aOpacity;
-         var aColor = System.Drawing.Color.FromArgb((int)(aAlpha * 255.0d), aBaseColor);         
-         aOut.NewPath();
-         aOut.SetColor(aColor);
-         //aOut.SetLineWidth(this.LineWidth);
-         var aFirst = true;
-         foreach (var aPoint in aSplines)
-         {
-            if (aFirst)
-               aOut.MoveTo(aPoint);
-            else
-               aOut.LineTo(aPoint);
-            aFirst = false;
-         }
-         aOut.Stroke();
-
-         { // DrawArrowTip
-            var aTip = this.Tip;
-            aOut.NewPath();
-            aOut.MoveTo(aTip.P1);
-            aOut.LineTo(aTip.P2);
-            aOut.LineTo(aTip.P3);
-            aOut.ClosePath();
-            aOut.Fill();
-         }
-      }
-      internal CTriangle Tip 
-      { 
-         get
-         {
-            //var aBezier = this.Splines;
-            var aTip = this.P1;
-            var aP1 = this.P2;
-            var aP2 = aTip - aP1;
-            var a90 = Math.PI / 2.0d;
-            var aLen = new CPoint(0.75d, 0.75d);
-            var aC1 = aP2.Rotate(a90) * aLen + aP1;
-            var aC2 = aP2.Rotate(-a90) * aLen + aP1;
-            var aTriangle = new CTriangle(aTip, aC1, aC2);
-            return aTriangle;
-         } 
-      }
-
+      internal override bool HitTestEnabled => false; // TODO-Lines hading to the bottom left are hittest false-negative.
       internal override CGaMorph NewMorph(CGaTransition aGaTransition, CGaEdge aNewEdge) => new CGaEdgeMorph(aGaTransition, this, aNewEdge);
       internal override CGaMorph NewMorph(CGaTransition aGaTransition, CGaNode aNewNode) => throw new InvalidOperationException();
       internal override CGaMorph AcceptNewMorph(CGaTransition aGaTransition, CGaShape aOldShape) => aOldShape.NewMorph(aGaTransition, this);
-
-      internal volatile CPoint[] Splines;
+      internal override Color HoveringColor => HoveringColorRemove;
+      //internal volatile CPoint[] Splines;
       internal override void Animate(CAnnounceAnimation aAnnounceAnimation)
       {
          base.Animate(aAnnounceAnimation);
 
          this.Color = aAnnounceAnimation.ColorWobble.MorphColor(this.GwEdge.Color, AnnouncingColor);
       }
-      internal override CRectangle Rect
-      {
-         get
-         {
-            var aPoint1 = this.P1;
-            var aPoint2 = this.P2;
-            var aTopLeft = aPoint1.Min(aPoint2);
-            var aBottomRight = aPoint2.Max(aPoint2);
-            var aRect = new CRectangle(aTopLeft, aBottomRight - aTopLeft);
-            return aRect;
-         }
-      }
 
-      internal CPoint P1 { get => this.Splines.First(); }
-      internal CPoint P2 { get => this.Splines.Last(); }
-
-      internal override bool ContainsPointExact(CPoint aPoint)
-      {
-         var aThickness = 5.0d;
-         var aEp1 = this.P1;
-         var aEp2 = this.P2;
-         var aP1 = new CPoint(aEp1.X - aThickness / 2.0d, aEp1.Y);
-         var aP2 = new CPoint(aEp1.X + aThickness / 2.0d, aEp1.Y);
-         var aP3 = new CPoint(aEp2.X + aThickness / 2.0d, aEp2.Y);
-         var aP4 = new CPoint(aEp2.X - aThickness / 2.0d, aEp2.Y);
-         var aT1 = new CTriangle(aP1, aP2, aP4);
-         var aT2 = new CTriangle(aP2, aP3, aP4);
-         var aContains = aT1.Contains(aPoint)
-                      || aT2.Contains(aPoint);
-         return aContains;        
-      }
    }
 
    internal sealed class CGaNode : CGaShape
@@ -236,6 +326,8 @@ namespace CbChannelStrip.GaAnimator
       internal override CRectangle Rect { get { var aTl = this.TopLeftPos; var aBr = this.BottomRightPos; return new CRectangle(aTl.X, aTl.Y, aBr.X - aTl.X, aBr.Y - aTl.Y); } }
       internal CTriangle Triangle { get { var r = this.Rect; return new CTriangle(r.BottomLeft, r.BottomRight, new CPoint(r.X + r.Dx / 2.0d, r.Y)); } }
       internal CTriangle InvTriangle { get { var r = this.Rect; return new CTriangle(r.TopLeft, r.TopRight, new CPoint(r.X + r.Dx / 2.0d, r.Y + r.Dy)); } }
+      internal override bool HitTestEnabled => true;
+      internal override Color HoveringColor => HoveringColorAdd;
       internal override bool ContainsPointExact(CPoint aPoint)
       {
          switch(this.GwNode.ShapeEnum)
@@ -336,6 +428,30 @@ namespace CbChannelStrip.GaAnimator
       }
    }
 
+   internal sealed class CGaDragEdge  :CGaEdgeBase
+   {
+      internal CGaDragEdge(CGaGraph aGaGraph) : base(aGaGraph)
+      {
+         this.Color = FocusedColor;
+      }
+
+      internal override CPoint P0 { get => this.GaAnimator.DragEdgeP1; }
+      internal override CPoint P1 { get => this.GaAnimator.DragEdgeP1; }
+      internal override CPoint P2 { get => this.GaAnimator.DragEdgeP2; }
+      internal override CPoint[] Splines { get => new CPoint[] { this.P0, this.P0, this.P2 }; set => base.Splines = value; }
+      internal override bool IsVisible { get => this.GaAnimator.DragEdgeVisible; }
+      internal override bool P2TipIsVisible => false;
+      internal override bool HasMorph => false;
+      internal override CGaMorph NewMorph(CGaTransition aGaTransition, CGaEdge aNewEdge) => throw new InvalidOperationException();
+      internal override CGaMorph NewMorph(CGaTransition aGaTransition, CGaNode aNewNode) => throw new InvalidOperationException();
+      internal override CGaMorph AcceptNewMorph(CGaTransition aGaTransition, CGaShape aOldShape) => throw new InvalidOperationException();
+      internal override string Name => "DragEdge";
+      internal override bool HitTestEnabled => false;
+      internal override void Paint(CVector2dPainter aOut)
+      {
+         base.Paint(aOut);
+      }
+   }
    internal sealed class CGaCursor : CGaShape
    {
       internal CGaCursor(CGaGraph aGaGraph):base(aGaGraph)
@@ -350,29 +466,35 @@ namespace CbChannelStrip.GaAnimator
       internal override CGaMorph NewMorph(CGaTransition aGaTransition, CGaEdge aNewEdge) => throw new InvalidOperationException();
       internal override CGaMorph NewMorph(CGaTransition aGaTransition, CGaNode aNewNode) => throw new InvalidOperationException();
       internal override CGaMorph AcceptNewMorph(CGaTransition aGaTransition, CGaShape aOldShape) => throw new InvalidOperationException();
-      internal override string Name => "cursor";
+      internal override string Name => "Cursor";
       internal override bool ContainsPointExact(CPoint aPoint) => this.CursorRect.Contains(aPoint);
+      internal override bool HitTestEnabled => false;
+      internal bool IsVisible { get => true; }
       internal override void Paint(CVector2dPainter aOut)
       {
-         var aRect = this.Rect;
-         var aCenter = aRect.CenterPoint;
-         var aDx2 = aRect.Dx / 2.0d;
-         var aDy2 = aRect.Dy / 2.0d;
-         var aP1 = new CPoint(aCenter.X, aCenter.Y - aDy2);
-         var aP2 = new CPoint(aCenter.X + aDx2, aCenter.Y);
-         var aP3 = new CPoint(aCenter.X, aCenter.Y + aDy2);
-         var aP4 = new CPoint(aCenter.X - aDx2, aCenter.Y);
-         var aColor = this.Color;
-         if(aColor.HasValue)
+         if(this.IsVisible)
          {
-            aOut.SetColor(aColor.Value);
-            //aOut.SetLineWidth(this.LineWidth);
-            aOut.MoveTo(aP4);
-            aOut.LineTo(aP2);
-            aOut.Stroke();
-            aOut.MoveTo(aP1);
-            aOut.LineTo(aP3);
-            aOut.Stroke();
+
+            var aRect = this.Rect;
+            var aCenter = aRect.CenterPoint;
+            var aDx2 = aRect.Dx / 2.0d;
+            var aDy2 = aRect.Dy / 2.0d;
+            var aP1 = new CPoint(aCenter.X, aCenter.Y - aDy2);
+            var aP2 = new CPoint(aCenter.X + aDx2, aCenter.Y);
+            var aP3 = new CPoint(aCenter.X, aCenter.Y + aDy2);
+            var aP4 = new CPoint(aCenter.X - aDx2, aCenter.Y);
+            var aColor = this.Color;
+            if (aColor.HasValue)
+            {
+               aOut.SetColor(aColor.Value);
+               aOut.SetLineWidth(this.LineWidth);
+               aOut.MoveTo(aP4);
+               aOut.LineTo(aP2);
+               aOut.Stroke();
+               aOut.MoveTo(aP1);
+               aOut.LineTo(aP3);
+               aOut.Stroke();
+            }
          }
       }
       internal readonly CPoint CursorSize = new CPoint(10, 10);
@@ -385,15 +507,18 @@ namespace CbChannelStrip.GaAnimator
       {
          this.Size = aSize;
          this.GaAnimator = aGaAnimator;
-         this.Cursor = new CGaCursor(this);         
+         this.Cursor = new CGaCursor(this);
+         this.DragEdge = new CGaDragEdge(this);
          foreach (var aShape in aShapes)
          {
             this.ShapesDic.Add(aShape.Name, aShape);
          }
-         this.ShapesDic.Add(this.Cursor.Name, this.Cursor);
+         this.ShapesDic.Add(this.DragEdge.Name, this.DragEdge);
+         this.ShapesDic.Add(this.Cursor.Name, this.Cursor);         
       }
 
       internal readonly CGaCursor Cursor;
+      internal readonly CGaDragEdge DragEdge;
 
       internal CGaGraph(CGaAnimator aGaAnimator, CGwGraph aGwGraph)
       {
@@ -431,7 +556,7 @@ namespace CbChannelStrip.GaAnimator
       IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 
       internal IEnumerable<CGaShape> GetShapes(CPoint aPoint)=>from aShape in this
-                                                               where ! (aShape is CGaCursor)
+                                                               where aShape.HitTestEnabled
                                                                where aShape.ContainsPoint(aPoint) select aShape;
    }
 
@@ -856,7 +981,7 @@ namespace CbChannelStrip.GaAnimator
          var aNotifyResult = new Action(delegate () { aDispatcher.BeginInvoke(new Action(delegate () 
          {
             aGaAnimator.ProcessNewGraph();
-            var aShapes = aGaAnimator.State.GaTransition.MorphGraph.GetShapes(new CPoint(15, 0));
+            var aShapes = aGaAnimator.State.GaTransition.MorphGraph.GetShapes(new CPoint(90, 41));
             if(!aShapes.IsEmpty())
             {
 
@@ -892,6 +1017,9 @@ namespace CbChannelStrip.GaAnimator
       }
       #endregion
 
+      internal CPoint DragEdgeP1;
+      internal CPoint DragEdgeP2;
+      internal volatile bool DragEdgeVisible;
       internal CPoint CursorPos;
 
       internal Action NotifyEndAnimation = new Action(delegate () { });
@@ -1048,6 +1176,8 @@ namespace CbChannelStrip.GaAnimator
       }
 
       internal CPoint Size => this.State.Size;
+
+      public bool NextGraphIsPending { get => this.WorkerNullable is object; }
 
       private Dispatcher AnimationThreadDispatcher;
       private AutoResetEvent AnimationThreadStartedEvent = new AutoResetEvent(false);

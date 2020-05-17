@@ -25,6 +25,7 @@ namespace CbChannelStrip
    using System.ComponentModel;
    using System.Threading;
    using CbChannelStripTest;
+   using System.Windows.Forms;
 
    internal abstract class CGwDiagramLayout
    {
@@ -271,6 +272,8 @@ namespace CbChannelStrip
          }
       }
 
+      internal abstract bool IsChannel { get; }
+
       internal bool CalcEnabled()
       {
          var aRouting = this.Routing;
@@ -342,6 +345,7 @@ namespace CbChannelStrip
       {
 
       }
+      internal override bool IsChannel => true;
    }
 
    internal sealed class CCsMainIo : CCsConnector
@@ -349,9 +353,8 @@ namespace CbChannelStrip
       internal CCsMainIo(CCsConnectors aConnectors) :base(aConnectors, 0)
       {
       }
+      internal override bool IsChannel => false;
    }
-
-
 
    internal abstract class CCsChannelIoMatrix
    {
@@ -547,7 +550,8 @@ namespace CbChannelStrip
          this.FromChannelsIn.Action = this.OnFromChannelsIn;
          this.ToChannelsOut = new CListOutlet(this);         
          this.ControlIn = new CListInlet(this);
-         this.ControlIn.SetPrefixedListAction("mouse", this.OnMouseIn);
+         this.ControlIn.SetPrefixedListAction("mouse1", this.OnMouse1In);
+         this.ControlIn.SetPrefixedListAction("mouse2", this.OnMouse2In);
          this.ControlIn.SetPrefixedListAction("key", this.OnKeyIn);
       }
 
@@ -737,7 +741,7 @@ namespace CbChannelStrip
       private CPoint Translate { get => new CPoint(10,10); }
       private CPoint Scale { get => this.CanvasSize / this.ImageSize; } 
       internal void Paint()
-      {
+      {         
          var aPainter = new CVector2dPainter(this.Vector2dDumpIn, this.Vector2dOut);
          aPainter.Clear();
          this.SendPWindow2Size();
@@ -778,7 +782,7 @@ namespace CbChannelStrip
       }
       internal void SetOutputActive(int aChannelNr, int aOutputIdx, bool aActive)
       {
-         if(!aActive
+         if (!aActive
          ||this.GetRoutingEnabled(aChannelNr, aOutputIdx))
          {
             this.Rows[aChannelNr][aOutputIdx] = aActive ? 1 : 0;
@@ -809,7 +813,7 @@ namespace CbChannelStrip
       internal bool GetRoutingEnabled(int aInput, int aOutput) => this.FlowMatrix.Enables[this.FlowMatrix.GetCellIdx(aOutput, aInput)];
 
       private CPoint MousePos;
-
+      private int MouseButton;
       private IEnumerable<CGaShape> GetShapes(CPoint aPoint)=> this.GaAnimator.State.GaTransition.MorphGraph.GetShapes(aPoint);
 
       CPoint CursorPos { get => this.GaAnimator.CursorPos; set => this.GaAnimator.CursorPos = value; }
@@ -855,7 +859,7 @@ namespace CbChannelStrip
             }
          });
       }
-      private void OnMouseIn(CInlet aInlet, string aFirstItem, CReadonlyListData aRemainingItems)
+      private void OnMouse1In(CInlet aInlet, string aFirstItem, CReadonlyListData aRemainingItems)
       {
          var aValues = aRemainingItems.ToArray();
          this.InvokeInMainTask(delegate ()
@@ -898,8 +902,208 @@ namespace CbChannelStrip
                }
             }
          });
+      }      
+      private CGaNode GetNodeNullable(CPoint aPos) =>this.GetShapes(aPos).OfType<CGaNode>().LastOrDefault();
+      private CGaEdge GetEdgeNullable(CPoint aPos) => this.GetShapes(aPos).OfType<CGaEdge>().LastOrDefault();      
+      private readonly Stopwatch DoubleClickStopWatch = new Stopwatch();
+
+      private List<CGaShape> MouseHoverings = new List<CGaShape>();
+      private bool IsDragging { get=> this.GaAnimator.DragEdgeVisible; set=> this.GaAnimator.DragEdgeVisible = value; }
+
+      private Tuple<CCsConnector, CCsConnector> GetDropInputAndOutput(CGaNode aDragNode, CGaNode aDropNode)
+      {
+         var aConnectors = this.Connectors;
+         var aDragConnector = aConnectors.GetConnectorByName(aDragNode.Name);
+         var aDropConnector = aConnectors.GetConnectorByName(aDropNode.Name);
+         if(aDragConnector.IsChannel && aDropConnector.IsChannel)
+         {
+            if (aDragConnector.GetOutputActive(aDropConnector.Number))
+            {
+               // remove
+               return new Tuple<CCsConnector, CCsConnector>(aDragConnector, aDropConnector);
+            }
+            else if(aDropConnector.GetOutputActive(aDragConnector.Number))
+            {
+               // remove
+               return new Tuple<CCsConnector, CCsConnector>(aDropConnector, aDragConnector);
+            }
+            else
+            {
+               // add
+               return new Tuple<CCsConnector, CCsConnector>(aDragConnector, aDropConnector); 
+            }
+         }
+         else
+         {
+            var aIsInvert = aDragNode.Name == CRouting.OutName
+                        ||  aDropNode.Name == CRouting.InName
+                           ;
+            var aOutput = !aIsInvert ? aDropConnector : aDragConnector;
+            var aInput = !aIsInvert ? aDragConnector : aDropConnector;
+            var aTuple = new Tuple<CCsConnector, CCsConnector>(aInput, aOutput);
+            return aTuple;
+         }
       }
 
+      private void OnMouse2In(CInlet aInlet, string aFirstItem, CReadonlyListData aRemainingItems)
+      {
+         var aValues = aRemainingItems.ToArray();
+         this.InvokeInMainTask(delegate ()
+         {
+            if (aValues.Length >= 3)
+            {
+               var aX = Convert.ToInt32(aValues[0]);
+               var aY = Convert.ToInt32(aValues[1]);
+               var aPos = new CPoint(aX, aY);
+               var aButton = Convert.ToInt32(aValues[2]);
+               this.MousePos = aPos;
+               this.GaAnimator.CursorPos = this.MousePos;
+
+               { // Announce
+                  var aDragNode = this.IsDragging
+                                ? this.GetNodeNullable(this.GaAnimator.DragEdgeP1)
+                                : default(CGaNode)
+                                ;
+                  var aHoverings = this.GetShapes(this.MousePos).OfType<CGaNode>();
+                  foreach (var aHovering in aHoverings)
+                  {
+                     CDropEffectEnum aDropEffectEnum;
+                     if(this.IsDragging)
+                     {
+                        var aConnectors = this.Connectors;
+                        var aDropNode = aHovering;
+                        var aDragConnector = aConnectors.GetConnectorByName(aDragNode.Name);
+                        var aInputAndOutput = this.GetDropInputAndOutput(aDragNode, aDropNode);
+                        var aInput = aInputAndOutput.Item1;
+                        var aOutput = aInputAndOutput.Item2;
+                        if (aDragNode.Name == aDropNode.Name)
+                        {
+                           aDropEffectEnum = CDropEffectEnum.None;
+                        }
+                        else
+                        {
+                           var aOldActive = aInput.GetOutputActive(aOutput.Number);
+                           var aNewActive = !aOldActive;
+                           aDropEffectEnum = aNewActive
+                                           ? CDropEffectEnum.Add
+                                           : CDropEffectEnum.Remove;
+                        }
+                     }
+                     else
+                     {
+                        aDropEffectEnum = CDropEffectEnum.Focus;
+                     }
+
+                     aHovering.DropEffectEnum = aDropEffectEnum;
+                     this.MouseHoverings.Add(aHovering);
+                  }
+                  var aOldHoverings = from aTest in this.MouseHoverings
+                                      where !aHoverings.Contains(aTest)
+                                      select aTest;
+                  foreach (var aOldHovering in aOldHoverings.ToArray())
+                  {
+                     aOldHovering.DropEffectEnum = default(CDropEffectEnum?);
+                     this.MouseHoverings.Remove(aOldHovering);
+                  }
+               }
+
+               
+               if (aButton != 0 && this.MouseButton == 0)
+               {
+                  if (this.DoubleClickStopWatch.IsRunning
+                  && this.DoubleClickStopWatch.ElapsedMilliseconds <= SystemInformation.DoubleClickTime)
+                  {
+                     // DoubleClick
+                     this.DoubleClickStopWatch.Stop();
+                     var aEdgeNullable = this.GetEdgeNullable(this.MousePos);
+                     if (aEdgeNullable is object)
+                     {
+                        // Deactivated by Edge.IsHitTestEnabled = false
+                        var aConnectors = this.Connectors;
+                        var aFromNode = aEdgeNullable.GaNode1;
+                        var aToNode = aEdgeNullable.GaNode2;
+                        var aFromConnector = aConnectors.GetConnectorByName(aFromNode.Name);
+                        var aToConnector = aConnectors.GetConnectorByName(aToNode.Name);
+                        aFromConnector.SetOutputActive(aToConnector.Number, false);
+                     }
+                     else
+                     {
+                        var aNodeNullable = this.GetNodeNullable(this.MousePos);
+                        // TODO: Open Plugin.
+                     }
+                  }
+                  else
+                  {
+                     this.DoubleClickStopWatch.Restart();
+                     // ButtonDown                  
+                     if (this.GetNodeNullable(this.MousePos) is object)
+                     {
+                        this.IsDragging = true;
+                        this.GaAnimator.DragEdgeP1 = this.MousePos;
+                        this.GaAnimator.DragEdgeP2 = this.MousePos;
+                     }
+                  }
+                  this.MouseButton = aButton;
+               }
+               else if(aButton == 1 && this.MouseButton == 1)
+               { // Dragging
+                  this.GaAnimator.DragEdgeP2 = this.MousePos;
+               }
+               else if(aButton == 0 && this.MouseButton == 1)
+               { // Drop/ButtonUp
+                  bool aHandled;
+                  if (this.IsDragging)
+                  {
+                     this.IsDragging = false;
+                     var aDragNode = this.GetNodeNullable(this.GaAnimator.DragEdgeP1);
+                     var aDropNode = this.GetNodeNullable(this.GaAnimator.DragEdgeP2);
+                     if (aDragNode is object
+                     && aDropNode is object
+                     && aDragNode.Name != aDropNode.Name)
+                     {
+                        //var aConnectors = this.Connectors;
+                        //var aDragConnector = aConnectors.GetConnectorByName(aDragNode.Name);
+                        //var aDropConnector = aConnectors.GetConnectorByName(aDropNode.Name);
+                        //var aDragNodeIsOut = aDragNode.Name == CRouting.OutName;
+                        //var aOutput = !aDragNodeIsOut ? aDropConnector : aDragConnector;
+                        //var aInput = !aDragNodeIsOut ? aDragConnector : aDropConnector;
+                        var aInputAndOutput = this.GetDropInputAndOutput(aDragNode, aDropNode);
+                        var aInput = aInputAndOutput.Item1;
+                        var aOutput = aInputAndOutput.Item2;
+                        var aOldActive = aInput.GetOutputActive(aOutput.Number);
+                        var aNewActive = !aOldActive;
+                        aInput.SetOutputActive(aOutput.Number, aNewActive);
+                        var aConnectors = this.Connectors;
+                        var aDropConnector = aConnectors.GetConnectorByName(aDropNode.Name);
+                        this.Connectors.FocusedConnector = aDropConnector;
+                        aHandled = true;
+                     }
+                     else
+                     {
+                        aHandled = false;
+                     }
+                  }
+                  else
+                  {
+                     aHandled = false;
+                  }                 
+                  if(!aHandled)
+                  {
+                     var aDragNode = this.GetNodeNullable(this.GaAnimator.DragEdgeP1);
+                     if (aDragNode is object)
+                     {
+                        this.Connectors.FocusedConnector = this.Connectors.GetConnectorByName(aDragNode.Name);
+                     }
+                  }
+                  this.MouseButton = aButton;
+               }
+               if (!this.GaAnimator.NextGraphIsPending)
+               {
+                  this.Paint();
+               }
+            }
+         });
+      }
       internal CGwDiagramLayout NewDiagramLayout() => new CCsDiagramLayout(this.ConnectorsM is object ? this.Connectors.FocusedConnectorIdx : default(int?));
 
       private enum CMouseButtonEventEnum

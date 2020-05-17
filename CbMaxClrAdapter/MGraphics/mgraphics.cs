@@ -41,6 +41,31 @@ namespace CbMaxClrAdapter.MGraphics
       public CPoint Max(CPoint aRhs) => new CPoint(Math.Max(this.X, aRhs.X), Math.Max(this.Y, aRhs.Y));
    }
 
+   public struct CLine
+   {
+      public CLine(CPoint p1, CPoint p2)
+      {
+         this.P1 = p1;
+         this.P2 = p2;
+      }
+      public readonly CPoint P1;
+      public readonly CPoint P2;
+
+      public CLine Paralell(double dist)
+      {
+         var p1 = this.P1;
+         var p2 = this.P2;                           
+         var d = p2 - p1;                           
+         var l = Math.Sqrt(Math.Pow(p2.X - p1.X, 2) + Math.Pow(p2.Y - p1.Y, 2)); 
+         var ud = new CPoint(d.X / l, d.Y / l);                                                 
+         var p = new CPoint(-ud.Y, ud.X);                                           
+         var n = new CPoint(p1.X - ud.Y * dist, p1.Y + ud.X * dist); 
+         var s = n + d;
+         return new CLine(n, s);
+
+      }
+
+   }
    public struct CTriangle
    {
       public CTriangle(CPoint p1, CPoint p2, CPoint p3)
