@@ -26,6 +26,7 @@ namespace CbChannelStrip
    using System.Threading;
    using CbChannelStripTest;
    using System.Windows.Forms;
+   using CbMaxClrAdapter.Timer;
 
    internal abstract class CGwDiagramLayout
    {
@@ -206,6 +207,22 @@ namespace CbChannelStrip
                      }
                      break;
 
+                  case "vst":
+                     if(aValues[3].Equals("param"))
+                     {
+                        var aParamIdx = Convert.ToInt32(aValues[4]);
+                        var aParamValue = Convert.ToInt32(aValues[5]);
+                        //this.ChannelStrip.WriteLogInfoMessage("VstParam.Id", aParamIdx);
+                        //this.ChannelStrip.WriteLogInfoMessage("VstParam.Value", aParamValue);
+                        switch (aParamIdx)
+                        {
+                           case LatencyParamIdx:
+                              this.ReceiveLatency(aParamValue);
+                              break;
+                        }
+                     }
+                     break;
+
                }
             }
          }
@@ -336,7 +353,129 @@ namespace CbChannelStrip
       internal readonly CCsChannelInMatrx InMatrix;
       internal readonly CCsChannelOutMatrx OutMatrix;
 
+      #region Latency
+      private const int LatencyParamIdx = -10;
+      internal void RequestNewLatency()
+      {
+         this.SendToChannel("vst", "get", LatencyParamIdx);
+      }
 
+      private int NodeLatencyM;
+      internal int NodeLatency { get => this.NodeLatencyM;
+         set
+         {
+            this.NodeLatencyM = value;
+            this.UpdateNodeLatency();
+         }
+      }
+
+      internal int? NewNodeLatency;
+      internal void CommitNewNodeLatency()
+      {
+         if(this.NewNodeLatency.HasValue
+         && this.NewNodeLatency.Value != this.NodeLatency)
+         {
+            this.NodeLatency = this.NewNodeLatency.Value;
+            
+            
+         }
+      }
+      internal void UpdateNodeLatency()
+      {
+         this.Routing.NodeLatency = this.NodeLatency;
+      }
+      private void ReceiveLatency(int aLatency)
+      {
+         this.NewNodeLatency = aLatency;
+      }
+      private double SamplesToMs(int aSamples)
+      {
+         var aSampleRate = this.FlowMatrix.SampleRate;
+         double aMs = (aSampleRate > 0)
+                    ? ((double)aSamples) / ((double)aSampleRate) * 1000.0d
+                    : 0
+                    ;
+         return aMs;
+      }
+
+      #region OutLatencySamples
+      private void SendOutLatencySamples(int aLatency)
+      {
+         this.SendToChannel("latency", "out", "samples", aLatency);
+         this.OutLatencySamplesSent = aLatency;
+      }
+      private int? OutLatencySamplesSent;
+      private void SendOutLatencySamplesOnDemand()
+      {
+         var aLatency = this.Routing.OutLatency;
+         if (!this.OutLatencySamplesSent.HasValue
+         || this.OutLatencySamplesSent.Value != aLatency)
+         {
+            this.SendOutLatencySamples(aLatency);
+         }
+      }
+      #endregion
+      #region OutLatencyMs
+      private void SendOutLatencyMs(double aLatency)
+      {
+         this.SendToChannel("latency", "out", "ms", aLatency);
+         this.OutLatencyMsSent = aLatency;
+      }
+      private double? OutLatencyMsSent;
+      private void SendOutLatencyMsOnDemand()
+      {
+         var aLatency = this.SamplesToMs(this.Routing.OutLatency);
+         if (!this.OutLatencyMsSent.HasValue
+         || this.OutLatencyMsSent.Value != aLatency)
+         {
+            this.SendOutLatencyMs(aLatency);
+         }
+      }
+      #endregion
+      #region NodeLatencySamples
+      private void SendNodeLatencySamples(int aLatency)
+      {
+         this.SendToChannel("latency", "node", "samples", aLatency);
+         this.NodeLatencySamplesSent = aLatency;
+      }
+      private int? NodeLatencySamplesSent;
+      private void SendNodeLatencySamplesOnDemand()
+      {
+         var aLatency = this.Routing.NodeLatency;
+         if (!this.NodeLatencySamplesSent.HasValue
+         || this.NodeLatencySamplesSent.Value != aLatency)
+         {
+            this.SendNodeLatencySamples(aLatency);
+         }
+      }
+      #endregion
+      #region NodeLatencyMs
+      private void SendNodeLatencyMs(double aLatency)
+      {
+         this.ChannelStrip.WriteLogInfoMessage(nameof(this.SendNodeLatencyMs), this.Number);
+         this.SendToChannel("latency", "node", "ms", aLatency);
+         this.NodeLatencyMsSent = aLatency;
+      }
+      private double? NodeLatencyMsSent;
+      private void SendNodeLatencyMsOnDemand()
+      {
+         this.ChannelStrip.WriteLogInfoMessage(nameof(this.SendNodeLatencyMsOnDemand), this.Number);
+         var aLatency = this.SamplesToMs(this.Routing.NodeLatency);
+         if (!this.NodeLatencyMsSent.HasValue
+         || this.NodeLatencyMsSent.Value != aLatency)
+         {
+            this.SendNodeLatencyMs(aLatency);
+         }
+      }
+      #endregion
+      internal void SendLatenciesOnDemand()
+      {         
+         this.SendOutLatencySamplesOnDemand();
+         this.SendNodeLatencySamplesOnDemand();
+         this.SendOutLatencyMsOnDemand();
+         this.SendNodeLatencyMsOnDemand();
+      }
+      #endregion
    }
 
    internal sealed class CCsChannel : CCsConnector
@@ -491,6 +630,8 @@ namespace CbChannelStrip
          }
       }
 
+      public IEnumerable<int> OutputLatencies { get=>from aConnector in this.Connectors select aConnector.Routing.OutLatency; }
+
       internal void UpdateRoutings()
       {
          foreach(var aChannel in this.Connectors)
@@ -506,6 +647,33 @@ namespace CbChannelStrip
       }
 
       internal CCsConnector GetConnectorByName(string aName) => (from aTest in this.Connectors where aTest.Routing.NameForInput == aName || aTest.Routing.NameForOutput == aName select aTest).Single();
+
+      internal void CommitNewNodeLatencies()
+      {
+         foreach (var aConnector in this.Connectors)
+         {
+            aConnector.CommitNewNodeLatency();
+         }
+         this.UpdateNodeLatencies();         
+      }
+
+      internal void UpdateNodeLatencies()
+      {
+         foreach (var aConnector in this.Connectors)
+         {
+            aConnector.UpdateNodeLatency();
+         }
+         this.SendLatenciesOnDemand();
+      }
+
+      internal void SendLatenciesOnDemand()
+      {
+         foreach (var aConnector in this.Connectors)
+         {
+            aConnector.SendLatenciesOnDemand();
+         }
+      }
+
    }
 
    internal sealed class CCsDiagramLayout : CGwDiagramLayout
@@ -554,6 +722,17 @@ namespace CbChannelStrip
          this.ControlIn.SetPrefixedListAction("mouse1", this.OnMouse1In);
          this.ControlIn.SetPrefixedListAction("mouse2", this.OnMouse2In);
          this.ControlIn.SetPrefixedListAction("key", this.OnKeyIn);
+         this.ControlIn.SetPrefixedListAction("samplerate", this.OnSampleRate);
+         this.TimerThread = new CTimerThread(this);
+         { // InitLatencyUpdateTimer
+            var aRunInMainThread = true;
+            var aInterval = new TimeSpan(0, 0, 0, 0, 3000);
+            var aPriority = System.Windows.Threading.DispatcherPriority.Background;
+            this.LatencyUpdateTimer = new CTimer(this.TimerThread, 
+                                                 aInterval, aPriority,
+                                                 this.OnLatencyUpdateTimer, 
+                                                 aRunInMainThread);
+         }
       }
       private void OnInit(CInlet aInlet, string aFirstItem, CReadonlyListData aParams)
       {
@@ -573,6 +752,7 @@ namespace CbChannelStrip
          this.SendMatrixEnabledStates();
          this.Connectors.UpdateRoutings();
          this.Connectors.FocusedConnector = this.Connectors.MainIo;
+         this.LatencyUpdateTimer.Start();
       }
       #endregion
       #region Control 
@@ -596,7 +776,12 @@ namespace CbChannelStrip
       {
          this.BeginInvokeInMainTask(delegate ()
          {
+            // First:
             this.GaAnimator.ProcessNewGraph();
+
+            // RefreshChangedState:
+            this.UpdateFlowMatrixSampleRate();
+            this.Connectors.UpdateNodeLatencies();            
          });
       }
       private volatile CCsState CsState;
@@ -1071,6 +1256,69 @@ namespace CbChannelStrip
       {
          Up,
          Down
+      }
+      #endregion
+      #region SampleRate
+      internal int SampleRate;
+      private void UpdateFlowMatrixSampleRate()
+      {
+         this.FlowMatrix.SampleRate = this.SampleRate;
+      }
+      private void OnSampleRate(CInlet aInlet, string aPrefix, CReadonlyListData aList)
+      {
+         this.WriteLogInfoMessage(nameof(this.OnSampleRate));
+         var aSampleRate = Convert.ToInt32(aList.ElementAt(0));
+         this.SampleRate = aSampleRate;
+         this.WriteLogInfoMessage("ChannelStrip.SampleRate", this.SampleRate);
+         this.UpdateFlowMatrixSampleRate();
+         this.SendLatenciesOnDemand();
+      }
+      #endregion
+      #region TimerThread
+      private readonly CTimerThread TimerThread;
+      #endregion
+      #region Latency
+      private readonly CTimer LatencyUpdateTimer;
+      private void OnLatencyUpdateTimer(object aSender, EventArgs aArgs)
+      {         
+         this.LatencyUpdateTimer.Stop();
+         try
+         {
+            var aConnectors = this.Connectors;
+            var aLatencyChanged = false;
+            foreach(var aConnector in aConnectors.Connectors)
+            {
+               aConnector.RequestNewLatency();
+
+               //this.WriteLogInfoMessage("Channel", aConnector.Number);
+               //this.WriteLogInfoMessage("NewNodeLatency", aConnector.NewNodeLatency);
+               //this.WriteLogInfoMessage("NodeLatency", aConnector.NodeLatency);
+               if (aConnector.NewNodeLatency.HasValue
+               && aConnector.NewNodeLatency.Value != aConnector.NodeLatency)
+               {
+                  //this.WriteLogInfoMessage(">>>>>>>>>>>>>>>>>>>>>>>> LatencyChanged");
+                  aLatencyChanged = true;
+               }
+            }
+
+            if(aLatencyChanged)
+            {
+               this.WriteLogInfoMessage("LatencyChanged");
+               this.Connectors.CommitNewNodeLatencies(); 
+               this.SendLatenciesOnDemand();
+            }
+         }
+         finally
+         { 
+            this.LatencyUpdateTimer.Start();
+         }
+      }
+      private void SendLatenciesOnDemand()
+      {
+         foreach (var aConnector in this.Connectors.Connectors)
+         {
+            aConnector.SendLatenciesOnDemand();
+         }
       }
       #endregion
    }

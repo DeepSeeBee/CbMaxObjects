@@ -1,5 +1,6 @@
 ﻿using CbChannelStrip;
 using CbChannelStrip.GaAnimator;
+using CbChannelStrip.Graph;
 using CbMaxClrAdapter;
 using CbMaxClrAdapter.Jitter;
 using System;

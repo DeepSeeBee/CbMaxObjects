@@ -530,11 +530,11 @@ namespace CbChannelStrip.GraphWiz
             if (aRouting.InputIdx == 0)
             {
                this.AddLines(aRouting.NameForInput, 0, aRouting.IsLinkedToOutput, "invtriangle");
-               this.AddLines(aRouting.NameForOutput, aRouting.FinalOutputLatency, aRouting.IsLinkedToOutput, "triangle");
+               this.AddLines(aRouting.NameForOutput, aRouting.InternalInputLatency, aRouting.IsLinkedToOutput, "triangle");
             }
             else
             {
-               this.AddLines(aRouting.NameForInput, aRouting.OutputLatency, aRouting.IsLinkedToInput && aRouting.IsLinkedToOutput, "Mcircle");
+               this.AddLines(aRouting.NameForInput, aRouting.OutLatency, aRouting.IsLinkedToInput && aRouting.IsLinkedToOutput, "Mcircle");
             }
          }
 

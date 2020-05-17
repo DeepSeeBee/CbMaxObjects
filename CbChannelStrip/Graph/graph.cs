@@ -186,12 +186,17 @@ namespace CbChannelStrip.Graph
          }
       }
 
-      private static void Test(string aTestId, int[] aActual, int[] aExpected, Action<string> aFail)
+      private static void Test(string aTestId, bool aOk, Action<string> aFail)
       {
-         if (!IsEqual(aActual, aExpected))
+         if(!aOk)
          {
             aFail(aTestId);
          }
+      }
+
+      private static void Test(string aTestId, int[] aActual, int[] aExpected, Action<string> aFail)
+      {
+         Test(aTestId, IsEqual(aActual, aExpected), aFail);
       }
 
       private static void Test(string aTestId, IEnumerable<int[]> aActual, IEnumerable<int[]> aExpected, Action<string> aFail)
@@ -219,7 +224,7 @@ namespace CbChannelStrip.Graph
       {
          internal CTestDiagramLayout() { }
       }
-      public static void Test(Action<string> aFailTest, Action<string> aDebugPrint)
+      public static void Test(Action<string> aFailAction, Action<string> aDebugPrint)
       {
          var aSettings = new CTestDiagramLayout();
          Test("c6090373-ca31-409c-968b-cc954900d29f", new CFlowMatrix(aDebugPrint, aSettings, 5,
@@ -232,7 +237,7 @@ namespace CbChannelStrip.Graph
                                                1, 0, 1, 1, 1,
                                                1, 1, 0, 1, 1,
                                                1, 1, 1, 0, 1,
-                                               1, 1, 1, 1, 0 }, aFailTest);
+                                               1, 1, 1, 1, 0 }, aFailAction);
 
          Test("4bb437c9-db94-49e1-bf85-e285aa2dc8e2", new CFlowMatrix(aDebugPrint, aSettings, 5,
                                                                      0, 1, 0, 0, 0,
@@ -244,7 +249,7 @@ namespace CbChannelStrip.Graph
                                                1, 0, 1, 1, 1,
                                                1, 1, 0, 1, 1,
                                                1, 1, 1, 0, 1,
-                                               1, 1, 1, 1, 0 }, aFailTest);
+                                               1, 1, 1, 1, 0 }, aFailAction);
 
 
 
@@ -258,7 +263,7 @@ namespace CbChannelStrip.Graph
                                                1, 0, 1, 1, 1,
                                                1, 0, 0, 1, 1,
                                                1, 1, 1, 0, 1,
-                                               1, 1, 1, 1, 0 }, aFailTest);
+                                               1, 1, 1, 1, 0 }, aFailAction);
 
          Test("f02dd08f-8c78-4118-bf4b-680e08681ef9", new CFlowMatrix(aDebugPrint, aSettings, 5,
                                                                      0, 0, 0, 0, 0,
@@ -270,9 +275,24 @@ namespace CbChannelStrip.Graph
                                                1, 0, 1, 1, 1,
                                                1, 0, 0, 1, 1,
                                                1, 0, 1, 0, 1,
-                                               1, 0, 0, 1, 0 }, aFailTest);
+                                               1, 0, 0, 1, 0 }, aFailAction);
 
 
+
+
+         //{ // TestLatencyOfMainOut
+         //   var aFlowMatrix = new CFlowMatrix(aDebugPrint, aSettings, 3,
+         //                                                             1, 1, 0,
+         //                                                             0, 0, 1,
+         //                                                             1, 0, 0);
+         //   var aL1 = 2;
+         //   var aL2 = 3;
+         //   var aL3 = 4;
+         //   aFlowMatrix.Routings.ElementAt(1).NodeLatency = aL1;
+         //   aFlowMatrix.Routings.ElementAt(5).NodeLatency = aL2;
+         //   aFlowMatrix.Routings.ElementAt(6).NodeLatency = aL3;
+         //   Test("a68f0ada-eee1-45f3-a8f1-8ac456e75443", aFlowMatrix.Routings.ElementAt(0).OutLatency == aL1 + aL2 + aL3, aFailAction);
+         //}
       }
       #endregion
       private volatile CRoutings RoutingsM;
@@ -288,6 +308,7 @@ namespace CbChannelStrip.Graph
          }
       }
 
+      internal int SampleRate;
 
       internal static CFlowMatrix NewTestFlowMatrix1(Action<string> aDebugPrint) => new CFlowMatrix(aDebugPrint, new CTestDiagramLayout(), 7,
                                                                       0, 1, 1, 0, 0, 0, 0,
@@ -335,6 +356,8 @@ namespace CbChannelStrip.Graph
                                                                 0, 0, 0, 0, 0, 0, 0,
                                                                 1, 0, 0, 0, 0, 0, 0
                                                                 );
+
+
    }
 
 
@@ -375,7 +398,7 @@ namespace CbChannelStrip.Graph
          this.FlowMatrix = aFlowMatrix;
       }
 
-      private readonly CFlowMatrix FlowMatrix;
+      internal readonly CFlowMatrix FlowMatrix;
 
       internal readonly CRouting[] Routings;
 
@@ -467,7 +490,19 @@ namespace CbChannelStrip.Graph
       internal string NameForInput { get => this.InputIdx == 0 ? InName : this.Name; }
       internal string NameForOutput { get => this.InputIdx == 0 ? OutName : this.Name; }
 
-      internal int NodeLatency { get => this.InputIdx; } // TODO.
+      private int NodeLatencyM;
+      internal int NodeLatency 
+      { 
+         get => this.NodeLatencyM; 
+         set
+         {
+            if(this.NodeLatencyM != value)
+            {
+               this.NodeLatencyM = value;
+               this.RefreshOutputLatency();
+            }
+         }
+      } 
 
       private IEnumerable<CRouting> InputsM;
       internal IEnumerable<CRouting> Inputs
@@ -482,21 +517,45 @@ namespace CbChannelStrip.Graph
          }
       }
 
-      internal int? FinalOutputLatencyM;
-      internal int FinalOutputLatency
+      internal int? InternalInputLatencyM;
+      internal int InternalInputLatency
       {
          get
          {
-            if (!this.FinalOutputLatencyM.HasValue)
+            if (!this.InternalInputLatencyM.HasValue)
             {
                var aLatencies = (from aInput in this.Inputs
+                                 where aInput.InputIdx != 0
                                  where aInput.IsLinkedToInput
                                  where aInput.IsLinkedToOutput
-                                 select aInput.OutputLatency);
+                                 select aInput.OutLatency);
                var aLatency = aLatencies.IsEmpty() ? 0 : aLatencies.Max();
-               this.FinalOutputLatencyM = aLatency;
+               this.InternalInputLatencyM = aLatency;
             }
-            return this.FinalOutputLatencyM.Value;
+            return this.InternalInputLatencyM.Value;
+         }
+      }
+      private void RefreshOutputLatency()
+      {
+         this.Routings.FlowMatrix.DebugPrint(nameof(this.RefreshOutputLatency) + "." + this.InputIdx);
+
+         this.InternalInputLatencyM = default(int?);
+         if (this.InputIdx != 0)
+         {            
+            foreach (var aOutput in this.Outputs)
+            {
+               aOutput.RefreshInputLatency();
+            }
+         }
+      }
+      internal void RefreshInputLatency()
+      {
+         this.Routings.FlowMatrix.DebugPrint(nameof(this.RefreshInputLatency) + "." + this.InputIdx);
+
+         if (this.InputIdx != 0)
+         {
+            this.InputLatencyM = default(int?);
+            this.RefreshOutputLatency();
          }
       }
 
@@ -518,13 +577,13 @@ namespace CbChannelStrip.Graph
                }
                else
                {
-                  this.InputLatencyM = this.FinalOutputLatency;
+                  this.InputLatencyM = this.InternalInputLatency;
                }
             }
             return this.InputLatencyM.Value;
          }
       }
-      internal int OutputLatency { get => this.InputLatency + this.NodeLatency; }
+      internal int OutLatency { get => this.InputLatency + this.NodeLatency; }
 
       internal CRouting[] Joins { get => this.Routings.Joins[this.InputIdx]; }
 

@@ -964,7 +964,7 @@ namespace CbMaxClrAdapter
       internal SObject_New NewArgs { get; private set; }
       #endregion
       #region Log
-      private string PrependDebugTime(string aMsg)
+      private string PrependDebugInfo(string aMsg)
       {         
          var aIncludeTime = true;
          if(aIncludeTime)
@@ -973,18 +973,19 @@ namespace CbMaxClrAdapter
             var aTimeText = aNow.Minute.ToString().PadLeft(2, '0') 
                     + ":" + aNow.Second.ToString().PadLeft(2, '0')
                     + ":" + aNow.Millisecond.ToString().PadLeft(3, '0')
-                    + ": " + aMsg;
-            return aTimeText;
+                    + ": ";
+            var aThreadText = "T" + System.Threading.Thread.CurrentThread.ManagedThreadId.ToString() + ": ";
+            return aTimeText + aThreadText + aMsg;
          }
          return aMsg;
       }
       public void WriteLogErrorMessage(CConnector aConnector, string aMsg)
       {
-         this.WriteLogErrorMessage(aConnector.GetType().Name + ": " + this.PrependDebugTime(aMsg));
+         this.WriteLogErrorMessage(aConnector.GetType().Name + ": " + this.PrependDebugInfo(aMsg));
       }
       public void WriteLogErrorMessage(string aMsg)
       {
-         this.Marshal.Max_Log_Write(this.PrependDebugTime(aMsg), true);
+         this.Marshal.Max_Log_Write(this.PrependDebugInfo(aMsg), true);
       }
       public void WriteLogErrorMessage(Exception aExc)
       {
@@ -993,7 +994,7 @@ namespace CbMaxClrAdapter
       private string GetObjMsg(object aObj) => aObj is object ? aObj.ToString() : "<Null>";
       public void WriteLogInfoMessage(object aObj)
       {
-         this.Marshal.Max_Log_Write(this.PrependDebugTime(GetObjMsg(aObj)), false);
+         this.Marshal.Max_Log_Write(this.PrependDebugInfo(GetObjMsg(aObj)), false);
       }
       public void WriteLogInfoMessage(string aVarName, object aVarValue)
       {
@@ -1013,7 +1014,7 @@ namespace CbMaxClrAdapter
       /// Can be called from any thread.
       /// Uses Max::QElem mechanism.
       /// </summary>
-      protected void InvokeInMainTask(Action aAction)
+      public void BeginInvokeInMainTask(Action aAction)
       {
          lock(this.MainTaskActivity)
          {
@@ -1060,11 +1061,17 @@ namespace CbMaxClrAdapter
       }
       #endregion
       #region Shutdown
+      internal List<Action> ShutdownActions = new List<Action>();
+
       protected virtual void OnShutdown()
       {
       }
       internal void Shutdown()
       {
+         foreach(var aShutdownAction in this.ShutdownActions)
+         {
+            aShutdownAction();
+         }
          this.OnShutdown();
       }
       #endregion
