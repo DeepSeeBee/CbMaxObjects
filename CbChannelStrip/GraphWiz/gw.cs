@@ -18,8 +18,6 @@ using System.Threading.Tasks;
 
 namespace CbChannelStrip.GraphWiz
 {
-   using CPoint = Tuple<double, double>;
-
    internal sealed class CGwEdge
    {
       internal CGwEdge(string aNode1Name, string aNode2Name, IEnumerable<CPoint> aSplines, Color? aColor)
@@ -48,15 +46,15 @@ namespace CbChannelStrip.GraphWiz
       internal CGwNode(string aName, double aX, double aY, double aDx, double aDy, string aShape)
       {
          this.Name = aName;
-         this.X = aX;
-         this.Y = aY;
+         this.CenterX = aX;
+         this.CenterY = aY;
          this.Dx = aDx;
          this.Dy = aDy;
          this.ShapeEnum = (CShapeEnum)Enum.Parse(typeof(CShapeEnum), aShape, true);
       }
       internal readonly string Name;
-      internal readonly double X;
-      internal readonly double Y;
+      internal readonly double CenterX;
+      internal readonly double CenterY;
       internal readonly double Dx;
       internal readonly double Dy;
       internal enum CShapeEnum
@@ -69,15 +67,6 @@ namespace CbChannelStrip.GraphWiz
       internal readonly CShapeEnum ShapeEnum;
       internal Color? Color;
       internal Color? FontColor;
-
-      internal double CenterX
-      {
-         get => this.X + this.Dx / 2.0d;
-      }
-      internal double CenterY
-      {
-         get => this.Y + this.Dy / 2.0d;
-      }
    }
 
    internal sealed class CCaseInsenstiveComparer : IEqualityComparer<string>
@@ -146,7 +135,17 @@ namespace CbChannelStrip.GraphWiz
             return default(Color?);
          }
       }
-      internal static CGwGraph New(string aCode)
+
+      internal void DebugPrint(Action<string> aDebugPrint)
+      {
+         foreach(var aNode in this.Nodes)
+         {
+            aDebugPrint("GwNode.CenterY=" + aNode.CenterY);
+            aDebugPrint("GwNode.Dy=" + aNode.Dy);
+         }
+      }
+
+      internal static CGwGraph New(string aCode, CPoint aScreenSize, Action<string> aDebugPrint)
       {
          aCode = aCode.Replace(Environment.NewLine, " ");
          var aNodes = new List<CGwNode>();
@@ -171,8 +170,21 @@ namespace CbChannelStrip.GraphWiz
          var aToks = aCoords.Split(',').ToArray();
          var aDiagX = aParser.ParseDouble(aToks[0]);
          var aDiagY = aParser.ParseDouble(aToks[1]);
-         var aDiagDx = aParser.ParseDouble(aToks[2]);
-         var aDiagDy = aParser.ParseDouble(aToks[3]);
+         var aDiagDx1 = aParser.ParseDouble(aToks[2]);
+         var aDiagDy1 = aParser.ParseDouble(aToks[3]);
+         var aDiagSize = CPoint.GetSizeOfPreservedRatioScale(new CPoint(aDiagDx1, aDiagDy1), aScreenSize);
+         var aScale = 1.0d; // aDiagDx1 / aDiagSize.x;
+         aDebugPrint(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Scale=" + aScale);
+         var aTranslate = (aScreenSize - aDiagSize) / new CPoint(2.0d);         
+         var aTranslateX = aTranslate.x;
+         var aTranslateY = aTranslate.y;
+         var aImportDx = new Func<double, double>(c => c * aScale);
+         var aImportDy = new Func<double, double>(c => c * aScale);
+         var aImportX = new Func<double, double>(c => c * aScale + aTranslateX) ;
+         var aImportY = new Func<double, double>(c => c * aScale + aTranslateY);
+         var aDiagDx = aScreenSize.x;  
+         var aDiagDy = aScreenSize.y;  
+
          aParser.SkipWhitespace();
          aParser.Expect("]");
          aParser.SkipWhitespace();
@@ -199,10 +211,10 @@ namespace CbChannelStrip.GraphWiz
                var aSplines = new List<CPoint>();
                while(!aPosParser.IsEof)
                {
-                  var aX = aPosParser.ParseDouble(aPosParser.ReadValue());
+                  var aX = aImportX(aPosParser.ParseDouble(aPosParser.ReadValue()));
                   aPosParser.Expect(",");
-                  var aY = aDiagDy - aPosParser.ParseDouble(aPosParser.ReadValue());
-                  var aPoint = new CPoint(aX, aY);
+                  var aY = aDiagDy - aImportY(aPosParser.ParseDouble(aPosParser.ReadValue()));
+                  var aPoint = new CPoint(aX,aY);
                   aSplines.Add(aPoint);
                   aPosParser.SkipWhitespace();
                }
@@ -233,10 +245,10 @@ namespace CbChannelStrip.GraphWiz
                   var aXy = aPos.Split(',');
                   var aXText = aXy[0];
                   var aYText = aXy[1];
-                  var aX = aParser.ParseDouble(aXText);
-                  var aY = aDiagDy - aParser.ParseDouble(aYText);
-                  var aDx = InchesToPixels(aParser.ParseDouble(aNodeAttributes["width"]));
-                  var aDy = InchesToPixels(aParser.ParseDouble(aNodeAttributes["height"]));
+                  var aX = aImportX(aParser.ParseDouble(aXText));
+                  var aY = aDiagDy - aImportY(aParser.ParseDouble(aYText));
+                  var aDx = aImportDx(InchesToPixels(aParser.ParseDouble(aNodeAttributes["width"])));
+                  var aDy = aImportDy(InchesToPixels(aParser.ParseDouble(aNodeAttributes["height"])));
                   var aShape = aNodeAttributes["shape"];
                   var aColor = GetColor(aNodeAttributes, "color");
                   var aFontColor = GetColor(aNodeAttributes, "fontcolor");                  
@@ -464,7 +476,10 @@ namespace CbChannelStrip.GraphWiz
          {
             if(!(this.GwGraphM is object))
             {
-               var aGraph = CGwGraph.New(this.CodeWithCoords.JoinString(" "));
+               var aDiagSize1 = this.DiagramLayout.DiagramSize;
+               var aDiagSize2 = new CPoint(aDiagSize1.x, aDiagSize1.y);
+               var aDiagSize = aDiagSize2;
+               var aGraph = CGwGraph.New(this.CodeWithCoords.JoinString(" "), aDiagSize, this.DebugPrint);
                this.GwGraphM = aGraph;
             }
             return this.GwGraphM;
@@ -588,7 +603,8 @@ namespace CbChannelStrip.GraphWiz
       {
          aDiagram.Bitmap.Save(@"C:\Program Files\Cycling '74\Max 8\packages\max-sdk-8.0.3\source\charly_beck\CbChannelStrip\m4l\Test\graph.png");
          var aCodeWithCoords = aDiagram.CodeWithCoords.JoinString(Environment.NewLine);
-         var aGwGraph = CGwGraph.New(aCodeWithCoords);
+         var aDiagSize = new CPoint(200, 200);
+         var aGwGraph = CGwGraph.New(aCodeWithCoords, aDiagSize, delegate (string a) { });
       }
 
       internal static void Test(Action<string> aFailAction, Action<string> aDebugPrint)

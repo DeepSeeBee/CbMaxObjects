@@ -32,8 +32,9 @@ namespace CbChannelStrip
    {
       internal DirectoryInfo GraphWizInstallDir { get =>new DirectoryInfo(@"C:\Program Files (x86)\Graphviz2.38\"); }
       internal virtual bool GetIncludeInDiagram(CChannel aChannel) => aChannel.IsLinkedToSomething;
-   }
+      internal virtual CPoint DiagramSize { get => new CPoint(1600, 600); }
 
+   }
 
    internal sealed class CCsWorkerResult : CGaWorkerResult
    {
@@ -738,7 +739,11 @@ namespace CbChannelStrip
          {
             aRows[aIdx] = new int[aIoCount];
          }
-         aRows[0][0] = 1;
+         if(aIoCount > 1)
+         {
+            aRows[0][1] = 1;
+            aRows[1][0] = 1;
+         }
          this.GaAnimator.State = this.SetNewState(this.GaAnimator, aIoCount);
          this.Rows = aRows;
          this.IoCount = aIoCount;
@@ -896,8 +901,8 @@ namespace CbChannelStrip
          var aSizeList = this.PWindow2InOut.GetMessage<CList>().Value;
          aSizeList.Clear();
          aSizeList.Add("size");
-         aSizeList.Add(aSize.X);
-         aSizeList.Add(aSize.Y);
+         aSizeList.Add(aSize.x);
+         aSizeList.Add(aSize.y);
          this.PWindow2InOut.Send();
       }
 

@@ -1,4 +1,14 @@
-﻿using CbMaxClrAdapter;
+﻿/*
+ * Bugs:
+ * - Seit 202005180700: Max beendet sich nicht mehr.
+ * 
+ * 
+ * 
+ * 
+ * 
+ * 
+ */
+using CbMaxClrAdapter;
 using System;
 using System.Collections.Generic;
 using System.Linq;

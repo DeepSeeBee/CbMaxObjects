@@ -334,6 +334,55 @@ namespace CbChannelStrip.Graph
             Test("3c4f2ccd-a36c-47cc-96f4-2b241687382f", aFlowMatrix.Channels.ElementAt(0).LatencyCompensations.Length == 1, aFailAction);
             Test("c2c2b99a-3a6c-452a-9da7-b808d55046b2", aFlowMatrix.Channels.ElementAt(0).LatencyCompensations[0] == 0, aFailAction);
          }
+
+         {
+
+            var aFlowMatrix = new CFlowMatrix(aDebugPrint, aSettings, 11,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+                                                                      );
+            var aGraph = aFlowMatrix.Channels.GwDiagramBuilder.GwGraph;
+
+
+         }
+
+         {
+            var aFlowMatrix = new CFlowMatrix(aDebugPrint, aSettings, 5,
+                                                          0, 1, 1, 0, 1,
+                                                          0, 0, 0, 1, 0,
+                                                          0, 0, 0, 1, 0,
+                                                          1, 0, 0, 0, 0,
+                                                          0, 0, 1, 0, 0
+                                                          );
+            var aGraph = aFlowMatrix.Channels.GwDiagramBuilder.GwGraph;
+         }
+         { // SaveReferenceBitmap
+            var aFlowMatrix = new CFlowMatrix(aDebugPrint, aSettings, 11,
+                                                                      0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+                                                                      );
+            var aGraph = aFlowMatrix.Channels.GwDiagramBuilder.GwGraph;
+            aFlowMatrix.Channels.GwDiagramBuilder.Bitmap.Save(@"C:\Program Files\Cycling '74\Max 8\packages\max-sdk-8.0.3\source\charly_beck\CbChannelStrip\m4l\Test\graph.png");
+         }
+
       }
       #endregion
       private volatile CChannels ChannelsM;

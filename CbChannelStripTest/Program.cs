@@ -3,6 +3,7 @@ using CbChannelStrip.GaAnimator;
 using CbChannelStrip.Graph;
 using CbMaxClrAdapter;
 using CbMaxClrAdapter.Jitter;
+using CbMaxClrAdapter.MGraphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +18,7 @@ namespace CbChannelStripTest
       static void Main(string[] args)
       {
          var aFailAction = new Action<string>(delegate (string aTestCaseId) { throw new Exception("Test failed: " + aTestCaseId); });
-         var aDebugPrint = new Action<string>(delegate (string aMsg) { Console.WriteLine(aMsg); });
+         var aDebugPrint = new Action<string>(delegate (string aMsg) { Console.WriteLine(aMsg); });        
          CListData.Test(aFailAction);
          CChannelStrip.Test(aFailAction, aDebugPrint);
          CMatrixCellEnumerator.Test(aFailAction);
