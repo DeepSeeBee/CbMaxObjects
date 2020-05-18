@@ -1005,8 +1005,16 @@ namespace CbChannelStrip
                         {
                            var aIoIdx = aKey - aOffset.Value;
                            var aConnectors = this.Connectors;
-                           var aFocused = aConnectors.GetConnectorByIdx(aIoIdx);
-                           aConnectors.FocusedConnector = aFocused;                  
+                           var aNewConnector = aConnectors.GetConnectorByIdx(aIoIdx);
+                           if(aNewConnector.Channel.IsLinkedToSomething)
+                           {
+                              aConnectors.FocusedConnector = aNewConnector;
+                           }
+                           else if(aConnectors.FocusedConnector is object)
+                           {
+                              aConnectors.FocusedConnector.SetOutputActive(aNewConnector.Number, true);
+                              aConnectors.FocusedConnector = aNewConnector;
+                           }
                         }              
                      }
                      break;
