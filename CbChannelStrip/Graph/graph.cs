@@ -354,7 +354,39 @@ namespace CbChannelStrip.Graph
 
 
          }
+         {
+            var aFlowMatrix = new CFlowMatrix(aDebugPrint, aSettings, 11,
+                                                                      0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+                                                                      );
+            var aGraph = aFlowMatrix.Channels.GwDiagramBuilder.GwGraph;
+         }
 
+         {
+            var aFlowMatrix = new CFlowMatrix(aDebugPrint, aSettings, 11,
+                                                                      0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0,
+                                                                      0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0
+                                                                      );
+            var aGraph = aFlowMatrix.Channels.GwDiagramBuilder.GwGraph;
+         }
          {
             var aFlowMatrix = new CFlowMatrix(aDebugPrint, aSettings, 5,
                                                           0, 1, 1, 0, 1,

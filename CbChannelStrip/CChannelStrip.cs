@@ -730,6 +730,8 @@ namespace CbChannelStrip
                                                  aRunInMainThread);
          }
          this.SignalMatrixOut = new CListOutlet(this);
+         this.DebugInlet = new CListInlet(this);
+         this.InitDebugInlet();
       }
       private void OnInit(CInlet aInlet, string aFirstItem, CReadonlyListData aParams)
       {
@@ -755,6 +757,17 @@ namespace CbChannelStrip
          this.Connectors.FocusedConnector = this.Connectors.MainIo;
          this.LatencyUpdateTimer.Start();
          this.SendSignalMatrix();
+      }
+      #endregion
+      #region Debug
+      private readonly CListInlet DebugInlet;
+      private void InitDebugInlet()
+      {
+         this.DebugInlet.SetPrefixedListAction("next_graph", this.OnDebugNextGraph);
+      }
+      private void OnDebugNextGraph(CInlet aInlet, string aPrefix, CReadonlyListData aRemainingItems)
+      {
+         this.NextGraph();
       }
       #endregion
       #region Control 

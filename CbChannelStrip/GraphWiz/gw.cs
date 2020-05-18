@@ -161,29 +161,86 @@ namespace CbChannelStrip.GraphWiz
          aParser.Expect("graph");
          aParser.SkipWhitespace();
          aParser.Expect("[");
-         aParser.SkipWhitespace();
-         aParser.Expect("bb");
-         aParser.SkipWhitespace();
-         aParser.Expect("=");
-         aParser.SkipWhitespace();
-         var aCoords = aParser.ReadString().Trim();
+
+         var aGraphAttributes = aParser.ReadAttributes();
+         var aCoords = aGraphAttributes["bb"].Trim();
          var aToks = aCoords.Split(',').ToArray();
          var aDiagX = aParser.ParseDouble(aToks[0]);
          var aDiagY = aParser.ParseDouble(aToks[1]);
          var aDiagDx1 = aParser.ParseDouble(aToks[2]);
          var aDiagDy1 = aParser.ParseDouble(aToks[3]);
+
+         ///////////////////////////////////////////////
+         /// Klein, kein problem beim skalierungswechsel (sollte der zuletzt eingecheckte stand sein)
+         var aDiagSize1 = new CPoint(aDiagDx1, aDiagDy1);
          var aDiagSize = CPoint.GetSizeOfPreservedRatioScale(new CPoint(aDiagDx1, aDiagDy1), aScreenSize);
-         var aScale = 1.0d; // aDiagDx1 / aDiagSize.x;
-         aDebugPrint(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>Scale=" + aScale);
-         var aTranslate = (aScreenSize - aDiagSize) / new CPoint(2.0d);         
+         var aScale = 1.0d; 
+         var aScale1 = aDiagSize1 / aDiagSize;
+         var aTranslate = (aScreenSize - aDiagSize * aScale1) / new CPoint(2.0d);
          var aTranslateX = aTranslate.x;
          var aTranslateY = aTranslate.y;
          var aImportDx = new Func<double, double>(c => c * aScale);
          var aImportDy = new Func<double, double>(c => c * aScale);
-         var aImportX = new Func<double, double>(c => c * aScale + aTranslateX) ;
+         var aImportX = new Func<double, double>(c => c * aScale + aTranslateX);
          var aImportY = new Func<double, double>(c => c * aScale + aTranslateY);
-         var aDiagDx = aScreenSize.x;  
-         var aDiagDy = aScreenSize.y;  
+         var aDiagDx = aScreenSize.x;
+         var aDiagDy = aScreenSize.y;
+
+         ///////////////////////////////////////////////
+         // gross, problem beim skalierungswechsel, 
+         //var aDiagSize = CPoint.GetSizeOfPreservedRatioScale(new CPoint(aDiagDx1, aDiagDy1), aScreenSize);
+         //var aScale = aDiagDx1 / aDiagSize.x;
+         //aDebugPrint(">>>>>>>>>>>>>>>>>>>>> DiagDx1=" + aDiagDx1);
+         //aDebugPrint(">>>>>>>>>>>>>>>>>>>>> DiagDy1=" + aDiagDy1);
+         //aDebugPrint(">>>>>>>>>>>>>>>>>>>>> Scale=" + aScale);
+         //var aTranslate = (aScreenSize - aDiagSize) / new CPoint(2.0d);
+         //var aTranslateX = aTranslate.x;
+         //var aTranslateY = aTranslate.y;
+         //var aImportDx = new Func<double, double>(c => c * aScale);
+         //var aImportDy = new Func<double, double>(c => c * aScale);
+         //var aImportX = new Func<double, double>(c => c * aScale + aTranslateX);
+         //var aImportY = new Func<double, double>(c => c * aScale + aTranslateY);
+         //var aDiagDx = aScreenSize.x;
+         //var aDiagDy = aScreenSize.y;
+
+         ///////////////////////////////////////////////
+         // Noch probieren:         
+         //var aDiagSize = CPoint.GetSizeOfPreservedRatioScale(new CPoint(aDiagDx1, aDiagDy1), aScreenSize);
+         //var aScale = aDiagDx1 / aDiagSize;
+         //aDebugPrint(">>>>>>>>>>>>>>>>>>>>> DiagDx1=" + aDiagDx1);
+         //aDebugPrint(">>>>>>>>>>>>>>>>>>>>> DiagDy1=" + aDiagDy1);
+         //aDebugPrint(">>>>>>>>>>>>>>>>>>>>> Scale=" + aScale);
+         //var aTranslate = (aScreenSize - aDiagSize) / new CPoint(2.0d);
+         //var aTranslateX = aTranslate.x;
+         //var aTranslateY = aTranslate.y;
+         //var aImportDx = new Func<double, double>(c => c * aScale.x);
+         //var aImportDy = new Func<double, double>(c => c * aScale.y);
+         //var aImportX = new Func<double, double>(c => c * aScale.x + aTranslateX);
+         //var aImportY = new Func<double, double>(c => c * aScale.y + aTranslateY);
+         //var aDiagDx = aScreenSize.x;
+         //var aDiagDy = aScreenSize.y;
+
+
+         ///////////////////////////////////////////////
+         /// Gross, gut aber probleme beim skalierungswechswel:
+
+         //var aDiagSize1 = new CPoint(aDiagDx1, aDiagDy1);
+         //var aDiagSize = CPoint.GetSizeOfPreservedRatioScale(aScreenSize, new CPoint(aDiagDx1, aDiagDy1));
+         //var aScale = aDiagSize / aDiagSize1;
+         //aDebugPrint(">>>>>>>>>>>>>>>>>>>>> DiagDx1=" + aDiagDx1);
+         //aDebugPrint(">>>>>>>>>>>>>>>>>>>>> DiagDy1=" + aDiagDy1);
+         //aDebugPrint(">>>>>>>>>>>>>>>>>>>>> Scale=" + aScale);
+         //var aTranslate = (aScreenSize - aDiagSize) / new CPoint(2.0d);
+         //var aTranslateX = aTranslate.x;
+         //var aTranslateY = aTranslate.y;
+         //var aImportDx = new Func<double, double>(c => c * aScale.x);
+         //var aImportDy = new Func<double, double>(c => c * aScale.y);
+         //var aImportX = new Func<double, double>(c => c * aScale.x + aTranslateX);
+         //var aImportY = new Func<double, double>(c => c * aScale.y + aTranslateY);
+         //var aDiagDx = aScreenSize.x;
+         //var aDiagDy = aScreenSize.y;
+         ///////////////////////////////////////////////
+
 
          aParser.SkipWhitespace();
          aParser.Expect("]");
@@ -284,7 +341,8 @@ namespace CbChannelStrip.GraphWiz
          }
          internal CParser Copy() => new CParser(this.String, this.Pos);
          private int Pos;
-         private readonly string String;
+         internal readonly string String;
+         internal string RemainingText { get => this.String.Substring(this.Pos, this.String.Length - this.Pos); }
          internal char Char { get => this.String[this.Pos]; }
          internal bool IsEof { get => this.Pos >= this.String.Length; }
          private bool IsWhitespace { get => this.Char.ToString().Trim() == string.Empty; }
@@ -534,8 +592,10 @@ namespace CbChannelStrip.GraphWiz
       {
          this.AddLine("digraph G");
          this.AddLine("{");
+         // TODO: size="6,6"; testen
+         this.AddLine("rankdir = \"LR\";");         
          ++this.Indent;
-         var aWithOutputs = from aTest in aChannels
+         var aWithOutputs = from aTest  in aChannels
                             where aTest.IoIdx == 0
                                || this.DiagramLayout.GetIncludeInDiagram(aTest)
                             select aTest;
@@ -544,8 +604,8 @@ namespace CbChannelStrip.GraphWiz
          {
             if (aChannel.IoIdx == 0)
             {
-               this.AddLines(aChannel.NameForInput, 0, aChannel.IsLinkedToOutput, "invtriangle");
-               this.AddLines(aChannel.NameForOutput, aChannel.OutLatency, aChannel.IsLinkedToOutput, "triangle");
+               this.AddLines(aChannel.NameForInput, 0, aChannel.IsLinkedToOutput, "Mcircle"); //"invtriangle"
+               this.AddLines(aChannel.NameForOutput, aChannel.OutLatency, aChannel.IsLinkedToOutput, "Mcircle");//"triangle"
             }
             else
 
@@ -598,7 +658,7 @@ namespace CbChannelStrip.GraphWiz
       {
       }
 
-      #region Test
+#region Test
       private static void Test(string aId, CGwDiagramBuilder aDiagram, Action<string> aFailAction)
       {
          aDiagram.Bitmap.Save(@"C:\Program Files\Cycling '74\Max 8\packages\max-sdk-8.0.3\source\charly_beck\CbChannelStrip\m4l\Test\graph.png");
@@ -611,7 +671,7 @@ namespace CbChannelStrip.GraphWiz
       {
          Test("1baa58c2-5e3a-49c4-b762-eceab52cf977", CFlowMatrix.NewTestFlowMatrix5(aDebugPrint).Channels.GwDiagramBuilder, aFailAction);
       }
-      #endregion
+#endregion
 
       private IEnumerable<string> NewGraph(IEnumerable<string> aLines)
       {
