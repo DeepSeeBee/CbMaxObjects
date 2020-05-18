@@ -443,7 +443,7 @@ namespace CbChannelStrip.GraphWiz
       internal readonly IEnumerable<CGwEdge> Edges;
    }
 
-   internal sealed class CGwDiagramBuilder : CRoutingVisitor
+   internal sealed class CGwDiagramBuilder : CChannelVisitor
    {
       private Action<string> DebugPrint;
       internal CGwDiagramBuilder(Action<string> aDebugPrint,
@@ -515,49 +515,49 @@ namespace CbChannelStrip.GraphWiz
          return aStringBuilder.ToString();
       }
 
-      public override void Visit(CChannels aRoutings)
+      public override void Visit(CChannels aChannels)
       {
          this.AddLine("digraph G");
          this.AddLine("{");
          ++this.Indent;
-         var aWithOutputs = from aTest in aRoutings
+         var aWithOutputs = from aTest in aChannels
                             where aTest.IoIdx == 0
                                || this.DiagramLayout.GetIncludeInDiagram(aTest)
                             select aTest;
 
-         foreach (var aRouting in aWithOutputs)
+         foreach (var aChannel in aWithOutputs)
          {
-            if (aRouting.IoIdx == 0)
+            if (aChannel.IoIdx == 0)
             {
-               this.AddLines(aRouting.NameForInput, 0, aRouting.IsLinkedToOutput, "invtriangle");
-               this.AddLines(aRouting.NameForOutput, aRouting.OutLatency, aRouting.IsLinkedToOutput, "triangle");
+               this.AddLines(aChannel.NameForInput, 0, aChannel.IsLinkedToOutput, "invtriangle");
+               this.AddLines(aChannel.NameForOutput, aChannel.OutLatency, aChannel.IsLinkedToOutput, "triangle");
             }
             else
 
             {
-               this.AddLines(aRouting.NameForInput, aRouting.OutLatency, aRouting.IsLinkedToInput && aRouting.IsLinkedToOutput, "Mcircle");
+               this.AddLines(aChannel.NameForInput, aChannel.OutLatency, aChannel.IsLinkedToInput && aChannel.IsLinkedToOutput, "Mcircle");
             }
          }
 
-         base.Visit(aRoutings);
+         base.Visit(aChannels);
          --this.Indent;
          this.AddLine("}");
       }
 
 
 
-      private void VisitNonNull(CNonNullRouting aRouting)
+      private void VisitNonNull(CNonNullChannel aChannel)
       {
-         if (aRouting.IsLinkedToSomething)
+         if (aChannel.IsLinkedToSomething)
          {
-            foreach (var aOutput in aRouting.Outputs)
+            foreach (var aOutput in aChannel.Outputs)
             {
                if (aOutput.IsLinkedToSomething
                && ! aOutput.IsMainOut)
                {
-                  var aEdge = aRouting.NameForInput + " -> " + aOutput.NameForOutput;
+                  var aEdge = aChannel.NameForInput + " -> " + aOutput.NameForOutput;
                   var aAttribs = new Dictionary<string, string>();
-                  var aIsLinked = aRouting.IsLinkedToInput && aOutput.IsLinkedToOutput;
+                  var aIsLinked = aChannel.IsLinkedToInput && aOutput.IsLinkedToOutput;
                   aAttribs.Add("color", aIsLinked ? "black" : "lightgrey");
                   var aAttributesCode = this.GetAttributesCode(aAttribs);
                   this.AddLine(aEdge + aAttributesCode + ";");
@@ -566,17 +566,17 @@ namespace CbChannelStrip.GraphWiz
          }
       }
 
-      public override void Visit(CParalellRouting aParalellRouting)
+      public override void Visit(CParalellChannel aParalellChannel)
       {
-         this.VisitNonNull(aParalellRouting);
+         this.VisitNonNull(aParalellChannel);
       }
 
-      public override void Visit(CDirectRouting aDirectRouting)
+      public override void Visit(CDirectChannel aDirectChannel)
       {
-         this.VisitNonNull(aDirectRouting);
+         this.VisitNonNull(aDirectChannel);
       }
 
-      public override void Visit(CNullRouting aNullRouting)
+      public override void Visit(CNullChannel aNullChannel)
       {
       }
       public override void Visit(CMainOut aMainOut)

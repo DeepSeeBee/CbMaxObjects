@@ -291,9 +291,9 @@ namespace CbChannelStrip.Graph
             var aL2b = 4;
             aFlowMatrix.Channels.ElementAt(0).NodeLatency = aL1;
             aFlowMatrix.Channels.ElementAt(1).NodeLatency = aL2a;
-            Test("a68f0ada-eee1-45f3-a8f1-8ac456e75443", aFlowMatrix.Channels.Routings[0].OutLatency == aL1 + aL2a, aFailAction);
+            Test("a68f0ada-eee1-45f3-a8f1-8ac456e75443", aFlowMatrix.Channels.Channels[0].OutLatency == aL1 + aL2a, aFailAction);
             aFlowMatrix.Channels.ElementAt(1).NodeLatency = aL2b;
-            Test("26612543-fef0-4249-985e-c6ae523186d8", aFlowMatrix.Channels.Routings[0].OutLatency == aL1 + aL2b, aFailAction);
+            Test("26612543-fef0-4249-985e-c6ae523186d8", aFlowMatrix.Channels.Channels[0].OutLatency == aL1 + aL2b, aFailAction);
          }
 
          { // TestIsLinkedToSomething
@@ -336,16 +336,16 @@ namespace CbChannelStrip.Graph
          }
       }
       #endregion
-      private volatile CChannels RoutingsM;
+      private volatile CChannels ChannelsM;
       public CChannels Channels
       {
          get
          {
-            if (!(this.RoutingsM is object))
+            if (!(this.ChannelsM is object))
             {
-               this.RoutingsM = new CChannels(this);
+               this.ChannelsM = new CChannels(this);
             }
-            return this.RoutingsM;
+            return this.ChannelsM;
          }
       }
 
@@ -402,19 +402,19 @@ namespace CbChannelStrip.Graph
    }
 
 
-   internal abstract class CRoutingVisitor
+   internal abstract class CChannelVisitor
    {
 
-      public virtual void Visit(CChannels aRoutings)
+      public virtual void Visit(CChannels aChannels)
       {
-         foreach (var aRouting in aRoutings)
+         foreach (var aChannel in aChannels)
          {
-            aRouting.Accept(this);
+            aChannel.Accept(this);
          }
       }
-      public abstract void Visit(CParalellRouting aParalellRouting);
-      public abstract void Visit(CDirectRouting aDirectRouting);
-      public abstract void Visit(CNullRouting aNullRouting);
+      public abstract void Visit(CParalellChannel aParalellChannel);
+      public abstract void Visit(CDirectChannel aDirectChannel);
+      public abstract void Visit(CNullChannel aNullChannel);
       public abstract void Visit(CMainOut aMainOut);
    }
 
@@ -422,7 +422,7 @@ namespace CbChannelStrip.Graph
    {
       internal CChannels(CFlowMatrix aFlowMatrix)
       {
-         var aRoutings = new CChannel[aFlowMatrix.IoCount];
+         var aChannels = new CChannel[aFlowMatrix.IoCount];
          for (var aRow = 0; aRow < aFlowMatrix.IoCount; ++aRow)
          {
             var aOutputs = new List<int>();
@@ -433,22 +433,22 @@ namespace CbChannelStrip.Graph
                   aOutputs.Add(aCol);
                }
             }
-            var aRouting = CChannel.New(this, aRow, aOutputs);
-            aRoutings[aRow] = aRouting;
+            var aChannel = CChannel.New(this, aRow, aOutputs);
+            aChannels[aRow] = aChannel;
          }
          var aMainOut = new CMainOut(this);
-         this.Routings = aRoutings;
+         this.Channels = aChannels;
          this.MainOut = aMainOut;
          this.FlowMatrix = aFlowMatrix;
       }
 
       internal readonly CFlowMatrix FlowMatrix;
 
-      internal readonly CChannel[] Routings;
+      internal readonly CChannel[] Channels;
 
       internal readonly CChannel MainOut;
 
-      public IEnumerator<CChannel> GetEnumerator() => this.Routings.AsEnumerable().GetEnumerator();
+      public IEnumerator<CChannel> GetEnumerator() => this.Channels.AsEnumerable().GetEnumerator();
       IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
 
       private CChannel[][] JoinsM;
@@ -461,7 +461,7 @@ namespace CbChannelStrip.Graph
                var aJoins = new CChannel[this.FlowMatrix.IoCount][];
                for (var aRow = 0; aRow < this.FlowMatrix.IoCount; ++aRow)
                {
-                  aJoins[aRow] = (from aIdx in this.FlowMatrix.Joins[aRow] select this.Routings[aIdx]).ToArray();
+                  aJoins[aRow] = (from aIdx in this.FlowMatrix.Joins[aRow] select this.Channels[aIdx]).ToArray();
                }
                this.JoinsM = aJoins;
             }
@@ -484,34 +484,34 @@ namespace CbChannelStrip.Graph
          }
       }
 
-      internal enum CRoutingUseCase
+      internal enum CChannelUseCase
       {
          In,
          Out,
          Channel
       }
 
-      internal Tuple<CRoutingUseCase, CChannel> GetByName(string aName)
+      internal Tuple<CChannelUseCase, CChannel> GetByName(string aName)
       {
          if (aName == CChannel.InName)
-            return new Tuple<CRoutingUseCase, CChannel>(CRoutingUseCase.In, this.Routings[0]);
+            return new Tuple<CChannelUseCase, CChannel>(CChannelUseCase.In, this.Channels[0]);
          else if (aName == CChannel.OutName)
-            return new Tuple<CRoutingUseCase, CChannel>(CRoutingUseCase.Out, this.Routings[0]);
+            return new Tuple<CChannelUseCase, CChannel>(CChannelUseCase.Out, this.Channels[0]);
          else
-            return new Tuple<CRoutingUseCase, CChannel>(CRoutingUseCase.Channel, this.Routings[int.Parse(aName.TrimStart(CChannel.ChannelNamePrefix))]);
+            return new Tuple<CChannelUseCase, CChannel>(CChannelUseCase.Channel, this.Channels[int.Parse(aName.TrimStart(CChannel.ChannelNamePrefix))]);
       }
 
    }
 
    internal sealed class CMainOut : CChannel
    {
-      internal CMainOut(CChannels aRoutings):base(aRoutings, 0, new int[] { })
+      internal CMainOut(CChannels aChannels):base(aChannels, 0, new int[] { })
       {
       }
 
-      internal override int NodeLatency { get => this.Routings.Routings[0].NodeLatency; set => throw new InvalidOperationException(); }
+      internal override int NodeLatency { get => this.Channels.Channels[0].NodeLatency; set => throw new InvalidOperationException(); }
 
-      public override void Accept(CRoutingVisitor aVisitor) { aVisitor.Visit(this); } // Not needed atm.
+      public override void Accept(CChannelVisitor aVisitor) { aVisitor.Visit(this); } // Not needed atm.
 
       internal override bool IsMainOut => true;
 
@@ -520,13 +520,13 @@ namespace CbChannelStrip.Graph
    internal abstract class CChannel
    {
 
-      internal CChannel(CChannels aRoutings, int aInputIdx, int[] aOutputIdxs)
+      internal CChannel(CChannels aChannels, int aInputIdx, int[] aOutputIdxs)
       {
-         this.Routings = aRoutings;
+         this.Channels = aChannels;
          this.IoIdx = aInputIdx;
          this.OutputIdxs = aOutputIdxs;
       }
-      internal readonly CChannels Routings;
+      internal readonly CChannels Channels;
       internal readonly int IoIdx;
       internal readonly int[] OutputIdxs;
 
@@ -539,12 +539,12 @@ namespace CbChannelStrip.Graph
             foreach (var aOutput in this.OutputsWithoutMainOut)
                yield return aOutput;
             if (this.IsLinkedDirectlyToMainOut)
-               yield return this.Routings.MainOut;
+               yield return this.Channels.MainOut;
          }
 
       }
 
-      internal bool IsLinkedDirectlyToMainOut { get => this.Routings.FlowMatrix.Actives[this.Routings.FlowMatrix.GetCellIdx(0, this.IoIdx)]; }
+      internal bool IsLinkedDirectlyToMainOut { get => this.Channels.FlowMatrix.Actives[this.Channels.FlowMatrix.GetCellIdx(0, this.IoIdx)]; }
 
       private CChannel[] OutputsM;
       private CChannel[] OutputsWithoutMainOut
@@ -553,7 +553,7 @@ namespace CbChannelStrip.Graph
          {
             if (!(this.OutputsM is object))
             {
-               this.OutputsM = (from aIdx in Enumerable.Range(0, this.OutputIdxs.Length) select this.Routings.ElementAt(this.OutputIdxs[aIdx])).ToArray();
+               this.OutputsM = (from aIdx in Enumerable.Range(0, this.OutputIdxs.Length) select this.Channels.ElementAt(this.OutputIdxs[aIdx])).ToArray();
             }
             return this.OutputsM;
          }
@@ -580,7 +580,7 @@ namespace CbChannelStrip.Graph
          }
       }
 
-      internal IEnumerable<CChannel> NewInputs() => (from aTest in this.Routings where aTest.OutputsWithMainOut.Contains(this) select aTest).ToArray();
+      internal IEnumerable<CChannel> NewInputs() => (from aTest in this.Channels where aTest.OutputsWithMainOut.Contains(this) select aTest).ToArray();
 
       private IEnumerable<CChannel> InputsM;
       internal IEnumerable<CChannel> Inputs
@@ -659,28 +659,28 @@ namespace CbChannelStrip.Graph
       }
       private int InternalOutLatency { get => this.InputLatency + this.NodeLatency; }
 
-      internal int OutLatency { get => this.IoIdx == 0 ? this.Routings.MainOut.InternalOutLatency : this.InternalOutLatency; }
+      internal int OutLatency { get => this.IoIdx == 0 ? this.Channels.MainOut.InternalOutLatency : this.InternalOutLatency; }
 
 
       internal int[] LatencyCompensations { get => (from aInput in this.Inputs select - ((aInput.IoIdx == 0 ? 0 : aInput.OutLatency) - this.InputLatency)).ToArray(); }
 
-      internal CChannel[] Joins { get => this.Routings.Joins[this.IoIdx]; }
+      internal CChannel[] Joins { get => this.Channels.Joins[this.IoIdx]; }
 
-      public abstract void Accept(CRoutingVisitor aVisitor);
+      public abstract void Accept(CChannelVisitor aVisitor);
 
-      internal static CChannel New(CChannels aRoutings, int aInputIdx, IEnumerable<int> aOutputs)
+      internal static CChannel New(CChannels aChannels, int aInputIdx, IEnumerable<int> aOutputs)
       {
          if (aOutputs.IsEmpty())
          {
-            return new CNullRouting(aRoutings, aInputIdx);
+            return new CNullChannel(aChannels, aInputIdx);
          }
          else if (aOutputs.ContainsOneElements())
          {
-            return new CDirectRouting(aRoutings, aInputIdx, aOutputs.Single());
+            return new CDirectChannel(aChannels, aInputIdx, aOutputs.Single());
          }
          else
          {
-            return new CParalellRouting(aRoutings, aInputIdx, aOutputs.ToArray());
+            return new CParalellChannel(aChannels, aInputIdx, aOutputs.ToArray());
          }
       }
 
@@ -734,28 +734,28 @@ namespace CbChannelStrip.Graph
 
    }
 
-   internal sealed class CNullRouting : CChannel
+   internal sealed class CNullChannel : CChannel
    {
-      internal CNullRouting(CChannels aRoutings, int aInputIdx) : base(aRoutings, aInputIdx, new int[] { }) { }
-      public override void Accept(CRoutingVisitor aVisitor) => aVisitor.Visit(this);
+      internal CNullChannel(CChannels aChannels, int aInputIdx) : base(aChannels, aInputIdx, new int[] { }) { }
+      public override void Accept(CChannelVisitor aVisitor) => aVisitor.Visit(this);
    }
 
-   internal abstract class CNonNullRouting : CChannel
+   internal abstract class CNonNullChannel : CChannel
    {
-      internal CNonNullRouting(CChannels aRoutings, int aInputIdx, int[] aOutputIdx) : base(aRoutings, aInputIdx, aOutputIdx) { }
+      internal CNonNullChannel(CChannels aChannels, int aInputIdx, int[] aOutputIdx) : base(aChannels, aInputIdx, aOutputIdx) { }
 
    }
 
-   internal sealed class CParalellRouting : CNonNullRouting
+   internal sealed class CParalellChannel : CNonNullChannel
    {
-      internal CParalellRouting(CChannels aRoutings, int aInputIdx, int[] aOutputIdx) : base(aRoutings, aInputIdx, aOutputIdx) { }
-      public override void Accept(CRoutingVisitor aVisitor) => aVisitor.Visit(this);
+      internal CParalellChannel(CChannels aChannels, int aInputIdx, int[] aOutputIdx) : base(aChannels, aInputIdx, aOutputIdx) { }
+      public override void Accept(CChannelVisitor aVisitor) => aVisitor.Visit(this);
    }
 
-   internal sealed class CDirectRouting : CNonNullRouting
+   internal sealed class CDirectChannel : CNonNullChannel
    {
-      internal CDirectRouting(CChannels aRoutings, int aInputIdx, int aOutputIdx) : base(aRoutings, aInputIdx, new int[] { aOutputIdx }) { }
-      public override void Accept(CRoutingVisitor aVisitor) => aVisitor.Visit(this);
+      internal CDirectChannel(CChannels aChannels, int aInputIdx, int aOutputIdx) : base(aChannels, aInputIdx, new int[] { aOutputIdx }) { }
+      public override void Accept(CChannelVisitor aVisitor) => aVisitor.Visit(this);
 
       public CChannel Output { get => this.Outputs.Single(); }
 

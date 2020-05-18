@@ -31,7 +31,7 @@ namespace CbChannelStrip
    internal abstract class CGwDiagramLayout
    {
       internal DirectoryInfo GraphWizInstallDir { get =>new DirectoryInfo(@"C:\Program Files (x86)\Graphviz2.38\"); }
-      internal virtual bool GetIncludeInDiagram(CChannel aRouting) => aRouting.IsLinkedToSomething;
+      internal virtual bool GetIncludeInDiagram(CChannel aChannel) => aChannel.IsLinkedToSomething;
    }
 
 
@@ -76,9 +76,9 @@ namespace CbChannelStrip
          if (aShape is CGaNode
          && aFocusedConnector is object)
          {          
-            var aRouting = aFocusedConnector.Routing;
-            var aFocused = aShape.Name == aRouting.NameForInput
-                        || aShape.Name == aRouting.NameForOutput
+            var aChannel = aFocusedConnector.Channel;
+            var aFocused = aShape.Name == aChannel.NameForInput
+                        || aShape.Name == aChannel.NameForOutput
                          ;
             return aFocused;
          }
@@ -274,17 +274,17 @@ namespace CbChannelStrip
       internal CChannelStrip ChannelStrip { get => this.Conncectors.ChannelStrip; }
       internal bool IsOutput { get => this.Number == this.ChannelStrip.IoCount; }
       internal CFlowMatrix FlowMatrix { get => this.ChannelStrip.FlowMatrix; }
-      internal CChannels Routings { get => this.FlowMatrix.Channels; }
+      internal CChannels Channels { get => this.FlowMatrix.Channels; }
       internal int IoCount { get => this.FlowMatrix.IoCount; }
 
-      internal  CChannel Routing
+      internal  CChannel Channel
       {
          get
          {
-            var aRoutings = this.Routings;
+            var aChannels = this.Channels;
             return this.IsOutput
-                  ? aRoutings.Routings[0]
-                  : aRoutings.Routings[this.Number]
+                  ? aChannels.Channels[0]
+                  : aChannels.Channels[this.Number]
                   ;
          }
       }
@@ -293,15 +293,15 @@ namespace CbChannelStrip
 
       internal bool CalcEnabled()
       {
-         var aRouting = this.Routing;
-         var aEnabled = aRouting.IsLinkedToInput
-                     && aRouting.IsLinkedToOutput
+         var aChannel = this.Channel;
+         var aEnabled = aChannel.IsLinkedToInput
+                     && aChannel.IsLinkedToOutput
                      ;
          return aEnabled;
       }
 
-      internal bool GetOutputEnabled(Int32 aOutput) => this.ChannelStrip.GetRoutingEnabled(this.Number, aOutput);
-      internal bool GetInputEnabled(Int32 aInput) => this.ChannelStrip.GetRoutingEnabled(aInput, this.Number);
+      internal bool GetOutputEnabled(Int32 aOutput) => this.ChannelStrip.GetChannelEnabled(this.Number, aOutput);
+      internal bool GetInputEnabled(Int32 aInput) => this.ChannelStrip.GetChannelEnabled(aInput, this.Number);
       private void ConnectTo(CCsConnector aConnector)
       {
          if(this.GetOutputActive(aConnector.Number))
@@ -314,7 +314,7 @@ namespace CbChannelStrip
          }
       }
 
-      internal virtual void UpdateRoutings()
+      internal virtual void UpdateChannels()
       {
          this.Enabled = this.CalcEnabled();
        
@@ -382,7 +382,7 @@ namespace CbChannelStrip
       }
       internal void UpdateNodeLatency()
       {
-         this.Routing.NodeLatency = this.NodeLatency;
+         this.Channel.NodeLatency = this.NodeLatency;
       }
       private void ReceiveLatency(int aLatency)
       {
@@ -407,7 +407,7 @@ namespace CbChannelStrip
       private int? OutLatencySamplesSent;
       private void SendOutLatencySamplesOnDemand()
       {
-         var aLatency = this.Routing.OutLatency;
+         var aLatency = this.Channel.OutLatency;
          if (!this.OutLatencySamplesSent.HasValue
          || this.OutLatencySamplesSent.Value != aLatency)
          {
@@ -424,7 +424,7 @@ namespace CbChannelStrip
       private double? OutLatencyMsSent;
       private void SendOutLatencyMsOnDemand()
       {
-         var aLatency = this.SamplesToMs(this.Routing.OutLatency);
+         var aLatency = this.SamplesToMs(this.Channel.OutLatency);
          if (!this.OutLatencyMsSent.HasValue
          || this.OutLatencyMsSent.Value != aLatency)
          {
@@ -441,7 +441,7 @@ namespace CbChannelStrip
       private int? NodeLatencySamplesSent;
       private void SendNodeLatencySamplesOnDemand()
       {
-         var aLatency = this.Routing.NodeLatency;
+         var aLatency = this.Channel.NodeLatency;
          if (!this.NodeLatencySamplesSent.HasValue
          || this.NodeLatencySamplesSent.Value != aLatency)
          {
@@ -458,7 +458,7 @@ namespace CbChannelStrip
       private double? NodeLatencyMsSent;
       private void SendNodeLatencyMsOnDemand()
       {
-         var aLatency = this.SamplesToMs(this.Routing.NodeLatency);
+         var aLatency = this.SamplesToMs(this.Channel.NodeLatency);
          if (!this.NodeLatencyMsSent.HasValue
          || this.NodeLatencyMsSent.Value != aLatency)
          {
@@ -609,7 +609,7 @@ namespace CbChannelStrip
                bool aNextGraph = false;
                if(this.FocusedConnectorM is object)
                {
-                  if (!this.FocusedConnectorM.Routing.IsLinkedToSomething)
+                  if (!this.FocusedConnectorM.Channel.IsLinkedToSomething)
                      aNextGraph = true;
                   this.FocusedConnectorM.Unfocus();
                }
@@ -617,7 +617,7 @@ namespace CbChannelStrip
                {
                   this.FocusedConnectorM = value;
                   this.FocusedConnectorM.Focus();
-                  if (!this.FocusedConnectorM.Routing.IsLinkedToSomething)
+                  if (!this.FocusedConnectorM.Channel.IsLinkedToSomething)
                      aNextGraph = true;
                }
                if(aNextGraph)
@@ -627,11 +627,11 @@ namespace CbChannelStrip
             }
          }
       }     
-      internal void UpdateRoutings()
+      internal void UpdateChannels()
       {
          foreach(var aChannel in this.Connectors)
          {
-            aChannel.UpdateRoutings();
+            aChannel.UpdateChannels();
          }
       }
 
@@ -641,7 +641,7 @@ namespace CbChannelStrip
             aConnector.Receive(aList);
       }
 
-      internal CCsConnector GetConnectorByName(string aName) => (from aTest in this.Connectors where aTest.Routing.NameForInput == aName || aTest.Routing.NameForOutput == aName select aTest).Single();
+      internal CCsConnector GetConnectorByName(string aName) => (from aTest in this.Connectors where aTest.Channel.NameForInput == aName || aTest.Channel.NameForOutput == aName select aTest).Single();
 
       internal void CommitNewNodeLatencies()
       {
@@ -673,12 +673,12 @@ namespace CbChannelStrip
 
    internal sealed class CCsDiagramLayout : CGwDiagramLayout
    {
-      internal CCsDiagramLayout(int? aFocusedRouting)
+      internal CCsDiagramLayout(int? aFocusedChannel)
       {
-         this.FocusedRouting = aFocusedRouting;
+         this.FocusedChannel = aFocusedChannel;
       }
-      private readonly int? FocusedRouting;
-      internal override bool GetIncludeInDiagram(CChannel aRouting) => base.GetIncludeInDiagram(aRouting) || this.FocusedRouting == aRouting.IoIdx;
+      private readonly int? FocusedChannel;
+      internal override bool GetIncludeInDiagram(CChannel aChannel) => base.GetIncludeInDiagram(aChannel) || this.FocusedChannel == aChannel.IoIdx;
    }
 
    public sealed class CChannelStrip : CMaxObject
@@ -744,9 +744,9 @@ namespace CbChannelStrip
          this.IoCount = aIoCount;
          this.Connectors = new CCsConnectors(this);
          this.UpdateMatrix();
-         this.SendRoutingMatrix();
+         this.SendChannelMatrix();
          this.SendMatrixEnabledStates();
-         this.Connectors.UpdateRoutings();
+         this.Connectors.UpdateChannels();
          this.Connectors.FocusedConnector = this.Connectors.MainIo;
          this.LatencyUpdateTimer.Start();
          this.SendSignalMatrix();
@@ -786,13 +786,13 @@ namespace CbChannelStrip
       {
          this.CsState = aNewState;
          this.SendMatrixEnabledStates();
-         this.SendRoutingMatrix();
+         this.SendChannelMatrix();
       }
       private void OnEndAnimation()
       {
          this.BeginInvokeInMainTask(delegate ()
          {
-            this.Connectors.UpdateRoutings();
+            this.Connectors.UpdateChannels();
             this.SendSignalMatrix();
          });
       }
@@ -818,7 +818,7 @@ namespace CbChannelStrip
       internal Int32 IoCount;
       internal Int32[][] Rows;
       internal CFlowMatrix FlowMatrix { get => this.CsState.FlowMatrix; }
-      internal void SendRoutingMatrix()
+      internal void SendChannelMatrix()
       {
          foreach (var aRowIdx in Enumerable.Range(0, this.FlowMatrix.IoCount))
          {
@@ -862,7 +862,7 @@ namespace CbChannelStrip
       internal void SetInputActive(int aChannelNr, int aInputIdx, bool aActive)
       {
          if (!aActive
-         || this.GetRoutingEnabled(aInputIdx, aChannelNr))
+         || this.GetChannelEnabled(aInputIdx, aChannelNr))
          {
             this.Rows[aInputIdx][aChannelNr] = aActive ? 1 : 0;
             this.UpdateMatrix();
@@ -871,7 +871,7 @@ namespace CbChannelStrip
       internal void SetOutputActive(int aChannelNr, int aOutputIdx, bool aActive)
       {
          if (!aActive
-         || this.GetRoutingEnabled(aChannelNr, aOutputIdx))
+         || this.GetChannelEnabled(aChannelNr, aOutputIdx))
          {
             this.Rows[aChannelNr][aOutputIdx] = aActive ? 1 : 0;
             this.UpdateMatrix();
@@ -938,7 +938,7 @@ namespace CbChannelStrip
          this.Connectors.Receive(aList);
       }
 
-      internal bool GetRoutingEnabled(int aInput, int aOutput) => this.FlowMatrix.Enables[this.FlowMatrix.GetCellIdx(aOutput, aInput)];
+      internal bool GetChannelEnabled(int aInput, int aOutput) => this.FlowMatrix.Enables[this.FlowMatrix.GetCellIdx(aOutput, aInput)];
       #endregion
       #region Test
       public static void Test(Action<string> aFailAction, Action<string> aDebugPrint)
@@ -1206,7 +1206,7 @@ namespace CbChannelStrip
                         //var aConnectors = this.Connectors;
                         //var aDragConnector = aConnectors.GetConnectorByName(aDragNode.Name);
                         //var aDropConnector = aConnectors.GetConnectorByName(aDropNode.Name);
-                        //var aDragNodeIsOut = aDragNode.Name == CRouting.OutName;
+                        //var aDragNodeIsOut = aDragNode.Name == CChannel.OutName;
                         //var aOutput = !aDragNodeIsOut ? aDropConnector : aDragConnector;
                         //var aInput = !aDragNodeIsOut ? aDragConnector : aDropConnector;
                         var aInputAndOutput = this.GetDropInputAndOutput(aDragNode, aDropNode);
