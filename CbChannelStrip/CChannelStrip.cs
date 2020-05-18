@@ -31,7 +31,7 @@ namespace CbChannelStrip
    internal abstract class CGwDiagramLayout
    {
       internal DirectoryInfo GraphWizInstallDir { get =>new DirectoryInfo(@"C:\Program Files (x86)\Graphviz2.38\"); }
-      internal virtual bool GetIncludeInDiagram(CRouting aRouting) => aRouting.IsLinkedToSomething;
+      internal virtual bool GetIncludeInDiagram(CChannel aRouting) => aRouting.IsLinkedToSomething;
    }
 
 
@@ -69,7 +69,7 @@ namespace CbChannelStrip
       internal readonly CFlowMatrix FlowMatrix;
       internal readonly CChannelStrip ChannelStrip;
 
-      internal override CGwGraph GwGraph => this.FlowMatrix.Routings.GwDiagramBuilder.GwGraph;
+      internal override CGwGraph GwGraph => this.FlowMatrix.Channels.GwDiagramBuilder.GwGraph;
       internal override bool GetIsFocused(CGaShape aShape)
       {
          var aFocusedConnector = this.ChannelStrip.Connectors.FocusedConnector;
@@ -140,7 +140,7 @@ namespace CbChannelStrip
       internal void SendToChannel(params object[] aValues)
       {
          var aWithPrefix = new object[] { "to_channel", this.Number }.Concat(aValues).ToArray();
-         this.Outlet.SendValues(aWithPrefix);
+         this.Outlet.SendValuesO(aWithPrefix);
       }
 
       internal void Receive(CList aList)=>this.Receive(aList.Value.ToArray());
@@ -274,10 +274,10 @@ namespace CbChannelStrip
       internal CChannelStrip ChannelStrip { get => this.Conncectors.ChannelStrip; }
       internal bool IsOutput { get => this.Number == this.ChannelStrip.IoCount; }
       internal CFlowMatrix FlowMatrix { get => this.ChannelStrip.FlowMatrix; }
-      internal CRoutings Routings { get => this.FlowMatrix.Routings; }
+      internal CChannels Routings { get => this.FlowMatrix.Channels; }
       internal int IoCount { get => this.FlowMatrix.IoCount; }
 
-      internal  CRouting Routing
+      internal  CChannel Routing
       {
          get
          {
@@ -678,7 +678,7 @@ namespace CbChannelStrip
          this.FocusedRouting = aFocusedRouting;
       }
       private readonly int? FocusedRouting;
-      internal override bool GetIncludeInDiagram(CRouting aRouting) => base.GetIncludeInDiagram(aRouting) || this.FocusedRouting == aRouting.IoIdx;
+      internal override bool GetIncludeInDiagram(CChannel aRouting) => base.GetIncludeInDiagram(aRouting) || this.FocusedRouting == aRouting.IoIdx;
    }
 
    public sealed class CChannelStrip : CMaxObject
@@ -728,6 +728,7 @@ namespace CbChannelStrip
                                                  this.OnLatencyUpdateTimer, 
                                                  aRunInMainThread);
          }
+         this.SignalMatrixOut = new CListOutlet(this);
       }
       private void OnInit(CInlet aInlet, string aFirstItem, CReadonlyListData aParams)
       {
@@ -748,6 +749,7 @@ namespace CbChannelStrip
          this.Connectors.UpdateRoutings();
          this.Connectors.FocusedConnector = this.Connectors.MainIo;
          this.LatencyUpdateTimer.Start();
+         this.SendSignalMatrix();
       }
       #endregion
       #region Control 
@@ -791,6 +793,7 @@ namespace CbChannelStrip
          this.BeginInvokeInMainTask(delegate ()
          {
             this.Connectors.UpdateRoutings();
+            this.SendSignalMatrix();
          });
       }
       private CCsState SetNewState(CGaAnimator aAnimator, int aIoCount)
@@ -821,7 +824,7 @@ namespace CbChannelStrip
          {
             foreach (var aColIdx in Enumerable.Range(0, this.FlowMatrix.IoCount))
             {
-               this.MatrixCtrlLeftInOut.SendValues("set", aColIdx, aRowIdx, this.Rows[aRowIdx][aColIdx]);
+               this.MatrixCtrlLeftInOut.SendValuesO("set", aColIdx, aRowIdx, this.Rows[aRowIdx][aColIdx]);
             }
          }
       }
@@ -916,7 +919,7 @@ namespace CbChannelStrip
       private void SendGraphBitmap()
       { 
          //return; // TODO         
-         var aBitmap = this.FlowMatrix.Routings.GwDiagramBuilder.Bitmap;
+         var aBitmap = this.FlowMatrix.Channels.GwDiagramBuilder.Bitmap;
          var aSizeList = this.PWindowInOut.GetMessage<CList>().Value;
          aSizeList.Clear();
          aSizeList.Add("size");
@@ -1074,8 +1077,8 @@ namespace CbChannelStrip
          }
          else
          {
-            var aIsInvert = aDragNode.Name == CRouting.OutName
-                        ||  aDropNode.Name == CRouting.InName
+            var aIsInvert = aDragNode.Name == CChannel.OutName
+                        ||  aDropNode.Name == CChannel.InName
                            ;
             var aOutput = !aIsInvert ? aDropConnector : aDragConnector;
             var aInput = !aIsInvert ? aDragConnector : aDropConnector;
@@ -1304,6 +1307,43 @@ namespace CbChannelStrip
          foreach (var aConnector in this.Connectors.Connectors)
          {
             aConnector.SendLatenciesOnDemand();
+         }
+      }
+      #endregion
+      #region SignalMatrixOut
+      private readonly CListOutlet SignalMatrixOut;
+      private void SendSignalMatrix()
+      {
+         this.SendSignalMatrix(true);
+         this.SendSignalMatrix(false);
+      }
+      private void SendSignalMatrix(bool aRestOrSet)
+      {
+         var aIoCount = this.IoCount;
+         var aListData = this.SignalMatrixOut.Message.Value;
+         for (var aInIdx = 0; aInIdx < aIoCount; ++aInIdx)
+         { 
+            for(var aOutIdx = 0; aOutIdx < aIoCount; ++aOutIdx)
+            {
+               var aCellIdx = this.FlowMatrix.GetCellIdx(aInIdx, aOutIdx);
+               bool aSend;
+               bool aValue;
+               if(aRestOrSet)
+               {
+                  aSend = true;
+                  aValue = false;
+               }
+               else
+               {
+                  aValue = this.FlowMatrix.Actives[aCellIdx];
+                  aSend = aValue;                  
+               }
+               if(aSend)
+               {
+                  var aValueInt = aValue ? 1 : 0;
+                  this.SignalMatrixOut.SendValuesI(aInIdx, aOutIdx, aValueInt);
+               }
+            }
          }
       }
       #endregion

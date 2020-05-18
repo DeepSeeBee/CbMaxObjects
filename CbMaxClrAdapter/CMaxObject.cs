@@ -518,23 +518,29 @@ namespace CbMaxClrAdapter
       internal override int Index => this.IndexM;
       internal override bool IsReadonly => false;
 
-      public void SendValues(params object[] aValues)
+      public void SendValuesO(params object[] aValues)
       {
          var aMessage = this.GetMessage<CList>();
-         aMessage.Value.Set(aValues);
+         aMessage.Value.SetO(aValues);
          this.Send(CMessageTypeEnum.List);
       }
 
-      public void SendValues(params string[] aValues)
+      public void SendValuesS(params string[] aValues)
       {
          var aMessage = this.GetMessage<CList>();
-         aMessage.Value.Set(aValues);
+         aMessage.Value.SetS(aValues);
          this.Send(CMessageTypeEnum.List);
       }
-      public void SendValues(params double[] aValues)
+      public void SendValuesD(params double[] aValues)
       {
          var aMessage = this.GetMessage<CList>();
-         aMessage.Value.Set(aValues);
+         aMessage.Value.SetD(aValues);
+         this.Send(CMessageTypeEnum.List);
+      }      
+      public void SendValuesI(params Int32[] aValues)
+      {
+         var aMessage = this.GetMessage<CList>();
+         aMessage.Value.SetI(aValues);
          this.Send(CMessageTypeEnum.List);
       }
 
@@ -711,10 +717,11 @@ namespace CbMaxClrAdapter
       /// <summary>
       /// Max has under certain circumstance a "list" symbol added in front of the list.
       /// This property contains the list with a list prefix symbol added.
-      /// </summary>
-      public bool NeedsListPrefix { get => false; }
+      /// </summary>      
+      public bool NeedsListPrefix { get => !this.MaybeWithListPrefix.IsEmpty() && (!(IsSymbol(this.MaybeWithListPrefix.First()) || this.MaybeWithListPrefix.First().ToString() == ListPrefix)); }
       //public bool NeedsListPrefix { get => !this.MaybeWithListPrefix.IsEmpty() && (!IsSymbol(this.MaybeWithListPrefix.First()) || this.MaybeWithListPrefix.First().ToString() == ListPrefix); }
       //public bool NeedsListPrefix { get => !this.MaybeWithListPrefix.IsEmpty() && this.MaybeWithListPrefix.First().ToString() != ListPrefix; }
+      //public bool NeedsListPrefix { get => false; }
 
       /// <summary>
       /// This property designates wether the given value represents a max symbol
@@ -897,23 +904,29 @@ namespace CbMaxClrAdapter
       }
       public void Add(CMessage aMessage) => aMessage.AddTo(this);
 
-      public void Set(params object[] aValues)
+      public void SetO(params object[] aValues)
       {
          this.Clear();
          foreach (var aValue in aValues)
             this.Add(aValue);
       }
-      public void Set(params string[] aValues)
+      public void SetS(params string[] aValues)
       {
          this.Clear();
          foreach (var aValue in aValues)
             this.Add(aValue);
       }
 
-      internal void Set(double[] aValues)
+      internal void SetD(double[] aValues)
       {
          this.Clear();
          foreach(var aValue in aValues)
+            this.Add(aValue);
+      }
+      internal void SetI(Int32[] aValues)
+      {
+         this.Clear();
+         foreach (var aValue in aValues)
             this.Add(aValue);
       }
    }

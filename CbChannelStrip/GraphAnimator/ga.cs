@@ -946,15 +946,15 @@ namespace CbChannelStrip.GaAnimator
             switch (this.TestCaseNr % 5)
             {
                case 0:
-                  return CFlowMatrix.NewTestFlowMatrix1(this.DebugPrint).Routings.GwDiagramBuilder.GwGraph;
+                  return CFlowMatrix.NewTestFlowMatrix1(this.DebugPrint).Channels.GwDiagramBuilder.GwGraph;
                case 1:
-                  return CFlowMatrix.NewTestFlowMatrix2(this.DebugPrint).Routings.GwDiagramBuilder.GwGraph;
+                  return CFlowMatrix.NewTestFlowMatrix2(this.DebugPrint).Channels.GwDiagramBuilder.GwGraph;
                case 2:
-                  return CFlowMatrix.NewTestFlowMatrix3(this.DebugPrint).Routings.GwDiagramBuilder.GwGraph;
+                  return CFlowMatrix.NewTestFlowMatrix3(this.DebugPrint).Channels.GwDiagramBuilder.GwGraph;
                case 3:
-                  return CFlowMatrix.NewTestFlowMatrix4(this.DebugPrint).Routings.GwDiagramBuilder.GwGraph;
+                  return CFlowMatrix.NewTestFlowMatrix4(this.DebugPrint).Channels.GwDiagramBuilder.GwGraph;
                default:
-                  return CFlowMatrix.NewTestFlowMatrix5(this.DebugPrint).Routings.GwDiagramBuilder.GwGraph;
+                  return CFlowMatrix.NewTestFlowMatrix5(this.DebugPrint).Channels.GwDiagramBuilder.GwGraph;
             }
          }
          internal override CGaWorkerResult NewWorkerResult(BackgroundWorker aBackgroundWorker) => new CGaDefaultWorkerResult(aBackgroundWorker, this.NewTestState);

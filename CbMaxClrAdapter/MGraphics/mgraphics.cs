@@ -142,7 +142,7 @@ namespace CbMaxClrAdapter.MGraphics
       private readonly COutlet Out;
       private readonly CListInlet DumpIn;
 
-      private void Send(params object[] aValues)=> this.Out.SendValues(aValues);
+      private void Send(params object[] aValues)=> this.Out.SendValuesO(aValues);
       private double ColorPart(byte aPart) => ((double)aPart / (double)255);
       private double R(Color aColor) => ColorPart(aColor.R);
       private double G(Color aColor) => ColorPart(aColor.G);

@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 209.0, 96.0, 1483.0, 913.0 ],
+		"rect" : [ 373.0, 100.0, 1483.0, 913.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 1,
 		"default_fontsize" : 12.0,
@@ -67,8 +67,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "multichannelsignal" ],
-					"patching_rect" : [ 1664.0, 30.0, 92.0, 22.0 ],
-					"text" : "mc.receive~ R7"
+					"patching_rect" : [ 1664.0, 30.0, 102.0, 22.0 ],
+					"text" : "mc.receive~ R7 2"
 				}
 
 			}
@@ -284,7 +284,7 @@
 					"numoutlets" : 2,
 					"offset" : [ 0.0, 0.0 ],
 					"outlettype" : [ "multichannelsignal", "" ],
-					"patching_rect" : [ 351.666666666666629, 111.0, 173.0, 230.0 ],
+					"patching_rect" : [ 351.666666666666629, 124.0, 173.0, 230.0 ],
 					"presentation" : 1,
 					"presentation_rect" : [ 174.0, 1.0, 169.0, 150.0 ],
 					"viewvisibility" : 1
@@ -298,8 +298,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "multichannelsignal" ],
-					"patching_rect" : [ 1474.0, 32.0, 92.0, 22.0 ],
-					"text" : "mc.receive~ R6"
+					"patching_rect" : [ 1474.0, 32.0, 102.0, 22.0 ],
+					"text" : "mc.receive~ R6 2"
 				}
 
 			}
@@ -310,8 +310,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "multichannelsignal" ],
-					"patching_rect" : [ 1243.0, 28.0, 92.0, 22.0 ],
-					"text" : "mc.receive~ R5"
+					"patching_rect" : [ 1243.0, 28.0, 102.0, 22.0 ],
+					"text" : "mc.receive~ R5 2"
 				}
 
 			}
@@ -322,8 +322,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "multichannelsignal" ],
-					"patching_rect" : [ 1025.666666666666515, 28.0, 92.0, 22.0 ],
-					"text" : "mc.receive~ R4"
+					"patching_rect" : [ 1025.666666666666515, 28.0, 102.0, 22.0 ],
+					"text" : "mc.receive~ R4 2"
 				}
 
 			}
@@ -334,8 +334,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "multichannelsignal" ],
-					"patching_rect" : [ 805.000000000000114, 22.0, 92.0, 22.0 ],
-					"text" : "mc.receive~ R3"
+					"patching_rect" : [ 805.000000000000114, 22.0, 102.0, 22.0 ],
+					"text" : "mc.receive~ R3 2"
 				}
 
 			}
@@ -346,8 +346,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "multichannelsignal" ],
-					"patching_rect" : [ 574.666666666666515, 18.0, 92.0, 22.0 ],
-					"text" : "mc.receive~ R2"
+					"patching_rect" : [ 574.666666666666515, 18.0, 102.0, 22.0 ],
+					"text" : "mc.receive~ R2 2"
 				}
 
 			}
@@ -358,8 +358,8 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "multichannelsignal" ],
-					"patching_rect" : [ 351.666666666666629, 22.0, 92.0, 22.0 ],
-					"text" : "mc.receive~ R1"
+					"patching_rect" : [ 351.666666666666629, 22.0, 102.0, 22.0 ],
+					"text" : "mc.receive~ R1 2"
 				}
 
 			}
@@ -681,7 +681,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-24", 1 ],
-					"order" : 1,
+					"order" : 2,
 					"source" : [ "obj-26", 0 ]
 				}
 
@@ -697,7 +697,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-30", 1 ],
-					"order" : 2,
+					"order" : 1,
 					"source" : [ "obj-26", 0 ]
 				}
 
@@ -784,6 +784,25 @@
 					"source" : [ "obj-7", 1 ]
 				}
 
+			}
+ ],
+		"styles" : [ 			{
+				"name" : "AudioStatus_Menu",
+				"default" : 				{
+					"bgfillcolor" : 					{
+						"type" : "color",
+						"color" : [ 0.294118, 0.313726, 0.337255, 1 ],
+						"color1" : [ 0.454902, 0.462745, 0.482353, 0 ],
+						"color2" : [ 0.290196, 0.309804, 0.301961, 1 ],
+						"angle" : 270,
+						"proportion" : 0.39,
+						"autogradient" : 0
+					}
+
+				}
+,
+				"parentstyle" : "",
+				"multi" : 0
 			}
  ]
 	}

@@ -515,7 +515,7 @@ namespace CbChannelStrip.GraphWiz
          return aStringBuilder.ToString();
       }
 
-      public override void Visit(CRoutings aRoutings)
+      public override void Visit(CChannels aRoutings)
       {
          this.AddLine("digraph G");
          this.AddLine("{");
@@ -593,7 +593,7 @@ namespace CbChannelStrip.GraphWiz
 
       internal static void Test(Action<string> aFailAction, Action<string> aDebugPrint)
       {
-         Test("1baa58c2-5e3a-49c4-b762-eceab52cf977", CFlowMatrix.NewTestFlowMatrix5(aDebugPrint).Routings.GwDiagramBuilder, aFailAction);
+         Test("1baa58c2-5e3a-49c4-b762-eceab52cf977", CFlowMatrix.NewTestFlowMatrix5(aDebugPrint).Channels.GwDiagramBuilder, aFailAction);
       }
       #endregion
 
