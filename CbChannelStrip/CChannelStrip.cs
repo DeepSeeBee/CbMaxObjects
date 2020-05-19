@@ -476,6 +476,49 @@ namespace CbChannelStrip
          this.SendNodeLatencyMsOnDemand();
       }
       #endregion
+      #region LatencyCompensation
+      internal void SendMixDelays()
+      {
+         // TODO_OPT
+         var aChannel = this.Channel;
+         var aDelays = (from aIoIdx in Enumerable.Range(0, this.IoCount)
+                       select aChannel.InputIoIdxs.Contains(aIoIdx)
+                            ? aChannel.LatencyCompensations[aChannel.GetInputIdxByIoIdx(aIoIdx)]
+                            : 0);
+         var aValues = new object[] { "mix", "delays", }.Concat(aDelays.Cast<object>()).ToArray();
+         this.SendToChannel(aValues);
+      }
+      internal void SendMixInMatrix()
+      { // TODO_OPT
+         var aChannel = this.Channel;
+         var aIoCount = this.IoCount;
+         var aActives = (from aIoIdx in Enumerable.Range(0, aIoCount) select aChannel.InputIoIdxs.Contains(aIoIdx) ? 1 : 0).ToArray();
+         foreach(var aIoIdx in Enumerable.Range(0, aIoCount))
+         {
+            var aActive = aActives[aIoIdx];
+            this.SendToChannel("mix", "inmatrix", aIoIdx, 0, aActive);
+         }         
+      }
+      private void  SendMixOutMatrix(bool aActivate)
+      {// TODO_OPT
+         var aChannel = this.Channel;
+         var aIoCount = this.IoCount;
+         var aActives = (from aIoIdx in Enumerable.Range(0, aIoCount) select (aActivate && aChannel.OutputIdxs.Contains(aIoIdx)) ? 1 : 0).ToArray();
+         foreach (var aIoIdx in Enumerable.Range(0, aIoCount))
+         {
+            var aActive = aActives[aIoIdx];
+            this.SendToChannel("mix", "outmatrix", 0, aIoIdx, aActive);
+         }
+      }
+      internal void SendMixDisable()
+      {
+         this.SendMixOutMatrix(false);
+      }
+      internal void SendMixEnable()
+      {
+         this.SendMixOutMatrix(true);
+      }
+      #endregion
    }
 
    internal sealed class CCsChannel : CCsConnector
@@ -667,7 +710,21 @@ namespace CbChannelStrip
       {
          foreach (var aConnector in this.Connectors)
          {
+            aConnector.SendMixDisable();
+         }
+         foreach (var aConnector in this.Connectors)
+         {
             aConnector.SendLatenciesOnDemand();
+         }
+         foreach (var aConnector in this.Connectors)
+         {
+            aConnector.SendMixDelays();
+            aConnector.SendMixInMatrix();
+
+         }
+         foreach (var aConnector in this.Connectors)
+         {
+            aConnector.SendMixEnable();
          }
       }
 

@@ -610,7 +610,6 @@ namespace CbChannelStrip.Graph
       internal readonly CChannels Channels;
       internal readonly int IoIdx;
       internal readonly int[] OutputIdxs;
-
       internal IEnumerable<CChannel> Outputs { get => this.OutputsWithMainOut; }
 
       private IEnumerable<CChannel> OutputsWithMainOut
@@ -675,6 +674,10 @@ namespace CbChannelStrip.Graph
             return this.InputsM;
          }
       }
+      internal IEnumerable<int> InputIoIdxs { get => from aInput in this.Inputs select aInput.IoIdx; }
+      internal int GetInputIdxByIoIdx(int aIoIdx) => (from aIdx in Enumerable.Range(0, this.Inputs.Count())
+                                                      where this.Inputs.ElementAt(aIdx).IoIdx == aIoIdx
+                                                      select aIdx).Single();
 
       internal int? InternalInputLatencyM;
       internal int InternalInputLatency
