@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 34.0, 77.0, 1852.0, 929.0 ],
+		"rect" : [ 42.0, 85.0, 1852.0, 929.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -39,6 +39,23 @@
 		"subpatcher_template" : "",
 		"boxes" : [ 			{
 				"box" : 				{
+					"id" : "obj-14",
+					"linecount" : 3,
+					"maxclass" : "comment",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 1657.0, 296.0, 153.0, 48.0 ],
+					"presentation" : 1,
+					"presentation_linecount" : 3,
+					"presentation_rect" : [ 1684.82839769092152, 9.0, 151.0, 48.0 ],
+					"text" : "Create a signal flow graph and process audio with vst plugins.",
+					"textcolor" : [ 0.847058823529412, 0.847058823529412, 0.847058823529412, 1.0 ],
+					"textjustification" : 2
+				}
+
+			}
+, 			{
+				"box" : 				{
 					"automation" : "Clear",
 					"fontsize" : 20.0,
 					"id" : "obj-50",
@@ -53,11 +70,11 @@
 					"presentation_rect" : [ 1632.15679538184304, 881.0, 207.0, 29.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
-							"parameter_longname" : "live.text[1]",
-							"parameter_mmax" : 1,
 							"parameter_shortname" : "live.text[1]",
 							"parameter_enum" : [ "Clear", "val2" ],
-							"parameter_type" : 2
+							"parameter_type" : 2,
+							"parameter_longname" : "live.text[1]",
+							"parameter_mmax" : 1
 						}
 
 					}
@@ -164,12 +181,12 @@
 					"presentation_rect" : [ 1638.82839769092152, 611.0, 194.0, 38.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
-							"parameter_longname" : "live.text",
-							"parameter_invisible" : 2,
-							"parameter_mmax" : 1,
 							"parameter_shortname" : "live.text",
 							"parameter_enum" : [ "val1", "val2" ],
-							"parameter_type" : 2
+							"parameter_type" : 2,
+							"parameter_longname" : "live.text",
+							"parameter_invisible" : 2,
+							"parameter_mmax" : 1
 						}
 
 					}
@@ -399,12 +416,12 @@
 					"presentation_rect" : [ 3.156795381843216, 66.0, 38.0, 187.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
-							"parameter_mmin" : -70.0,
-							"parameter_longname" : "live.gain~[23]",
-							"parameter_mmax" : 6.0,
 							"parameter_shortname" : "Input",
 							"parameter_type" : 0,
-							"parameter_unitstyle" : 4
+							"parameter_unitstyle" : 4,
+							"parameter_mmin" : -70.0,
+							"parameter_longname" : "live.gain~[23]",
+							"parameter_mmax" : 6.0
 						}
 
 					}
@@ -533,15 +550,15 @@
 , 			{
 				"box" : 				{
 					"id" : "obj-26",
-					"linecount" : 18,
+					"linecount" : 16,
 					"maxclass" : "comment",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 1642.0, 281.0, 153.0, 255.0 ],
+					"patching_rect" : [ 1642.0, 281.0, 153.0, 227.0 ],
 					"presentation" : 1,
 					"presentation_linecount" : 14,
 					"presentation_rect" : [ 1638.82839769092152, 269.0, 194.0, 200.0 ],
-					"text" : "Create a signal flow graph and process audio with vst plugins.\n\nKeyboard:\n0..9: Focus Channels\n+ Shit: (Dis)connect Channels\n\nGraph-View Mouse:\nConnect/Disconnect Channels\n\nNote:\nDownload and install graphwiz:\n\nwww.graphwiz.org",
+					"text" : "Keyboard:\n0..9: Focus Channels\n\nGraph-View Mouse:\nConnect/Disconnect Channels\n\nKeyboard/Mouse+ Shift: \n(Dis)connect Channels\n\nDoubleClick Background:\nCreate node\n\nDownload and install graphwiz:\nwww.graphwiz.org",
 					"textcolor" : [ 0.847058823529412, 0.847058823529412, 0.847058823529412, 1.0 ]
 				}
 
@@ -803,20 +820,20 @@
 												"selection" : [ 0.0, 1.0 ],
 												"loop" : 0,
 												"content_state" : 												{
+													"timestretch" : [ 0 ],
+													"quality" : [ "basic" ],
+													"formantcorrection" : [ 0 ],
+													"slurtime" : [ 0.0 ],
 													"originallength" : [ 0.0, "ticks" ],
 													"pitchshift" : [ 1.0 ],
-													"speed" : [ 1.0 ],
 													"originaltempo" : [ 120.0 ],
 													"basictuning" : [ 440 ],
+													"speed" : [ 1.0 ],
 													"originallengthms" : [ 0.0 ],
 													"pitchcorrection" : [ 0 ],
-													"followglobaltempo" : [ 0 ],
-													"formant" : [ 1.0 ],
-													"timestretch" : [ 0 ],
 													"mode" : [ "basic" ],
-													"formantcorrection" : [ 0 ],
-													"quality" : [ "basic" ],
-													"slurtime" : [ 0.0 ]
+													"followglobaltempo" : [ 0 ],
+													"formant" : [ 1.0 ]
 												}
 
 											}
@@ -900,14 +917,14 @@
 									"patching_rect" : [ 668.0, 56.5, 54.0, 23.0 ],
 									"saved_attribute_attributes" : 									{
 										"valueof" : 										{
+											"parameter_shortname" : "flonum",
+											"parameter_type" : 3,
 											"parameter_mmin" : 10.0,
 											"parameter_longname" : "flonum",
 											"parameter_initial_enable" : 1,
 											"parameter_invisible" : 1,
 											"parameter_mmax" : 10000.0,
-											"parameter_initial" : [ 440 ],
-											"parameter_shortname" : "flonum",
-											"parameter_type" : 3
+											"parameter_initial" : [ 440 ]
 										}
 
 									}
@@ -1478,7 +1495,7 @@
 					"numinlets" : 1,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
-					"patching_rect" : [ 1283.0, 92.0, 107.0, 22.0 ],
+					"patching_rect" : [ 1292.0, 93.0, 107.0, 22.0 ],
 					"text" : "prepend key press"
 				}
 
@@ -1507,12 +1524,12 @@
 					"patching_rect" : [ 1463.5, 613.0, 48.0, 136.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
-							"parameter_mmin" : -70.0,
-							"parameter_longname" : "live.gain~[1]",
-							"parameter_mmax" : 6.0,
 							"parameter_shortname" : "live.gain~[1]",
 							"parameter_type" : 0,
-							"parameter_unitstyle" : 4
+							"parameter_unitstyle" : 4,
+							"parameter_mmin" : -70.0,
+							"parameter_longname" : "live.gain~[1]",
+							"parameter_mmax" : 6.0
 						}
 
 					}
@@ -1957,7 +1974,9 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-1", 5 ],
-					"source" : [ "obj-6", 0 ]
+					"source" : [ "obj-6", 0 ],
+					"watchpoint_flags" : 5,
+					"watchpoint_id" : 45
 				}
 
 			}
@@ -2032,85 +2051,85 @@
 			}
  ],
 		"parameters" : 		{
-			"obj-85::obj-21::obj-3" : [ "vst~[2]", "vst~", 0 ],
-			"obj-85::obj-22::obj-2" : [ "live.gain~[8]", "Out", 0 ],
-			"obj-16" : [ "live.gain~[23]", "Input", 0 ],
-			"obj-85::obj-24::obj-1" : [ "live.gain~[12]", "In", 0 ],
-			"obj-85::obj-1::obj-3" : [ "vst~[8]", "vst~", 0 ],
-			"obj-15::obj-60" : [ "flonum", "flonum", 0 ],
-			"obj-85::obj-2::obj-2" : [ "live.gain~[20]", "Out", 0 ],
-			"obj-15::obj-4::obj-21::obj-6" : [ "live.tab[3]", "live.tab[1]", 0 ],
-			"obj-24" : [ "live.text", "live.text", 0 ],
 			"obj-85::obj-6::obj-3" : [ "vst~[1]", "vst~", 0 ],
 			"obj-85::obj-22::obj-3" : [ "vst~[3]", "vst~", 0 ],
-			"obj-85::obj-23::obj-2" : [ "live.gain~[10]", "Out", 0 ],
-			"obj-85::obj-30::obj-3" : [ "vst~[7]", "vst~", 0 ],
-			"obj-85::obj-7::obj-3" : [ "vst~", "vst~", 0 ],
-			"obj-85::obj-2::obj-3" : [ "vst~[9]", "vst~", 0 ],
-			"obj-15::obj-4::obj-35" : [ "[5]", "Level", 0 ],
-			"obj-85::obj-4::obj-2" : [ "live.gain~[21]", "Out", 0 ],
-			"obj-85::obj-6::obj-1" : [ "live.gain~[4]", "In", 0 ],
-			"obj-85::obj-21::obj-2" : [ "live.gain~[5]", "Out", 0 ],
 			"obj-85::obj-23::obj-1" : [ "live.gain~[9]", "In", 0 ],
-			"obj-85::obj-24::obj-2" : [ "live.gain~[11]", "Out", 0 ],
+			"obj-85::obj-30::obj-2" : [ "live.gain~[16]", "Out", 0 ],
+			"obj-85::obj-2::obj-1" : [ "live.gain~[19]", "In", 0 ],
+			"obj-15::obj-60" : [ "flonum", "flonum", 0 ],
+			"obj-85::obj-4::obj-2" : [ "live.gain~[21]", "Out", 0 ],
+			"obj-85::obj-6::obj-2" : [ "live.gain~[3]", "Out", 0 ],
+			"obj-15::obj-4::obj-35" : [ "[5]", "Level", 0 ],
+			"obj-85::obj-21::obj-2" : [ "live.gain~[5]", "Out", 0 ],
+			"obj-85::obj-28::obj-3" : [ "vst~[6]", "vst~", 0 ],
+			"obj-85::obj-23::obj-2" : [ "live.gain~[10]", "Out", 0 ],
+			"obj-15::obj-4::obj-21::obj-6" : [ "live.tab[3]", "live.tab[1]", 0 ],
+			"obj-85::obj-24::obj-3" : [ "vst~[5]", "vst~", 0 ],
+			"obj-85::obj-28::obj-2" : [ "live.gain~[14]", "Out", 0 ],
+			"obj-50" : [ "live.text[1]", "live.text[1]", 0 ],
+			"obj-85::obj-28::obj-1" : [ "live.gain~[13]", "In", 0 ],
 			"obj-85::obj-1::obj-2" : [ "live.gain~[18]", "Out", 0 ],
+			"obj-16" : [ "live.gain~[23]", "Input", 0 ],
 			"obj-85::obj-4::obj-3" : [ "vst~[10]", "vst~", 0 ],
 			"obj-85::obj-7::obj-2" : [ "live.gain~[2]", "Out", 0 ],
-			"obj-85::obj-28::obj-2" : [ "live.gain~[14]", "Out", 0 ],
 			"obj-85::obj-22::obj-1" : [ "live.gain~[7]", "In", 0 ],
-			"obj-85::obj-28::obj-1" : [ "live.gain~[13]", "In", 0 ],
-			"obj-85::obj-24::obj-3" : [ "vst~[5]", "vst~", 0 ],
-			"obj-83" : [ "live.gain~[1]", "live.gain~[1]", 0 ],
-			"obj-85::obj-30::obj-1" : [ "live.gain~[15]", "In", 0 ],
-			"obj-85::obj-2::obj-1" : [ "live.gain~[19]", "In", 0 ],
-			"obj-85::obj-6::obj-2" : [ "live.gain~[3]", "Out", 0 ],
-			"obj-85::obj-21::obj-1" : [ "live.gain~[6]", "In", 0 ],
-			"obj-85::obj-23::obj-3" : [ "vst~[4]", "vst~", 0 ],
+			"obj-85::obj-24::obj-2" : [ "live.gain~[11]", "Out", 0 ],
+			"obj-85::obj-30::obj-3" : [ "vst~[7]", "vst~", 0 ],
+			"obj-85::obj-2::obj-3" : [ "vst~[9]", "vst~", 0 ],
 			"obj-85::obj-7::obj-1" : [ "live.gain~", "In", 0 ],
-			"obj-85::obj-30::obj-2" : [ "live.gain~[16]", "Out", 0 ],
-			"obj-50" : [ "live.text[1]", "live.text[1]", 0 ],
-			"obj-85::obj-28::obj-3" : [ "vst~[6]", "vst~", 0 ],
-			"obj-85::obj-1::obj-1" : [ "live.gain~[17]", "In", 0 ],
+			"obj-85::obj-6::obj-1" : [ "live.gain~[4]", "In", 0 ],
+			"obj-85::obj-7::obj-3" : [ "vst~", "vst~", 0 ],
+			"obj-85::obj-21::obj-3" : [ "vst~[2]", "vst~", 0 ],
+			"obj-85::obj-23::obj-3" : [ "vst~[4]", "vst~", 0 ],
+			"obj-85::obj-30::obj-1" : [ "live.gain~[15]", "In", 0 ],
+			"obj-85::obj-1::obj-3" : [ "vst~[8]", "vst~", 0 ],
 			"obj-85::obj-4::obj-1" : [ "live.gain~[22]", "In", 0 ],
+			"obj-85::obj-21::obj-1" : [ "live.gain~[6]", "In", 0 ],
+			"obj-85::obj-22::obj-2" : [ "live.gain~[8]", "Out", 0 ],
+			"obj-24" : [ "live.text", "live.text", 0 ],
+			"obj-85::obj-24::obj-1" : [ "live.gain~[12]", "In", 0 ],
+			"obj-85::obj-1::obj-1" : [ "live.gain~[17]", "In", 0 ],
+			"obj-85::obj-2::obj-2" : [ "live.gain~[20]", "Out", 0 ],
+			"obj-83" : [ "live.gain~[1]", "live.gain~[1]", 0 ],
 			"parameterbanks" : 			{
 
 			}
 ,
 			"parameter_overrides" : 			{
-				"obj-85::obj-22::obj-2" : 				{
-					"parameter_longname" : "live.gain~[8]"
+				"obj-85::obj-23::obj-1" : 				{
+					"parameter_longname" : "live.gain~[9]"
 				}
 ,
-				"obj-85::obj-24::obj-1" : 				{
-					"parameter_longname" : "live.gain~[12]"
+				"obj-85::obj-30::obj-2" : 				{
+					"parameter_longname" : "live.gain~[16]"
 				}
 ,
-				"obj-85::obj-2::obj-2" : 				{
-					"parameter_longname" : "live.gain~[20]"
-				}
-,
-				"obj-85::obj-23::obj-2" : 				{
-					"parameter_longname" : "live.gain~[10]"
+				"obj-85::obj-2::obj-1" : 				{
+					"parameter_longname" : "live.gain~[19]"
 				}
 ,
 				"obj-85::obj-4::obj-2" : 				{
 					"parameter_longname" : "live.gain~[21]"
 				}
 ,
-				"obj-85::obj-6::obj-1" : 				{
-					"parameter_longname" : "live.gain~[4]"
+				"obj-85::obj-6::obj-2" : 				{
+					"parameter_longname" : "live.gain~[3]"
 				}
 ,
 				"obj-85::obj-21::obj-2" : 				{
 					"parameter_longname" : "live.gain~[5]"
 				}
 ,
-				"obj-85::obj-23::obj-1" : 				{
-					"parameter_longname" : "live.gain~[9]"
+				"obj-85::obj-23::obj-2" : 				{
+					"parameter_longname" : "live.gain~[10]"
 				}
 ,
-				"obj-85::obj-24::obj-2" : 				{
-					"parameter_longname" : "live.gain~[11]"
+				"obj-85::obj-28::obj-2" : 				{
+					"parameter_longname" : "live.gain~[14]"
+				}
+,
+				"obj-85::obj-28::obj-1" : 				{
+					"parameter_longname" : "live.gain~[13]"
 				}
 ,
 				"obj-85::obj-1::obj-2" : 				{
@@ -2121,48 +2140,48 @@
 					"parameter_longname" : "live.gain~[2]"
 				}
 ,
-				"obj-85::obj-28::obj-2" : 				{
-					"parameter_longname" : "live.gain~[14]"
-				}
-,
 				"obj-85::obj-22::obj-1" : 				{
 					"parameter_longname" : "live.gain~[7]"
 				}
 ,
-				"obj-85::obj-28::obj-1" : 				{
-					"parameter_longname" : "live.gain~[13]"
-				}
-,
-				"obj-85::obj-30::obj-1" : 				{
-					"parameter_longname" : "live.gain~[15]"
-				}
-,
-				"obj-85::obj-2::obj-1" : 				{
-					"parameter_longname" : "live.gain~[19]"
-				}
-,
-				"obj-85::obj-6::obj-2" : 				{
-					"parameter_longname" : "live.gain~[3]"
-				}
-,
-				"obj-85::obj-21::obj-1" : 				{
-					"parameter_longname" : "live.gain~[6]"
+				"obj-85::obj-24::obj-2" : 				{
+					"parameter_longname" : "live.gain~[11]"
 				}
 ,
 				"obj-85::obj-7::obj-1" : 				{
 					"parameter_longname" : "live.gain~"
 				}
 ,
-				"obj-85::obj-30::obj-2" : 				{
-					"parameter_longname" : "live.gain~[16]"
+				"obj-85::obj-6::obj-1" : 				{
+					"parameter_longname" : "live.gain~[4]"
+				}
+,
+				"obj-85::obj-30::obj-1" : 				{
+					"parameter_longname" : "live.gain~[15]"
+				}
+,
+				"obj-85::obj-4::obj-1" : 				{
+					"parameter_longname" : "live.gain~[22]"
+				}
+,
+				"obj-85::obj-21::obj-1" : 				{
+					"parameter_longname" : "live.gain~[6]"
+				}
+,
+				"obj-85::obj-22::obj-2" : 				{
+					"parameter_longname" : "live.gain~[8]"
+				}
+,
+				"obj-85::obj-24::obj-1" : 				{
+					"parameter_longname" : "live.gain~[12]"
 				}
 ,
 				"obj-85::obj-1::obj-1" : 				{
 					"parameter_longname" : "live.gain~[17]"
 				}
 ,
-				"obj-85::obj-4::obj-1" : 				{
-					"parameter_longname" : "live.gain~[22]"
+				"obj-85::obj-2::obj-2" : 				{
+					"parameter_longname" : "live.gain~[20]"
 				}
 
 			}

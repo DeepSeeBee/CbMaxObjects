@@ -128,13 +128,13 @@ namespace CbChannelStrip
    {
       internal CCsConnector(CCsConnectors aConnectors, int aNumber)
       {
-         this.Conncectors = aConnectors;
+         this.Connectors = aConnectors;
          this.Number = aNumber;
          this.InMatrix = new CCsChannelInMatrx(this);
          this.OutMatrix = new CCsChannelOutMatrx(this);
       }
          
-      internal readonly CCsConnectors Conncectors;
+      internal readonly CCsConnectors Connectors;
 
       /// <summary>
       /// 0            = Input
@@ -143,7 +143,7 @@ namespace CbChannelStrip
       /// </summary>
       internal readonly int Number;
 
-      private COutlet Outlet { get => this.Conncectors.ChannelStrip.ControlOut; }
+      private COutlet Outlet { get => this.Connectors.ChannelStrip.ControlOut; }
 
       internal void SendToChannel(params object[] aValues)
       {
@@ -162,11 +162,11 @@ namespace CbChannelStrip
                switch(aValues[2].ToString())
                {
                   case "from":
-                     this.Conncectors.FocusedConnector = this;
+                     this.Connectors.FocusedConnector = this;
                      break;
 
                   case "to":
-                     this.Conncectors.FocusedConnector.ConnectTo(this);
+                     this.Connectors.FocusedConnector.ConnectTo(this);
                      break;
 
                   case "inputs":
@@ -220,8 +220,6 @@ namespace CbChannelStrip
                      {
                         var aParamIdx = Convert.ToInt32(aValues[4]);
                         var aParamValue = Convert.ToInt32(aValues[5]);
-                        //this.ChannelStrip.WriteLogInfoMessage("VstParam.Id", aParamIdx);
-                        //this.ChannelStrip.WriteLogInfoMessage("VstParam.Value", aParamValue);
                         switch (aParamIdx)
                         {
                            case LatencyParamIdx:
@@ -236,7 +234,7 @@ namespace CbChannelStrip
                      break;
 
                   case "focus":
-                     this.Conncectors.FocusedConnector = this;
+                     this.Connectors.FocusedConnector = this;
                      break;
 
                }
@@ -258,7 +256,7 @@ namespace CbChannelStrip
          }
       }
 
-      internal bool CalcFocused() => object.ReferenceEquals(this, this.Conncectors.FocusedConnector);
+      internal bool CalcFocused() => object.ReferenceEquals(this, this.Connectors.FocusedConnector);
       internal void Focus(bool aFocused)
       {
          if (aFocused)
@@ -300,7 +298,7 @@ namespace CbChannelStrip
          }
       }
 
-      internal CChannelStrip ChannelStrip { get => this.Conncectors.ChannelStrip; }
+      internal CChannelStrip ChannelStrip { get => this.Connectors.ChannelStrip; }
       internal bool IsOutput { get => this.Number == this.ChannelStrip.IoCount; }
       internal CFlowMatrix FlowMatrix { get => this.ChannelStrip.FlowMatrix; }
       internal CChannels Channels { get => this.FlowMatrix.Channels; }
@@ -553,6 +551,33 @@ namespace CbChannelStrip
       {
          this.SendToChannel("vst", "open");
       }
+      internal void Remove()
+      {
+         var aInputs = this.Channel.Inputs.ToArray();
+         foreach (var aInput in aInputs)
+         {
+            this.SetInputActive(aInput.IoIdx, false);
+         }
+         var aOutputs = this.Channel.Outputs.ToArray();
+         foreach (var aOutput in aOutputs)
+         {
+            this.SetOutputActive(aOutput.IoIdx, false);
+         }
+         foreach (var aInput in aInputs)
+         {
+            foreach (var aOutput in aOutputs)
+            {
+               this.Connectors.GetConnector(aInput).SetOutputActive(aOutput.IoIdx, true);
+            }
+         }
+         var aNewFocus = !aInputs.IsEmpty()
+                       ? this.Connectors.GetConnector(aInputs.First())
+                       : !aOutputs.IsEmpty()
+                       ? this.Connectors.GetConnector(aOutputs.First())
+                       : this.Connectors.Connectors.First()
+                       ;
+         this.Connectors.FocusedConnector = aNewFocus;
+      }
       #endregion
 
    }
@@ -689,17 +714,15 @@ namespace CbChannelStrip
             {
                bool aNextGraph = false;
                if(this.FocusedConnectorM is object)
-               {
-                  if (!this.FocusedConnectorM.Channel.IsLinkedToSomething)
-                     aNextGraph = true;
+               {                 
+                  aNextGraph = true;
                   this.FocusedConnectorM.Unfocus();
                }
                if(value is object)
                {
                   this.FocusedConnectorM = value;
                   this.FocusedConnectorM.Focus();
-                  if (!this.FocusedConnectorM.Channel.IsLinkedToSomething)
-                     aNextGraph = true;
+                  aNextGraph = true;
                }
                if(aNextGraph)
                {
@@ -764,6 +787,10 @@ namespace CbChannelStrip
          }
       }
 
+      internal CCsConnector GetConnector(CChannel aChannel)
+      {
+         return this.Connectors.ElementAt(aChannel.IoIdx);
+      }
    }
 
    internal sealed class CCsDiagramLayout : CGwDiagramLayout
@@ -934,6 +961,7 @@ namespace CbChannelStrip
       }
       internal void NextGraph()
       {
+         this.WriteLogInfoMessage("NextGraph"); // TODO_OPT
          var aWorkerArgs = new CCsWorkerArgs(this, this.CsState);
          this.GaAnimator.NextGraph(aWorkerArgs);
       }
@@ -1027,7 +1055,6 @@ namespace CbChannelStrip
       {
          var aGraphOverlay = this.GaAnimator;
          var aSize = this.ImageSize + this.Translate; 
-         //this.WriteLogInfoMessage("SendPWindow2Size.Size=", aSize);
          var aSizeList = this.PWindow2InOut.GetMessage<CList>().Value;
          aSizeList.Clear();
          aSizeList.Add("size");
@@ -1090,20 +1117,22 @@ namespace CbChannelStrip
       }
       #endregion
       #region Keyboard
+      private int KeyboardModifier;
       private void OnKeyIn(CInlet aInlet, string aFirstItem, CReadonlyListData aRemainingItems)
       {
          var aValues = aRemainingItems.ToArray();
          this.BeginInvokeInMainTask(delegate ()
          {
-         if (aValues.Length >= 1)
-         {
-            var aEvent = aValues[0];
-            switch (aEvent)
+            if (aValues.Length >= 1)
             {
-               case "press":
-                  if (aValues.Length >= 3)
-                  {
+               var aEvent = aValues[0];
+               switch (aEvent)
+               {
+                  case "press":
+                     if (aValues.Length >= 3)
+                     {
                         var aModifier = Convert.ToInt32(aValues[1]);
+                        this.KeyboardModifier = aModifier;
                         var aIsModifier = (aModifier & 512) > 0;
                         var aKey = Convert.ToInt32(aValues[2]);
                         var aNorm0 = 48;
@@ -1141,9 +1170,16 @@ namespace CbChannelStrip
                            {
                               aConnectors.FocusedConnector = aNewConnector;
                            }
-                        }              
+                        }
+                        else if (aKey == -6) // delete
+                        {
+                           var aConnectors = this.Connectors;
+                           var aFocused = this.Connectors.FocusedConnector;
+                           aFocused.Remove();
+                           //this.NextGraph();
+                        }
                      }
-                     break;
+                  break;
                }
             }
          });
@@ -1308,37 +1344,67 @@ namespace CbChannelStrip
                   && this.DoubleClickStopWatch.ElapsedMilliseconds <= SystemInformation.DoubleClickTime)
                   {
                      // DoubleClick
-                     this.DoubleClickStopWatch.Stop();
+                     var aConnectors = this.Connectors;
+                     this.DoubleClickStopWatch.Reset();
                      var aEdgeNullable = this.GetEdgeNullable(this.MousePos);
                      if (aEdgeNullable is object)
                      {
                         // Deactivated by Edge.IsHitTestEnabled = false
-                        var aConnectors = this.Connectors;
                         var aFromNode = aEdgeNullable.GaNode1;
                         var aToNode = aEdgeNullable.GaNode2;
                         var aFromConnector = aConnectors.GetConnectorByName(aFromNode.Name);
                         var aToConnector = aConnectors.GetConnectorByName(aToNode.Name);
                         aFromConnector.SetOutputActive(aToConnector.Number, false);
+                        aConnectors.FocusedConnector = aToConnector;
                      }
                      else
                      {
                         var aNodeNullable = this.GetNodeNullable(this.MousePos);
                         if(aNodeNullable is object)
                         {
-                           var aConnector = this.Connectors.GetConnectorByName(aNodeNullable.Name);
+                           var aConnector = aConnectors.GetConnectorByName(aNodeNullable.Name);
                            aConnector.VstOpen();
+                        }
+                        else if(aConnectors.FocusedConnector is object)
+                        {
+                           var aFreeConnector = (from aConnector in aConnectors.Connectors where !aConnector.Channel.IsLinkedToSomething select aConnector).FirstOrDefault();
+                           if(aFreeConnector is object)
+                           {
+                              aConnectors.FocusedConnector.SetOutputActive(aFreeConnector.Number, true);
+                              aConnectors.FocusedConnector = aFreeConnector;
+                              this.FocusOnMouseUp = false;
+                           }
                         }
                      }
                   }
                   else
                   {
+                     // ButtonDown    
+                     this.FocusOnMouseUp = true;
+                     var aIsModifier = 0 != (Keyboard.Modifiers & ModifierKeys.Shift);
                      this.DoubleClickStopWatch.Restart();
-                     // ButtonDown                  
-                     if (this.GetNodeNullable(this.MousePos) is object)
+                     var aClickedNode = this.GetNodeNullable(this.MousePos);
+                     if (aClickedNode is object)
                      {
-                        this.IsDragging = true;
-                        this.GaAnimator.DragEdgeP1 = this.MousePos;
-                        this.GaAnimator.DragEdgeP2 = this.MousePos;
+                        var aClickedConnector = this.Connectors.GetConnectorByName(aClickedNode.Name);
+                        if(aIsModifier)
+                        {
+                           var aFocused = this.Connectors.FocusedConnector;
+                           if(aFocused is object
+                           && aClickedNode is object)
+                           {
+                              var aOldActive = aFocused.GetOutputActive(aClickedConnector.Number);
+                              var aNewActive = !aOldActive;
+                              aFocused.SetOutputActive(aClickedConnector.Number, aNewActive);
+                              this.DoubleClickStopWatch.Reset();
+                           }
+                        }
+                        else
+                        { 
+                           this.IsDragging = true;
+                           this.GaAnimator.DragEdgeP1 = this.MousePos;
+                           this.GaAnimator.DragEdgeP2 = this.MousePos;
+                        }
                      }
                   }
                   this.MouseButton = aButton;
@@ -1388,7 +1454,8 @@ namespace CbChannelStrip
                   if(!aHandled)
                   {
                      var aDragNode = this.GetNodeNullable(this.GaAnimator.DragEdgeP1);
-                     if (aDragNode is object)
+                     if (aDragNode is object
+                     && this.FocusOnMouseUp)
                      {
                         this.Connectors.FocusedConnector = this.Connectors.GetConnectorByName(aDragNode.Name);
                      }
@@ -1402,6 +1469,7 @@ namespace CbChannelStrip
             }
          });
       }
+      private bool FocusOnMouseUp;
 
       /// <summary>
       /// TODO: Obsolete
