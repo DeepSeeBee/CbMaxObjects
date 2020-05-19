@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 42.0, 85.0, 1846.0, 679.0 ],
+		"rect" : [ 34.0, 77.0, 1852.0, 929.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -88,7 +88,7 @@
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 11.0, 573.0, 1874.0, 233.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ -1.843204618156733, 58.0, 1852.0, 201.0 ],
+					"presentation_rect" : [ 6.156795381843267, 58.0, 1852.0, 201.0 ],
 					"viewvisibility" : 1
 				}
 
@@ -479,7 +479,7 @@
 						}
 ,
 						"classnamespace" : "box",
-						"rect" : [ 148.0, 477.0, 1549.0, 733.0 ],
+						"rect" : [ 34.0, 77.0, 1852.0, 929.0 ],
 						"bglocked" : 0,
 						"openinpresentation" : 0,
 						"default_fontsize" : 12.0,
@@ -516,7 +516,7 @@
 												"filename" : "20200413 - Charly Beck - EasterTrash 0.3.0.1.wav",
 												"filekind" : "audiofile",
 												"selection" : [ 0.0, 1.0 ],
-												"loop" : 1,
+												"loop" : 0,
 												"content_state" : 												{
 													"quality" : [ "basic" ],
 													"timestretch" : [ 0 ],
@@ -1013,6 +1013,7 @@
 						"boxes" : [ 							{
 								"box" : 								{
 									"id" : "obj-8",
+									"int" : 1,
 									"maxclass" : "gswitch2",
 									"numinlets" : 2,
 									"numoutlets" : 2,
