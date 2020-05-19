@@ -369,6 +369,7 @@ namespace CbChannelStrip
             this.UpdateNodeLatency();
          }
       }
+      internal bool IsMainOut { get => this.Number == 0; } // TODO
 
       internal int? NewNodeLatency;
       internal void CommitNewNodeLatency()
@@ -741,11 +742,15 @@ namespace CbChannelStrip
          {
             aRows[aIdx] = new int[aIoCount];
          }
-         if(aIoCount > 1)
+         if(aIoCount > 0)
          {
-            aRows[0][1] = 1;
-            aRows[1][0] = 1;
+            aRows[0][0] = 1;
          }
+         //if(aIoCount > 1)
+         //{
+         //   aRows[0][1] = 1;
+         //   aRows[1][0] = 1;
+         //}
          this.GaAnimator.State = this.SetNewState(this.GaAnimator, aIoCount);
          this.Rows = aRows;
          this.IoCount = aIoCount;
@@ -987,7 +992,7 @@ namespace CbChannelStrip
                   if (aValues.Length >= 3)
                   {
                         var aModifier = Convert.ToInt32(aValues[1]);
-                        var aInputOrOutput = (aModifier & 512) > 0;
+                        var aIsModifier = (aModifier & 512) > 0;
                         var aKey = Convert.ToInt32(aValues[2]);
                         var aNorm0 = 48;
                         var aNorm9 = 57;
@@ -1006,13 +1011,22 @@ namespace CbChannelStrip
                            var aIoIdx = aKey - aOffset.Value;
                            var aConnectors = this.Connectors;
                            var aNewConnector = aConnectors.GetConnectorByIdx(aIoIdx);
-                           if(aNewConnector.Channel.IsLinkedToSomething)
+                           if (!aIsModifier)
                            {
                               aConnectors.FocusedConnector = aNewConnector;
                            }
-                           else if(aConnectors.FocusedConnector is object)
+                           else if (aConnectors.FocusedConnector is object)
                            {
-                              aConnectors.FocusedConnector.SetOutputActive(aNewConnector.Number, true);
+                              var aOldActive = aConnectors.FocusedConnector.GetOutputActive(aNewConnector.Number);
+                              var aNewActive = !aOldActive;
+                              aConnectors.FocusedConnector.SetOutputActive(aNewConnector.Number, aNewActive);
+                              if (aNewActive)
+                              {
+                                 aConnectors.FocusedConnector = aNewConnector;
+                              }
+                           }
+                           else
+                           {
                               aConnectors.FocusedConnector = aNewConnector;
                            }
                         }              
