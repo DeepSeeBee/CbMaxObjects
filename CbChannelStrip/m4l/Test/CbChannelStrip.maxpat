@@ -139,12 +139,12 @@
 					"presentation_rect" : [ 1638.82839769092152, 572.0, 194.0, 120.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
-							"parameter_type" : 2,
-							"parameter_unitstyle" : 0,
 							"parameter_longname" : "live.tab",
 							"parameter_mmax" : 2,
 							"parameter_shortname" : "live.tab",
-							"parameter_enum" : [ "Power", "Mute", "Bypass" ]
+							"parameter_enum" : [ "Power", "Mute", "Bypass" ],
+							"parameter_type" : 2,
+							"parameter_unitstyle" : 0
 						}
 
 					}
@@ -479,7 +479,7 @@
 						}
 ,
 						"classnamespace" : "box",
-						"rect" : [ 109.0, 802.0, 1549.0, 733.0 ],
+						"rect" : [ 148.0, 477.0, 1549.0, 733.0 ],
 						"bglocked" : 0,
 						"openinpresentation" : 0,
 						"default_fontsize" : 12.0,
@@ -517,20 +517,20 @@
 												"selection" : [ 0.0, 1.0 ],
 												"loop" : 1,
 												"content_state" : 												{
-													"speed" : [ 1.0 ],
-													"originallength" : [ 0.0, "ticks" ],
+													"timestretch" : [ 0 ],
+													"formantcorrection" : [ 0 ],
 													"quality" : [ "basic" ],
 													"slurtime" : [ 0.0 ],
-													"originaltempo" : [ 120.0 ],
+													"speed" : [ 1.0 ],
+													"originallength" : [ 0.0, "ticks" ],
 													"pitchshift" : [ 1.0 ],
+													"originaltempo" : [ 120.0 ],
 													"basictuning" : [ 440 ],
-													"pitchcorrection" : [ 0 ],
 													"originallengthms" : [ 0.0 ],
-													"followglobaltempo" : [ 0 ],
-													"timestretch" : [ 0 ],
+													"pitchcorrection" : [ 0 ],
 													"mode" : [ "basic" ],
-													"formant" : [ 1.0 ],
-													"formantcorrection" : [ 0 ]
+													"followglobaltempo" : [ 0 ],
+													"formant" : [ 1.0 ]
 												}
 
 											}
@@ -614,14 +614,14 @@
 									"patching_rect" : [ 668.0, 56.5, 54.0, 23.0 ],
 									"saved_attribute_attributes" : 									{
 										"valueof" : 										{
-											"parameter_type" : 3,
 											"parameter_mmin" : 10.0,
 											"parameter_longname" : "flonum",
 											"parameter_initial_enable" : 1,
 											"parameter_invisible" : 1,
 											"parameter_mmax" : 10000.0,
 											"parameter_initial" : [ 440 ],
-											"parameter_shortname" : "flonum"
+											"parameter_shortname" : "flonum",
+											"parameter_type" : 3
 										}
 
 									}
@@ -1221,12 +1221,12 @@
 					"patching_rect" : [ 1420.0, 276.0, 48.0, 136.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
-							"parameter_type" : 0,
-							"parameter_unitstyle" : 4,
 							"parameter_mmin" : -70.0,
 							"parameter_longname" : "live.gain~[1]",
 							"parameter_mmax" : 6.0,
-							"parameter_shortname" : "live.gain~[1]"
+							"parameter_shortname" : "live.gain~[1]",
+							"parameter_type" : 0,
+							"parameter_unitstyle" : 4
 						}
 
 					}
@@ -1590,55 +1590,79 @@
 			}
  ],
 		"parameters" : 		{
-			"obj-85::obj-30::obj-1" : [ "live.gain~[15]", "In", 0 ],
-			"obj-85::obj-1::obj-1" : [ "live.gain~[17]", "In", 0 ],
-			"obj-85::obj-4::obj-2" : [ "live.gain~[21]", "Out", 0 ],
-			"obj-15::obj-4::obj-21::obj-6" : [ "live.tab[3]", "live.tab[1]", 0 ],
-			"obj-85::obj-22::obj-2" : [ "live.gain~[8]", "Out", 0 ],
-			"obj-15::obj-60" : [ "flonum", "flonum", 0 ],
-			"obj-85::obj-23::obj-3" : [ "vst~[4]", "vst~", 0 ],
-			"obj-85::obj-6::obj-3" : [ "vst~[1]", "vst~", 0 ],
-			"obj-15::obj-4::obj-35" : [ "[5]", "Level", 0 ],
+			"obj-85::obj-21::obj-2" : [ "live.gain~[5]", "Out", 0 ],
+			"obj-85::obj-23::obj-2" : [ "live.gain~[10]", "Out", 0 ],
 			"obj-85::obj-28::obj-1" : [ "live.gain~[13]", "In", 0 ],
+			"obj-85::obj-30::obj-3" : [ "vst~[7]", "vst~", 0 ],
+			"obj-83" : [ "live.gain~[1]", "live.gain~[1]", 0 ],
+			"obj-15::obj-4::obj-35" : [ "[5]", "Level", 0 ],
+			"obj-85::obj-6::obj-2" : [ "live.gain~[3]", "Out", 0 ],
+			"obj-85::obj-2::obj-1" : [ "live.gain~[19]", "In", 0 ],
+			"obj-15::obj-60" : [ "flonum", "flonum", 0 ],
+			"obj-85::obj-21::obj-3" : [ "vst~[2]", "vst~", 0 ],
+			"obj-85::obj-22::obj-1" : [ "live.gain~[7]", "In", 0 ],
+			"obj-85::obj-24::obj-1" : [ "live.gain~[12]", "In", 0 ],
+			"obj-85::obj-30::obj-1" : [ "live.gain~[15]", "In", 0 ],
+			"obj-85::obj-1::obj-3" : [ "vst~[8]", "vst~", 0 ],
+			"obj-85::obj-4::obj-2" : [ "live.gain~[21]", "Out", 0 ],
+			"obj-85::obj-22::obj-2" : [ "live.gain~[8]", "Out", 0 ],
+			"obj-85::obj-23::obj-1" : [ "live.gain~[9]", "In", 0 ],
+			"obj-85::obj-6::obj-1" : [ "live.gain~[4]", "In", 0 ],
+			"obj-85::obj-6::obj-3" : [ "vst~[1]", "vst~", 0 ],
+			"obj-85::obj-28::obj-2" : [ "live.gain~[14]", "Out", 0 ],
+			"obj-15::obj-4::obj-21::obj-6" : [ "live.tab[3]", "live.tab[1]", 0 ],
 			"obj-85::obj-1::obj-2" : [ "live.gain~[18]", "Out", 0 ],
 			"obj-85::obj-2::obj-3" : [ "vst~[9]", "vst~", 0 ],
-			"obj-85::obj-21::obj-3" : [ "vst~[2]", "vst~", 0 ],
-			"obj-85::obj-23::obj-2" : [ "live.gain~[10]", "Out", 0 ],
-			"obj-85::obj-24::obj-1" : [ "live.gain~[12]", "In", 0 ],
-			"obj-85::obj-30::obj-2" : [ "live.gain~[16]", "Out", 0 ],
-			"obj-85::obj-2::obj-1" : [ "live.gain~[19]", "In", 0 ],
-			"obj-85::obj-4::obj-1" : [ "live.gain~[22]", "In", 0 ],
-			"obj-83" : [ "live.gain~[1]", "live.gain~[1]", 0 ],
-			"obj-85::obj-7::obj-2" : [ "live.gain~[2]", "Out", 0 ],
-			"obj-85::obj-6::obj-2" : [ "live.gain~[3]", "Out", 0 ],
-			"obj-85::obj-22::obj-3" : [ "vst~[3]", "vst~", 0 ],
-			"obj-85::obj-24::obj-2" : [ "live.gain~[11]", "Out", 0 ],
-			"obj-85::obj-28::obj-3" : [ "vst~[6]", "vst~", 0 ],
-			"obj-85::obj-1::obj-3" : [ "vst~[8]", "vst~", 0 ],
-			"obj-85::obj-4::obj-3" : [ "vst~[10]", "vst~", 0 ],
-			"obj-32" : [ "live.tab", "live.tab", 0 ],
-			"obj-85::obj-21::obj-2" : [ "live.gain~[5]", "Out", 0 ],
-			"obj-85::obj-23::obj-1" : [ "live.gain~[9]", "In", 0 ],
-			"obj-85::obj-28::obj-2" : [ "live.gain~[14]", "Out", 0 ],
-			"obj-85::obj-7::obj-1" : [ "live.gain~", "In", 0 ],
-			"obj-85::obj-30::obj-3" : [ "vst~[7]", "vst~", 0 ],
-			"obj-85::obj-6::obj-1" : [ "live.gain~[4]", "In", 0 ],
-			"obj-85::obj-2::obj-2" : [ "live.gain~[20]", "Out", 0 ],
 			"obj-85::obj-21::obj-1" : [ "live.gain~[6]", "In", 0 ],
-			"obj-85::obj-22::obj-1" : [ "live.gain~[7]", "In", 0 ],
-			"obj-85::obj-7::obj-3" : [ "vst~", "vst~", 0 ],
+			"obj-85::obj-23::obj-3" : [ "vst~[4]", "vst~", 0 ],
+			"obj-85::obj-24::obj-2" : [ "live.gain~[11]", "Out", 0 ],
+			"obj-85::obj-30::obj-2" : [ "live.gain~[16]", "Out", 0 ],
+			"obj-85::obj-2::obj-2" : [ "live.gain~[20]", "Out", 0 ],
+			"obj-85::obj-4::obj-3" : [ "vst~[10]", "vst~", 0 ],
+			"obj-85::obj-7::obj-2" : [ "live.gain~[2]", "Out", 0 ],
+			"obj-32" : [ "live.tab", "live.tab", 0 ],
+			"obj-85::obj-22::obj-3" : [ "vst~[3]", "vst~", 0 ],
 			"obj-85::obj-24::obj-3" : [ "vst~[5]", "vst~", 0 ],
+			"obj-85::obj-28::obj-3" : [ "vst~[6]", "vst~", 0 ],
+			"obj-85::obj-7::obj-3" : [ "vst~", "vst~", 0 ],
+			"obj-85::obj-7::obj-1" : [ "live.gain~", "In", 0 ],
+			"obj-85::obj-1::obj-1" : [ "live.gain~[17]", "In", 0 ],
+			"obj-85::obj-4::obj-1" : [ "live.gain~[22]", "In", 0 ],
 			"parameterbanks" : 			{
 
 			}
 ,
 			"parameter_overrides" : 			{
-				"obj-85::obj-30::obj-1" : 				{
-					"parameter_longname" : "live.gain~[15]"
+				"obj-85::obj-21::obj-2" : 				{
+					"parameter_longname" : "live.gain~[5]"
 				}
 ,
-				"obj-85::obj-1::obj-1" : 				{
-					"parameter_longname" : "live.gain~[17]"
+				"obj-85::obj-23::obj-2" : 				{
+					"parameter_longname" : "live.gain~[10]"
+				}
+,
+				"obj-85::obj-28::obj-1" : 				{
+					"parameter_longname" : "live.gain~[13]"
+				}
+,
+				"obj-85::obj-6::obj-2" : 				{
+					"parameter_longname" : "live.gain~[3]"
+				}
+,
+				"obj-85::obj-2::obj-1" : 				{
+					"parameter_longname" : "live.gain~[19]"
+				}
+,
+				"obj-85::obj-22::obj-1" : 				{
+					"parameter_longname" : "live.gain~[7]"
+				}
+,
+				"obj-85::obj-24::obj-1" : 				{
+					"parameter_longname" : "live.gain~[12]"
+				}
+,
+				"obj-85::obj-30::obj-1" : 				{
+					"parameter_longname" : "live.gain~[15]"
 				}
 ,
 				"obj-85::obj-4::obj-2" : 				{
@@ -1649,76 +1673,52 @@
 					"parameter_longname" : "live.gain~[8]"
 				}
 ,
-				"obj-85::obj-28::obj-1" : 				{
-					"parameter_longname" : "live.gain~[13]"
-				}
-,
-				"obj-85::obj-1::obj-2" : 				{
-					"parameter_longname" : "live.gain~[18]"
-				}
-,
-				"obj-85::obj-23::obj-2" : 				{
-					"parameter_longname" : "live.gain~[10]"
-				}
-,
-				"obj-85::obj-24::obj-1" : 				{
-					"parameter_longname" : "live.gain~[12]"
-				}
-,
-				"obj-85::obj-30::obj-2" : 				{
-					"parameter_longname" : "live.gain~[16]"
-				}
-,
-				"obj-85::obj-2::obj-1" : 				{
-					"parameter_longname" : "live.gain~[19]"
-				}
-,
-				"obj-85::obj-4::obj-1" : 				{
-					"parameter_longname" : "live.gain~[22]"
-				}
-,
-				"obj-85::obj-7::obj-2" : 				{
-					"parameter_longname" : "live.gain~[2]"
-				}
-,
-				"obj-85::obj-6::obj-2" : 				{
-					"parameter_longname" : "live.gain~[3]"
-				}
-,
-				"obj-85::obj-24::obj-2" : 				{
-					"parameter_longname" : "live.gain~[11]"
-				}
-,
-				"obj-85::obj-21::obj-2" : 				{
-					"parameter_longname" : "live.gain~[5]"
-				}
-,
 				"obj-85::obj-23::obj-1" : 				{
 					"parameter_longname" : "live.gain~[9]"
-				}
-,
-				"obj-85::obj-28::obj-2" : 				{
-					"parameter_longname" : "live.gain~[14]"
-				}
-,
-				"obj-85::obj-7::obj-1" : 				{
-					"parameter_longname" : "live.gain~"
 				}
 ,
 				"obj-85::obj-6::obj-1" : 				{
 					"parameter_longname" : "live.gain~[4]"
 				}
 ,
-				"obj-85::obj-2::obj-2" : 				{
-					"parameter_longname" : "live.gain~[20]"
+				"obj-85::obj-28::obj-2" : 				{
+					"parameter_longname" : "live.gain~[14]"
+				}
+,
+				"obj-85::obj-1::obj-2" : 				{
+					"parameter_longname" : "live.gain~[18]"
 				}
 ,
 				"obj-85::obj-21::obj-1" : 				{
 					"parameter_longname" : "live.gain~[6]"
 				}
 ,
-				"obj-85::obj-22::obj-1" : 				{
-					"parameter_longname" : "live.gain~[7]"
+				"obj-85::obj-24::obj-2" : 				{
+					"parameter_longname" : "live.gain~[11]"
+				}
+,
+				"obj-85::obj-30::obj-2" : 				{
+					"parameter_longname" : "live.gain~[16]"
+				}
+,
+				"obj-85::obj-2::obj-2" : 				{
+					"parameter_longname" : "live.gain~[20]"
+				}
+,
+				"obj-85::obj-7::obj-2" : 				{
+					"parameter_longname" : "live.gain~[2]"
+				}
+,
+				"obj-85::obj-7::obj-1" : 				{
+					"parameter_longname" : "live.gain~"
+				}
+,
+				"obj-85::obj-1::obj-1" : 				{
+					"parameter_longname" : "live.gain~[17]"
+				}
+,
+				"obj-85::obj-4::obj-1" : 				{
+					"parameter_longname" : "live.gain~[22]"
 				}
 
 			}
