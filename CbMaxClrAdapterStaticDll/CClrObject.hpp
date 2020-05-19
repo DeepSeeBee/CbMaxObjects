@@ -7,6 +7,7 @@ class CClrObject
 	typedef void (CCallback)();
 
 	public: CClrObject(const SClrObject_New* aArgsPtr);
+	public: void Init();
 	public: ~CClrObject();
 
 	private: const SClrObject_New* mNewArgsPtr;
@@ -20,6 +21,9 @@ class CClrObject
 
 	private: using CFreeFunc = CObjectHandle(__stdcall*)(CObjectHandle aObjectHandle);
 	private: CFreeFunc mFreeFunc;
+
+	private: using CInitFunc = CObjectHandle(__stdcall*)(CObjectHandle aObjectHandle);
+	private: CInitFunc mInitFunc;
 
 	private: typedef UINT64 CClrObjectHandle;
 

@@ -27,16 +27,19 @@ namespace CbChannelStrip
    using CbChannelStripTest;
    using System.Windows.Forms;
    using CbMaxClrAdapter.Timer;
+   using System.Windows.Input;
 
    internal abstract class CGwDiagramLayout
    {
-      internal DirectoryInfo GraphWizInstallDir { get =>new DirectoryInfo(@"C:\Program Files (x86)\Graphviz2.38\"); }
+      internal static readonly DirectoryInfo GraphWizInstallDirDefault = new DirectoryInfo(@"C:\Program Files (x86)\Graphviz2.38\");
+      private DirectoryInfo GraphWizInstallDirM = GraphWizInstallDirDefault;
+      internal DirectoryInfo GraphWizInstallDir { get => this.GraphWizInstallDirM; set => this.GraphWizInstallDirM = value; }
       internal virtual bool GetIncludeInDiagram(CChannel aChannel) => aChannel.IsLinkedToSomething;
       internal virtual CPoint DiagramSize { get => new CPoint(1600, 600); }
 
    }
 
-   internal sealed class CCsWorkerResult : CGaWorkerResult
+   internal sealed class CCsWorkerResult : CGaNewStateWorkerResult
    {
       internal CCsWorkerResult(CChannelStrip aChannelStrip, BackgroundWorker aBackgroundWorker, CCsState aNewState) : base(aBackgroundWorker, aNewState)
       {
@@ -49,9 +52,14 @@ namespace CbChannelStrip
       {
          base.ReceiveResult();
          this.ChannelStrip.ChangeState(this.NewState);
+
+         Exception aExc = this.NewState.NewGraphWithExc.Item1;
+         if (aExc is object)
+         {
+            this.ChannelStrip.WriteLogErrorMessage(aExc.Message);
+         }
       }
    }
-
    internal sealed class CCsState : CGaState
    {
       internal CCsState(CGaAnimator aGaAnimator, CChannelStrip aChannelStrip, CFlowMatrix aFlowMatrix) : base(aGaAnimator)
@@ -69,8 +77,7 @@ namespace CbChannelStrip
 
       internal readonly CFlowMatrix FlowMatrix;
       internal readonly CChannelStrip ChannelStrip;
-
-      internal override CGwGraph GwGraph => this.FlowMatrix.Channels.GwDiagramBuilder.GwGraph;
+      internal override Tuple<Exception, CGwGraph> GwGraph => this.FlowMatrix.Channels.GwDiagramBuilder.GwGraph;
       internal override bool GetIsFocused(CGaShape aShape)
       {
          var aFocusedConnector = this.ChannelStrip.Connectors.FocusedConnector;
@@ -136,7 +143,7 @@ namespace CbChannelStrip
       /// </summary>
       internal readonly int Number;
 
-      private COutlet Outlet { get => this.Conncectors.ChannelStrip.ToChannelsOut; }
+      private COutlet Outlet { get => this.Conncectors.ChannelStrip.ControlOut; }
 
       internal void SendToChannel(params object[] aValues)
       {
@@ -224,6 +231,14 @@ namespace CbChannelStrip
                      }
                      break;
 
+                  case "init":
+                     this.SendInitialValues();
+                     break;
+
+                  case "focus":
+                     this.Conncectors.FocusedConnector = this;
+                     break;
+
                }
             }
          }
@@ -243,6 +258,15 @@ namespace CbChannelStrip
          }
       }
 
+      internal bool CalcFocused() => object.ReferenceEquals(this, this.Conncectors.FocusedConnector);
+      internal void Focus(bool aFocused)
+      {
+         if (aFocused)
+            this.Focus();
+         else
+            this.Unfocus();
+      }
+
       internal void Focus()
       {
          this.FocusPanelBorder = 4;
@@ -254,6 +278,11 @@ namespace CbChannelStrip
          this.FocusPanelBorder = 0;
       }
 
+      private void Enable(bool aEnabled)
+      {
+         var aAlpha = aEnabled ? 0 : 0.75;
+         this.SendToChannel("panel", "enable", "bgfillcolor", 1.0d, 1.0d, 1.0d, aAlpha);
+      }
       private bool? EnabledM;
       internal bool Enabled
       {
@@ -265,9 +294,8 @@ namespace CbChannelStrip
          {
             if(!this.EnabledM.HasValue || this.EnabledM.Value != value)
             {
-               var aAlpha = value ? 0 : 0.75;
-               this.EnabledM = value; 
-               this.SendToChannel("panel", "enable", "bgfillcolor", 1.0d, 1.0d, 1.0d, aAlpha);               
+               this.EnabledM = value;
+               this.Enable(value);
             }
          }
       }
@@ -347,8 +375,9 @@ namespace CbChannelStrip
 
       internal void SendInitialValues()
       {
-         this.Unfocus();
-         this.Enabled = false;
+         this.EnabledM = default(bool?);       
+         this.Enabled = this.CalcEnabled();
+         this.Focus(this.CalcFocused());
       }
 
       internal readonly CCsChannelInMatrx InMatrix;
@@ -519,6 +548,13 @@ namespace CbChannelStrip
          this.SendMixOutMatrix(true);
       }
       #endregion
+      #region Vst
+      internal void VstOpen()
+      {
+         this.SendToChannel("vst", "open");
+      }
+      #endregion
+
    }
 
    internal sealed class CCsChannel : CCsConnector
@@ -771,12 +807,13 @@ namespace CbChannelStrip
          this.PWindow2InOut.Support(CMessageTypeEnum.List);
          this.FromChannelsIn = new CListInlet(this);
          this.FromChannelsIn.Action = this.OnFromChannelsIn;
-         this.ToChannelsOut = new CListOutlet(this);         
+         this.ControlOut = new CListOutlet(this);         
          this.ControlIn = new CListInlet(this);
          this.ControlIn.SetPrefixedListAction("mouse1", this.OnMouse1In);
          this.ControlIn.SetPrefixedListAction("mouse2", this.OnMouse2In);
          this.ControlIn.SetPrefixedListAction("key", this.OnKeyIn);
          this.ControlIn.SetPrefixedListAction("samplerate", this.OnSampleRate);
+         this.ControlIn.SetPrefixedListAction("graph_wiz_folder", this.OnGraphWizFolder);
          this.TimerThread = new CTimerThread(this);
          { // InitLatencyUpdateTimer
             var aRunInMainThread = true;
@@ -791,9 +828,19 @@ namespace CbChannelStrip
          this.DebugInlet = new CListInlet(this);
          this.InitDebugInlet();
       }
+      protected override void OnInitialized()
+      {
+         base.OnInitialized();
+
+         this.InitGraph(11);
+      }
       private void OnInit(CInlet aInlet, string aFirstItem, CReadonlyListData aParams)
       {
          var aIoCount = Convert.ToInt32(aParams.ElementAt(0));
+         this.InitGraph(aIoCount);
+      }
+      private void InitGraph(int aIoCount)
+      {
          var aRows = new Int32[aIoCount][];
          for (var aIdx = 0; aIdx < aIoCount; ++aIdx)
          {
@@ -819,6 +866,7 @@ namespace CbChannelStrip
          this.Connectors.FocusedConnector = this.Connectors.MainIo;
          this.LatencyUpdateTimer.Start();
          this.SendSignalMatrix();
+         this.SendGraphWizFolder();
       }
       #endregion
       #region Debug
@@ -889,7 +937,13 @@ namespace CbChannelStrip
          var aWorkerArgs = new CCsWorkerArgs(this, this.CsState);
          this.GaAnimator.NextGraph(aWorkerArgs);
       }
-      internal CGwDiagramLayout NewDiagramLayout() => new CCsDiagramLayout(this.ConnectorsM is object ? this.Connectors.FocusedConnectorIdx : default(int?));
+      internal CGwDiagramLayout NewDiagramLayout()
+      {
+         var aFocusedChannelIdx = this.ConnectorsM is object ? this.Connectors.FocusedConnectorIdx : default(int?);
+         var aDiagramLayout = new CCsDiagramLayout(aFocusedChannelIdx);
+         aDiagramLayout.GraphWizInstallDir = this.GraphWizDirectoryInfo;
+         return aDiagramLayout;
+      }
       #endregion
       #region Matrix
       private readonly CListInlet MatrixCtrlLeftOutIn;
@@ -972,7 +1026,8 @@ namespace CbChannelStrip
       private void SendPWindow2Size()
       {
          var aGraphOverlay = this.GaAnimator;
-         var aSize = this.ImageSize + this.Translate;
+         var aSize = this.ImageSize + this.Translate; 
+         //this.WriteLogInfoMessage("SendPWindow2Size.Size=", aSize);
          var aSizeList = this.PWindow2InOut.GetMessage<CList>().Value;
          aSizeList.Clear();
          aSizeList.Add("size");
@@ -1012,7 +1067,7 @@ namespace CbChannelStrip
       #endregion
       #region Channels
       private readonly CListInlet FromChannelsIn;
-      internal readonly CListOutlet ToChannelsOut;
+      internal readonly CListOutlet ControlOut;
       private void OnFromChannelsIn(CInlet aInlet, CList aList)
       {
          this.Connectors.Receive(aList);
@@ -1268,7 +1323,11 @@ namespace CbChannelStrip
                      else
                      {
                         var aNodeNullable = this.GetNodeNullable(this.MousePos);
-                        // TODO: Open Plugin.
+                        if(aNodeNullable is object)
+                        {
+                           var aConnector = this.Connectors.GetConnectorByName(aNodeNullable.Name);
+                           aConnector.VstOpen();
+                        }
                      }
                   }
                   else
@@ -1442,6 +1501,68 @@ namespace CbChannelStrip
                }
             }
          }
+      }
+      #endregion
+      #region GraphWizFolder
+      private DirectoryInfo ConfigDir
+      {
+         get
+         {
+            var aDir = new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), typeof(CChannelStrip).FullName));
+            aDir.Create();
+            return aDir;
+         }
+      }
+      private FileInfo GraphWizDirectoryConfigFileInfo { get => new FileInfo(Path.Combine(this.ConfigDir.FullName, "GraphWizDir.txt")); }
+      private DirectoryInfo PersistentGraphWizDirectoryInfo
+      {
+         get => new DirectoryInfo(File.ReadAllText(this.GraphWizDirectoryConfigFileInfo.FullName).Trim());
+         set => File.WriteAllText(this.GraphWizDirectoryConfigFileInfo.FullName,value.FullName);
+      }
+      private DirectoryInfo NewGraphWizDirectoryInfo()
+      {
+         try
+         {
+            return this.PersistentGraphWizDirectoryInfo;
+         }
+         catch(Exception)
+         {
+            var aDir = CGwDiagramLayout.GraphWizInstallDirDefault;
+            try
+            {               
+               this.PersistentGraphWizDirectoryInfo = aDir;
+            }
+            catch (Exception) { }
+            return aDir;
+         }
+      }
+      private DirectoryInfo GraphWizDirectoryInfoM;
+      private DirectoryInfo GraphWizDirectoryInfo
+      {
+         get => CLazyLoad.Get(ref this.GraphWizDirectoryInfoM, this.NewGraphWizDirectoryInfo);
+         set
+         {
+            this.GraphWizDirectoryInfoM = value;
+            try
+            {
+               this.PersistentGraphWizDirectoryInfo = value;
+            }
+            catch(Exception aExc)
+            {
+               this.WriteLogErrorMessage(aExc);
+            }
+         }
+      }
+      private void SendGraphWizFolder()
+      {
+         this.ControlOut.SendValuesS("graph_wiz_folder", this.GraphWizDirectoryInfo.FullName);
+      }
+      private void OnGraphWizFolder(CInlet aInlet, string aPrefix, CReadonlyListData aRemainingItems)
+      {
+         var aDirectoryInfo = new DirectoryInfo(aRemainingItems.ElementAt(0).ToString());
+         this.GraphWizDirectoryInfo = aDirectoryInfo;
+         this.NextGraph();
+         this.SendGraphWizFolder();
       }
       #endregion
    }

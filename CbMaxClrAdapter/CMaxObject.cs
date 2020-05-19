@@ -939,21 +939,33 @@ namespace CbMaxClrAdapter
          this.Marshal = new CMarshal(this);
          this.LeftInlet = new CLeftInlet(this);
       }
-      internal void Init(SObject_New aArgs)
+      internal void Init()
       {
-         this.NewArgs = aArgs;
-         this.Marshal.Init();
-         foreach (var aInlet in this.Inlets.AsEnumerable().Reverse())
+         if (this.Initialized)
          {
-            aInlet.Add();
+            throw new InvalidOperationException();
          }
-         foreach (var aOutlet in this.Outlets.AsEnumerable().Reverse())
+         else
          {
-            aOutlet.Add();
+            var aArgs = this.NewArgs;
+            this.Marshal.Init();
+            foreach (var aInlet in this.Inlets.AsEnumerable().Reverse())
+            {
+               aInlet.Add();
+            }
+            foreach (var aOutlet in this.Outlets.AsEnumerable().Reverse())
+            {
+               aOutlet.Add();
+            }
+            this.Initialized = true;
+            this.BeginInvokeInMainTask(delegate () { this.OnInitialized(); });
          }
-         this.Initialized = true;
       }
       private bool InitializedM;
+      protected virtual void OnInitialized()
+      {
+
+      }
       internal bool Initialized { get => this.InitializedM; private set => this.InitializedM = value; }
       #endregion
       #region Marshall
@@ -974,7 +986,7 @@ namespace CbMaxClrAdapter
       #endregion
       #region NewArgs
       internal IntPtr Ptr { get => this.NewArgs.mObjectPtr; }
-      internal SObject_New NewArgs { get; private set; }
+      internal SObject_New NewArgs { get; set; }
       #endregion
       #region Log
       private string PrependDebugInfo(string aMsg)

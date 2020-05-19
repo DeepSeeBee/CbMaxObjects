@@ -239,7 +239,7 @@ namespace CbMaxClrAdapter
             var aAssembly = Assembly.LoadFrom(aAssemblyName);
             var aType = aAssembly.GetType(aArgs.mTypeName);
             var aObject = Activator.CreateInstance(aType);
-            GetObject<CMaxObject>(aObject).Init(aArgs);
+            GetObject<CMaxObject>(aObject).NewArgs = aArgs;
             var aId = NewId();
             Objects.Add(aId, aObject);
             return aId;
@@ -264,6 +264,12 @@ namespace CbMaxClrAdapter
          }
       }
 
+
+      [DllExport(CallingConvention = CallingConvention.StdCall)]
+      public static void Object_Init(UInt64 aObjectHandle)
+      {
+         GetObject<CMaxObject>(aObjectHandle).Init();
+      }
       private static TObject GetObject<TObject>(object aObject)
       {
          return (TObject)aObject;

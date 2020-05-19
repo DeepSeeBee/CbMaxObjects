@@ -26,5 +26,14 @@ extern "C"
 		delete GetClrObjectPtr(aObjectPtr);
 	}
 
+	void ClrObject_Init(CClrObjectVoidPtr aClrObjectVoidPtr)
+	{
+		CClrObject* aClrObjectPtr = GetClrObjectPtr(aClrObjectVoidPtr);
+		if (aClrObjectPtr)
+		{
+			aClrObjectPtr->Init();
+		}
+	}
+
 	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }

@@ -85,7 +85,8 @@ namespace CbChannelStrip.GraphWiz
          this.Size = aSize;
       }
 
-      internal CGwGraph() : this(new CGwNode[] { }, new CGwEdge[]{}, new CPoint(0.0d, 0.0d)) { }
+      internal CGwGraph() : this(new CPoint()) { }
+      internal CGwGraph(CPoint aSize) : this(new CGwNode[] { }, new CGwEdge[] { }, new CPoint(0.0d, 0.0d)) { this.Size = aSize; }
       internal readonly CPoint Size;
 
       private static void AddColor1(Dictionary<string, Color> aDic, string aName, Color aColor)
@@ -527,18 +528,26 @@ namespace CbChannelStrip.GraphWiz
 
       private readonly List<string> CodeWithoutCoords = new List<string>();
 
-      private volatile CGwGraph GwGraphM;
-      internal CGwGraph GwGraph
+      private volatile Tuple<Exception, CGwGraph> GwGraphM;
+      internal Tuple<Exception, CGwGraph> GwGraph
       {
          get
          {
             if(!(this.GwGraphM is object))
             {
-               var aDiagSize1 = this.DiagramLayout.DiagramSize;
-               var aDiagSize2 = new CPoint(aDiagSize1.x, aDiagSize1.y);
-               var aDiagSize = aDiagSize2;
-               var aGraph = CGwGraph.New(this.CodeWithCoords.JoinString(" "), aDiagSize, this.DebugPrint);
-               this.GwGraphM = aGraph;
+               var aDiagSize = this.DiagramLayout.DiagramSize;
+               try
+               {
+                  var aGraph = CGwGraph.New(this.CodeWithCoords.JoinString(" "), aDiagSize, this.DebugPrint);
+                  var aTuple = new Tuple<Exception, CGwGraph>(default, aGraph);
+                  this.GwGraphM = aTuple;
+               }
+               catch(Exception aExc)
+               {
+                  var aGraph = new CGwGraph(aDiagSize);
+                  var aTuple = new Tuple<Exception, CGwGraph>(aExc, aGraph);
+                  this.GwGraphM = aTuple;
+               }
             }
             return this.GwGraphM;
          }
@@ -733,7 +742,7 @@ namespace CbChannelStrip.GraphWiz
          }
          catch (Exception aExc)
          {
-            throw new Exception("Could not create graph. " + aExc.Message, aExc);
+            throw new Exception("Could not create graph. Is GraphWiz installed and directory set? " + aExc.Message, aExc);
          }
       }
 

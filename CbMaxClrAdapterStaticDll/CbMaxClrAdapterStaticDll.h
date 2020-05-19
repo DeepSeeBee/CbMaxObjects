@@ -21,7 +21,9 @@ extern "C" {
 
 
 	CClrObjectVoidPtr ClrObject_New(const SClrObject_New* aArgsPtr);
+	void ClrObject_Init(CClrObjectVoidPtr aClrObjectVoidPtr);
 	void ClrObject_Free(CClrObjectVoidPtr aClrObjectVoidPtr);
+
 
 
 

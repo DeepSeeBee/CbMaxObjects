@@ -208,12 +208,8 @@ namespace CbChannelStrip.GaAnimator
                var aWidth2 = this.HitTestWidth / 2.0d;
                for (var aIdx = 1; aIdx < aSplines.Length - 1 && !aContains; ++aIdx)
                {
-                  //var p1 = this.P1;
-                  //var p2 = this.P2;
                   var p1 = aSplines[aIdx];
                   var p2 = aSplines[aIdx + 1];
-                  this.GaAnimator.DebugPrint("P1=" + p1.ToString());
-                  this.GaAnimator.DebugPrint("P2=" + p2.ToString());
                   var aLine0 = new CLine(p1, p2);
                   var aLine1 = aLine0.Paralell(aWidth2);
                   var aLine2 = aLine0.Paralell(-aWidth2);
@@ -361,15 +357,6 @@ namespace CbChannelStrip.GaAnimator
          var aDy = this.GwNode.Dy * aScale;
          var aX = this.CenterPos.x  - aDx / 2.0d;
          var aY = this.CenterPos.y  - aDy / 2.0d;
-         if (this.TopLeftPos.y < 10)
-         {
-            this.GaAnimator.DebugPrint("CGaNode.Paint.GwNode.CenterX=" + this.GwNode.CenterX);
-            this.GaAnimator.DebugPrint("CGaNode.Paint.GwNode.CenterY=" + this.GwNode.CenterY);
-            this.GaAnimator.DebugPrint("CGaNode.Paint.GwNode.Dx=" + this.GwNode.Dx);
-            this.GaAnimator.DebugPrint("CGaNode.Paint.GwNode.Dy=" + this.GwNode.Dy);
-            //this.GaAnimator.DebugPrint("CGaNode.Paint.Dy=" + aDy);
-            //
-         }
          var aRect = new CRectangle(aX, aY, aDx, aDy);
          var aText = this.Name;
          var aOpacity = this.Opacity;
@@ -689,11 +676,6 @@ namespace CbChannelStrip.GaAnimator
       internal override void Morph()
       {
          this.MorphedNode.CenterPos = this.MorphProgress.MorphPoint(this.OldNode.CenterPos, this.NewNode.CenterPos);
-
-         //this.GaTransition.GaState.GaAnimator.DebugPrint("Morph.OldNode.Pos.Y=" + this.OldNode.CenterPos.Y);
-         //this.GaTransition.GaState.GaAnimator.DebugPrint("Morph.NewNode.Pos.Y=" + this.NewNode.CenterPos.Y);
-         //this.GaTransition.GaState.GaAnimator.DebugPrint("Morph.MorphedNode.Pos.Y=" + this.MorphedNode.CenterPos.Y);
-         
          this.MorphedNode.Color = this.MorphProgress.MorphColor(this.OldNode.Color, this.NewNode.Color);
          this.MorphedNode.FontColor = this.MorphProgress.MorphColor(this.OldNode.FontColor, this.NewNode.FontColor);
       }
@@ -867,18 +849,26 @@ namespace CbChannelStrip.GaAnimator
 
    internal abstract class CGaWorkerResult
    {
-      internal CGaWorkerResult(BackgroundWorker aBackgroundWorker, CGaState aNewState)
+      internal CGaWorkerResult(BackgroundWorker aBackgroundWorker)
       {
          this.BackgroundWorker = aBackgroundWorker;
-         this.NewState = aNewState;
       }
       internal readonly BackgroundWorker BackgroundWorker;
+      internal abstract void ReceiveResult();
+   }
+
+   internal abstract class CGaNewStateWorkerResult : CGaWorkerResult
+   {
+      internal CGaNewStateWorkerResult(BackgroundWorker aBackgroundWorker, CGaState aNewState):base(aBackgroundWorker)
+      {
+         this.NewState = aNewState;
+      }
       internal readonly CGaState NewState;
-      internal virtual void ReceiveResult()
+      internal override void ReceiveResult()
       {
          this.NewState.GaAnimator.State = this.NewState;
+         this.NewState.GaAnimator.GraphException = default;
       }
-      
    }
 
    internal abstract class CGaWorkerArgs
@@ -889,13 +879,29 @@ namespace CbChannelStrip.GaAnimator
       }
 
       internal readonly CGaState OldState;  
-      internal abstract CGaWorkerResult NewWorkerResult(BackgroundWorker aWorker);      
+      internal abstract CGaWorkerResult NewWorkerResult(BackgroundWorker aWorker);
+      internal virtual CGaWorkerResult NewWorkerResult(BackgroundWorker aWorker, CGaAnimator aGaAnimator, Exception aExc) => new CGaExceptionWorkerResult(aWorker, aGaAnimator, aExc);
    }
 
-   internal sealed class CGaDefaultWorkerResult : CGaWorkerResult
+   internal sealed class CGaDefaultWorkerResult : CGaNewStateWorkerResult
    {
       internal CGaDefaultWorkerResult(BackgroundWorker aBackgroundWorker, CGaState aNewState):base(aBackgroundWorker, aNewState)
       {
+      }
+   }
+
+   internal sealed class CGaExceptionWorkerResult : CGaWorkerResult
+   {
+      internal CGaExceptionWorkerResult(BackgroundWorker aWorker, CGaAnimator aAnimator, Exception aExc) : base(aWorker)
+      {
+         this.GaAnimator = aAnimator;
+         this.Exception = aExc;
+      }
+      internal readonly CGaAnimator GaAnimator;
+      internal readonly Exception Exception;
+      internal override void ReceiveResult()
+      {
+         this.GaAnimator.GraphException = this.Exception;
       }
    }
 
@@ -923,20 +929,20 @@ namespace CbChannelStrip.GaAnimator
       {
          internal CTestState(CGaAnimator aAnimator) : base(aAnimator)
          {
-            this.GwGraphM = new CGwGraph();
+            this.GwGraphM = new Tuple<Exception, CGwGraph>(default, new CGwGraph());
             this.Init();
          }
 
          internal CTestState(CGaAnimator aAnimator, CTestState aOldState, CGwGraph aGwGraph) : base(aAnimator, aOldState)
          {
-            this.GwGraphM = aGwGraph;
+            this.GwGraphM = new Tuple<Exception, CGwGraph>(default, aGwGraph);
             this.Init();
 
            
          }
 
-         private CGwGraph GwGraphM;
-         internal override CGwGraph GwGraph { get => this.GwGraphM; }
+         private Tuple<Exception, CGwGraph> GwGraphM;
+         internal override Tuple<Exception, CGwGraph> GwGraph { get => this.GwGraphM; }
       }
       internal sealed class CGaTestWorkerArgs : CGaWorkerArgs
       {
@@ -957,15 +963,15 @@ namespace CbChannelStrip.GaAnimator
             switch (this.TestCaseNr % 5)
             {
                case 0:
-                  return CFlowMatrix.NewTestFlowMatrix1(this.DebugPrint).Channels.GwDiagramBuilder.GwGraph;
+                  return CFlowMatrix.NewTestFlowMatrix1(this.DebugPrint).Channels.GwDiagramBuilder.GwGraph.Item2;
                case 1:
-                  return CFlowMatrix.NewTestFlowMatrix2(this.DebugPrint).Channels.GwDiagramBuilder.GwGraph;
+                  return CFlowMatrix.NewTestFlowMatrix2(this.DebugPrint).Channels.GwDiagramBuilder.GwGraph.Item2;
                case 2:
-                  return CFlowMatrix.NewTestFlowMatrix3(this.DebugPrint).Channels.GwDiagramBuilder.GwGraph;
+                  return CFlowMatrix.NewTestFlowMatrix3(this.DebugPrint).Channels.GwDiagramBuilder.GwGraph.Item2;
                case 3:
-                  return CFlowMatrix.NewTestFlowMatrix4(this.DebugPrint).Channels.GwDiagramBuilder.GwGraph;
+                  return CFlowMatrix.NewTestFlowMatrix4(this.DebugPrint).Channels.GwDiagramBuilder.GwGraph.Item2;
                default:
-                  return CFlowMatrix.NewTestFlowMatrix5(this.DebugPrint).Channels.GwDiagramBuilder.GwGraph;
+                  return CFlowMatrix.NewTestFlowMatrix5(this.DebugPrint).Channels.GwDiagramBuilder.GwGraph.Item2;
             }
          }
          internal override CGaWorkerResult NewWorkerResult(BackgroundWorker aBackgroundWorker) => new CGaDefaultWorkerResult(aBackgroundWorker, this.NewTestState);
@@ -1104,8 +1110,16 @@ namespace CbChannelStrip.GaAnimator
          //System.Threading.Thread.Sleep(3000);
          var aBackgroundWorker = (BackgroundWorker)aSender;
          var aGaWorkerArgs = (CGaWorkerArgs)aArgs.Argument;
-         var aNewWorkerResult = aGaWorkerArgs.NewWorkerResult(aBackgroundWorker);
-         aArgs.Result = aNewWorkerResult;
+         CGaWorkerResult aWorkerResult;
+         try
+         {
+            aWorkerResult = aGaWorkerArgs.NewWorkerResult(aBackgroundWorker);
+         }
+         catch(Exception aExc)
+         {
+            aWorkerResult = aGaWorkerArgs.NewWorkerResult(aBackgroundWorker, this, aExc);
+         }
+         aArgs.Result = aWorkerResult;
       }
 
       private void BackgroundWorkerRunWorkerCompleted(object aSender, RunWorkerCompletedEventArgs aArgs)
@@ -1228,6 +1242,8 @@ namespace CbChannelStrip.GaAnimator
       }
 
       private DispatcherFrame AnimationThreadDispatcherFrame;
+      internal Exception GraphException;
+
       private void RunAnimationThread(object aObj)
       {
          System.Threading.Thread.CurrentThread.Priority = ThreadPriority.AboveNormal;
@@ -1257,15 +1273,33 @@ namespace CbChannelStrip.GaAnimator
          this.NotifyPaint();
       }
 
-      internal void Paint(CVector2dPainter aOut)
+      private void Paint(CVector2dPainter aOut , Exception aExc)
       {
-         aOut.SetLineWidth(2.0d);
-         foreach (var aShape in this.State.GaTransition.MorphGraph)
-         {
-            aShape.Paint(aOut);
-         }
+         aOut.SetColor(Color.Red);
+         var aRect = new CRectangle(new CPoint(), this.Size);
+         aOut.Text(aExc.Message, aRect);
       }
 
+      internal void Paint(CVector2dPainter aOut)
+      {
+         var aExc = this.GraphException;
+         if (aExc is object)
+         {
+            this.Paint(aOut, aExc);
+         }
+         else if(this.State.NewGraphWithExc.Item1 is object)
+         {
+            this.Paint(aOut, this.State.NewGraphWithExc.Item1);
+         }
+         else
+         {
+            aOut.SetLineWidth(2.0d);
+            foreach (var aShape in this.State.GaTransition.MorphGraph)
+            {
+               aShape.Paint(aOut);
+            }
+         }
+      }
    }
 
    internal abstract class CGaAnimation
@@ -1284,7 +1318,7 @@ namespace CbChannelStrip.GaAnimator
 
       internal void Start()
       {
-         this.State.GaAnimator.DebugPrint(this.GetType().Name + ".Start");
+         //this.State.GaAnimator.DebugPrint(this.GetType().Name + ".Start");
          this.FrameLen = 0;
          this.Stopwatch.Start();
          this.IsRunning = true;
@@ -1634,17 +1668,27 @@ namespace CbChannelStrip.GaAnimator
 
       internal virtual bool GetIsFocused(CGaShape aShape) => false;
 
-      private CGaGraph NewGaGraph()
+      private Tuple<Exception, CGaGraph> NewGaGraph()
       {
-         var aGwGraph = this.GwGraph;
-         aGwGraph.DebugPrint(this.GaAnimator.DebugPrint);
-         var aGaGraph = new CGaGraph(this.GaAnimator, aGwGraph);
-         return aGaGraph;
+         try
+         {
+            var aGwGraphWithExc = this.GwGraph;
+            var aGwGraph = aGwGraphWithExc.Item2;
+            var aGaGraph = new CGaGraph(this.GaAnimator, aGwGraph);
+            var aResult = new Tuple<Exception, CGaGraph>(aGwGraphWithExc.Item1, aGaGraph);
+            return aResult;
+         }
+         catch(Exception aExc)
+         {
+            var aGaGraph = new CGaGraph(this.GaAnimator);
+            var aResult = new Tuple<Exception, CGaGraph>(aExc, aGaGraph);
+            return aResult;
+         }
       }
-      internal abstract CGwGraph GwGraph { get; }
-      private CGaGraph GaGraphM;
-      internal CGaGraph NewGraph { get => CLazyLoad.Get(ref this.GaGraphM, () => this.NewGaGraph()); }
-
+      internal abstract Tuple<Exception, CGwGraph> GwGraph { get; }
+      private Tuple<Exception, CGaGraph> NewGraphWithExcM;
+      internal Tuple<Exception, CGaGraph> NewGraphWithExc { get => CLazyLoad.Get(ref this.NewGraphWithExcM, () => this.NewGaGraph()); }
+      internal CGaGraph NewGraph { get => this.NewGraphWithExc.Item2; }
       internal IEnumerable<CGaAnimation> RunningAnimations
       {
          get

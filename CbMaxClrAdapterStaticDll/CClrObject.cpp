@@ -7,6 +7,7 @@ CClrObject::CClrObject(const SClrObject_New* aArgsPtr)
 ,   mModuleHandle(NULL)
 ,   mNewFunc(0)
 ,   mFreeFunc(0)
+,   mInitFunc(0)
 ,   mHandle(0)
 {
     this->mModuleHandle = ::LoadLibraryA("C:\\Program Files\\Cycling '74\\Max 8\\packages\\max-sdk-8.0.3\\externals\\CbMaxClrAdapter.dll");
@@ -14,6 +15,7 @@ CClrObject::CClrObject(const SClrObject_New* aArgsPtr)
     {
         this->mNewFunc = reinterpret_cast<CNewFunc>(::GetProcAddress(this->mModuleHandle, "Object_New"));
         this->mFreeFunc = reinterpret_cast<CFreeFunc>(::GetProcAddress(this->mModuleHandle, "Object_Free"));
+        this->mInitFunc = reinterpret_cast<CInitFunc>(::GetProcAddress(this->mModuleHandle, "Object_Init"));
     }
 
     if(this->mNewFunc
@@ -29,7 +31,14 @@ CClrObject::~CClrObject()
     {
         this->mFreeFunc(this->mHandle);
     }
+}
 
+void CClrObject::Init()
+{
+   if (this->mInitFunc)
+   {
+      this->mInitFunc(this->mHandle);
+   }
 }
 
 //CClrObject::Size CClrObject::GetInletCount()

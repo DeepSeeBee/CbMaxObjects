@@ -130,6 +130,11 @@ void* cb_clrobject_new(t_symbol* s, long argc, t_atom* argv)
       {
          aObjectPtr->mNamePtr = symbol_unique();
       }		
+
+      if (aObjectPtr->mClrObjectPtr)
+      {
+         ClrObject_Init(aObjectPtr->mClrObjectPtr);
+      }
    }
    return aObjectPtr;
 }
