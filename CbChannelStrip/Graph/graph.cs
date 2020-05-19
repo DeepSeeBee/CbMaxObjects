@@ -335,6 +335,33 @@ namespace CbChannelStrip.Graph
             Test("c2c2b99a-3a6c-452a-9da7-b808d55046b2", aFlowMatrix.Channels.ElementAt(0).LatencyCompensations[0] == 0, aFailAction);
          }
 
+         { // TestLatencyCompenstation2
+            // TestData\71521865-e4de-48cb-9c60-3cf61c3878a8.JPG
+            var aFlowMatrix = new CFlowMatrix(aDebugPrint, aSettings, 3,
+                                                          0, 1, 1, 
+                                                          1, 0, 0,
+                                                          1, 1, 0
+                                                          );
+            aFlowMatrix.Channels.ElementAt(0).NodeLatency = 0;
+            aFlowMatrix.Channels.ElementAt(1).NodeLatency = 1;
+            aFlowMatrix.Channels.ElementAt(2).NodeLatency = 2;
+            Test("", aFlowMatrix.Channels.ElementAt(1).InputIoIdxs.Count() == 2, aFailAction);
+            Test("", aFlowMatrix.Channels.ElementAt(1).InputIoIdxs.ElementAt(0) == 0, aFailAction);
+            Test("", aFlowMatrix.Channels.ElementAt(1).InputIoIdxs.ElementAt(1) == 2, aFailAction);
+            Test("", aFlowMatrix.Channels.ElementAt(1).LatencyCompensations[0] == 2, aFailAction);
+            Test("", aFlowMatrix.Channels.ElementAt(1).LatencyCompensations[1] == 0, aFailAction);
+            Test("", aFlowMatrix.Channels.ElementAt(2).InputIoIdxs.Count() == 1, aFailAction);
+            Test("", aFlowMatrix.Channels.ElementAt(2).InputIoIdxs.ElementAt(0) == 0, aFailAction);
+            Test("", aFlowMatrix.Channels.ElementAt(2).LatencyCompensations[0] == 0, aFailAction);
+
+            Test("", aFlowMatrix.Channels.ElementAt(0).InputIoIdxs.Count() == 2, aFailAction);
+            Test("", aFlowMatrix.Channels.ElementAt(0).InputIoIdxs.ElementAt(0) == 1, aFailAction);
+            Test("", aFlowMatrix.Channels.ElementAt(0).InputIoIdxs.ElementAt(1) == 2, aFailAction);
+            Test("", aFlowMatrix.Channels.ElementAt(0).LatencyCompensations[0] == 0, aFailAction);
+            Test("", aFlowMatrix.Channels.ElementAt(0).LatencyCompensations[1] == 1, aFailAction);
+
+         }
+
          {
 
             var aFlowMatrix = new CFlowMatrix(aDebugPrint, aSettings, 11,
