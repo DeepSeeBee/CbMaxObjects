@@ -34,12 +34,23 @@ namespace CbChannelStripTest
       }
    }
 
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            Assembly.LoadFrom(@"C:\Program Files\Cycling '74\Max 8\packages\max-sdk-8.0.3\source\charly_beck\CbChannelStrip\bin\x64\Debug\CbChannelStrip.exe");
-            
-        }
-    }
+   class Program
+   {
+      static void Main(string[] args)
+      {
+         //Assembly.LoadFrom(@"C:\Program Files\Cycling '74\Max 8\packages\max-sdk-8.0.3\source\charly_beck\CbChannelStrip\bin\x64\Debug\CbChannelStrip.exe");
+
+
+         var aFiles = new string[]
+         {
+            "cb_clrobject.mxe64",
+            "CbVirtualMixerMatrix.exe",
+            "CbMaxClrAdapter.dll",
+            "RGiesecke.DllExport.dll"
+         };
+
+         //var aSubDir = ""
+
+      }
+   }
 }

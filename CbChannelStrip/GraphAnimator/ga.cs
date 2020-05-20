@@ -1,5 +1,5 @@
-﻿using CbChannelStrip.Graph;
-using CbChannelStrip.GraphWiz;
+﻿using CbVirtualMixerMatrix.Graph;
+using CbVirtualMixerMatrix.GraphViz;
 using CbChannelStripTest;
 using CbMaxClrAdapter;
 using CbMaxClrAdapter.Jitter;
@@ -20,7 +20,7 @@ using System.Windows.Documents;
 using System.Windows.Media.Converters;
 using System.Windows.Threading;
 
-namespace CbChannelStrip.GaAnimator
+namespace CbVirtualMixerMatrix.GaAnimator
 {
    internal enum CDropEffectEnum
    {

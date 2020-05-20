@@ -15,8 +15,7 @@ extern "C" {
 	{
 		void* mObjectPtr;
 		const TCHAR* mAssemblyName;
-		const TCHAR* mTypeName;
-
+		const TCHAR* mTypeName;		
 	} SClrObject_New;
 
 

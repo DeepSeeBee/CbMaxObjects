@@ -1,6 +1,6 @@
-﻿using CbChannelStrip;
-using CbChannelStrip.GaAnimator;
-using CbChannelStrip.Graph;
+﻿using CbVirtualMixerMatrix;
+using CbVirtualMixerMatrix.GaAnimator;
+using CbVirtualMixerMatrix.Graph;
 using CbMaxClrAdapter;
 using CbMaxClrAdapter.Jitter;
 using CbMaxClrAdapter.MGraphics;
@@ -20,7 +20,7 @@ namespace CbChannelStripTest
          var aFailAction = new Action<string>(delegate (string aTestCaseId) { throw new Exception("Test failed: " + aTestCaseId); });
          var aDebugPrint = new Action<string>(delegate (string aMsg) { Console.WriteLine(aMsg); });        
          CListData.Test(aFailAction);
-         CChannelStrip.Test(aFailAction, aDebugPrint);
+         CVirtualMixerMatrix.Test(aFailAction, aDebugPrint);
          CMatrixCellEnumerator.Test(aFailAction);
          CGaAnimator.Test(aFailAction, aDebugPrint);
          System.Console.ReadKey();

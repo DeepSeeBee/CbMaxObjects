@@ -99,6 +99,17 @@ void cb_clrobject_qelem_callback(SCbClrObject* aObjectPtr)
    }
 }
 
+const char* GetText(long argc, t_atom* argv, long idx)
+{
+   if (idx < argc)
+   {
+      t_symbol* aSymbolPtr = atom_getsym(&argv[idx]);
+      const char* aTextPtr = aSymbolPtr ? aSymbolPtr->s_name : 0;
+      return aTextPtr;
+   }
+   return 0;
+}
+
 void* cb_clrobject_new(t_symbol* s, long argc, t_atom* argv)
 {
    SCbClrObject* aObjectPtr = 0;
@@ -108,10 +119,8 @@ void* cb_clrobject_new(t_symbol* s, long argc, t_atom* argv)
    if (aObjectPtr)
    {
       aObjectPtr->mClrObjectNewArgs.mObjectPtr = aObjectPtr;
-      aObjectPtr->mClrObjectNewArgs.mAssemblyName = TEXT("CbChannelStrip.exe");
-      aObjectPtr->mClrObjectNewArgs.mTypeName = TEXT("CbChannelStrip.CChannelStrip");
-      //aObjectPtr->mClrObjectNewArgs.mInletsAppendFuncPtr = Inlets_Append;
-      //aObjectPtr->mClrObjectNewArgs.mOutletsAppendFuncPtr = Outlets_Append;
+      aObjectPtr->mClrObjectNewArgs.mAssemblyName = GetText(argc, argv, 0);
+      aObjectPtr->mClrObjectNewArgs.mTypeName = GetText(argc, argv, 1);
       aObjectPtr->mClrObjectPtr = ClrObject_New(&aObjectPtr->mClrObjectNewArgs);
       aObjectPtr->mQelemPtr = qelem_new(aObjectPtr, cb_clrobject_qelem_callback);
    }

@@ -1,4 +1,4 @@
-﻿using CbChannelStrip.GraphWiz;
+﻿using CbVirtualMixerMatrix.GraphViz;
 using CbChannelStripTest;
 using CbMaxClrAdapter;
 using System;
@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CbChannelStrip.Graph
+namespace CbVirtualMixerMatrix.Graph
 {
 
    internal sealed class CFlowMatrix

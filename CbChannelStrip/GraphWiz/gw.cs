@@ -1,5 +1,5 @@
-﻿using CbChannelStrip.Graph;
-using CbChannelStrip.GaAnimator;
+﻿using CbVirtualMixerMatrix.Graph;
+using CbVirtualMixerMatrix.GaAnimator;
 using CbMaxClrAdapter;
 using CbMaxClrAdapter.Jitter;
 using CbMaxClrAdapter.MGraphics;
@@ -16,7 +16,7 @@ using System.Resources;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CbChannelStrip.GraphWiz
+namespace CbVirtualMixerMatrix.GraphViz
 {
    internal sealed class CGwEdge
    {

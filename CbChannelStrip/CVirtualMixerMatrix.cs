@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CbChannelStrip
+namespace CbVirtualMixerMatrix
 {
    using System.Collections;
    using System.Data;
@@ -15,9 +15,9 @@ namespace CbChannelStrip
    using System.IO;
    using System.Security.AccessControl;
    using System.Windows.Media.Imaging;
-   using CbChannelStrip.Graph;
-   using CbChannelStrip.GaAnimator;
-   using CbChannelStrip.GraphWiz;
+   using CbVirtualMixerMatrix.Graph;
+   using CbVirtualMixerMatrix.GaAnimator;
+   using CbVirtualMixerMatrix.GraphViz;
    using CbMaxClrAdapter;
    using CbMaxClrAdapter.Jitter;
    using CbMaxClrAdapter.MGraphics;
@@ -41,13 +41,13 @@ namespace CbChannelStrip
 
    internal sealed class CCsWorkerResult : CGaNewStateWorkerResult
    {
-      internal CCsWorkerResult(CChannelStrip aChannelStrip, BackgroundWorker aBackgroundWorker, CCsState aNewState) : base(aBackgroundWorker, aNewState)
+      internal CCsWorkerResult(CVirtualMixerMatrix aChannelStrip, BackgroundWorker aBackgroundWorker, CCsState aNewState) : base(aBackgroundWorker, aNewState)
       {
          this.ChannelStrip = aChannelStrip;
          this.NewState = aNewState;
       }
       internal readonly new CCsState NewState;
-      internal readonly CChannelStrip ChannelStrip;
+      internal readonly CVirtualMixerMatrix ChannelStrip;
       internal override void ReceiveResult()
       {
          base.ReceiveResult();
@@ -62,13 +62,13 @@ namespace CbChannelStrip
    }
    internal sealed class CCsState : CGaState
    {
-      internal CCsState(CGaAnimator aGaAnimator, CChannelStrip aChannelStrip, CFlowMatrix aFlowMatrix) : base(aGaAnimator)
+      internal CCsState(CGaAnimator aGaAnimator, CVirtualMixerMatrix aChannelStrip, CFlowMatrix aFlowMatrix) : base(aGaAnimator)
       {
          this.ChannelStrip = aChannelStrip;
          this.FlowMatrix = aFlowMatrix;         
          this.Init();
       }
-      internal CCsState(CGaAnimator aGaAnimator, CChannelStrip aChannelStrip, CCsState aOldState, CFlowMatrix aFlowMatrix):base(aGaAnimator, aOldState)
+      internal CCsState(CGaAnimator aGaAnimator, CVirtualMixerMatrix aChannelStrip, CCsState aOldState, CFlowMatrix aFlowMatrix):base(aGaAnimator, aOldState)
       {
          this.ChannelStrip = aChannelStrip;
          this.FlowMatrix = aFlowMatrix;
@@ -76,7 +76,7 @@ namespace CbChannelStrip
       }
 
       internal readonly CFlowMatrix FlowMatrix;
-      internal readonly CChannelStrip ChannelStrip;
+      internal readonly CVirtualMixerMatrix ChannelStrip;
       internal override Tuple<Exception, CGwGraph> GwGraph => this.FlowMatrix.Channels.GwDiagramBuilder.GwGraph;
       internal override bool GetIsFocused(CGaShape aShape)
       {
@@ -96,7 +96,7 @@ namespace CbChannelStrip
 
    internal sealed class CCsWorkerArgs : CGaWorkerArgs
    {
-      internal CCsWorkerArgs(CChannelStrip aChannelStrip, CCsState aOldState) : base(aOldState) 
+      internal CCsWorkerArgs(CVirtualMixerMatrix aChannelStrip, CCsState aOldState) : base(aOldState) 
       { 
          this.ChannelStrip = aChannelStrip;
          this.OldState = aOldState;
@@ -107,7 +107,7 @@ namespace CbChannelStrip
 
       internal readonly new CCsState OldState;
 
-      internal readonly CChannelStrip ChannelStrip;
+      internal readonly CVirtualMixerMatrix ChannelStrip;
       private readonly int[] NewMatrix;
       private readonly CGwDiagramLayout DiagramLayout;
       private readonly int IoCount;
@@ -182,7 +182,7 @@ namespace CbChannelStrip
                               if (aValues.Length == 7)
                               {
                                  var aIo = Convert.ToInt32(aValues[4]);
-                                 var aActive = CChannelStrip.GetBool(aValues[6]);
+                                 var aActive = CVirtualMixerMatrix.GetBool(aValues[6]);
                                  if(aIsInput)
                                  {
                                     bool aOk = !aActive || this.GetInputEnabled(aIo);
@@ -298,7 +298,7 @@ namespace CbChannelStrip
          }
       }
 
-      internal CChannelStrip ChannelStrip { get => this.Connectors.ChannelStrip; }
+      internal CVirtualMixerMatrix ChannelStrip { get => this.Connectors.ChannelStrip; }
       internal bool IsOutput { get => this.Number == this.ChannelStrip.IoCount; }
       internal CFlowMatrix FlowMatrix { get => this.ChannelStrip.FlowMatrix; }
       internal CChannels Channels { get => this.FlowMatrix.Channels; }
@@ -661,7 +661,7 @@ namespace CbChannelStrip
 
    internal sealed class CCsConnectors
    {
-      internal CCsConnectors(CChannelStrip aChannelStrip)
+      internal CCsConnectors(CVirtualMixerMatrix aChannelStrip)
       {
          this.ChannelStrip = aChannelStrip;
          var aIoCount = aChannelStrip.IoCount;
@@ -679,7 +679,7 @@ namespace CbChannelStrip
             aConnector.SendInitialValues();        
       }
 
-      internal readonly CChannelStrip ChannelStrip;
+      internal readonly CVirtualMixerMatrix ChannelStrip;
       internal readonly CCsMainIo MainIo;
       internal readonly CCsChannel[] Channels;
 
@@ -802,10 +802,10 @@ namespace CbChannelStrip
       internal override bool GetIncludeInDiagram(CChannel aChannel) => base.GetIncludeInDiagram(aChannel) || this.FocusedChannel == aChannel.IoIdx;
    }
 
-   public sealed class CChannelStrip : CMaxObject
+   public sealed class CVirtualMixerMatrix : CMaxObject
    {
       #region ctor
-      public CChannelStrip() 
+      public CVirtualMixerMatrix() 
       {
          this.LeftInlet.Support(CMessageTypeEnum.Bang);   
          this.LeftInlet.Support(CMessageTypeEnum.List);
@@ -1636,7 +1636,7 @@ namespace CbChannelStrip
       {
          get
          {
-            var aDir = new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), typeof(CChannelStrip).FullName));
+            var aDir = new DirectoryInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), typeof(CVirtualMixerMatrix).FullName));
             aDir.Create();
             return aDir;
          }
