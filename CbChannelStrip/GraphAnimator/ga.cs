@@ -1106,7 +1106,7 @@ namespace CbVirtualMixerMatrix.GaAnimator
 
       private void BackgroundWorkerDoWork(object aSender, DoWorkEventArgs aArgs)
       {
-         System.Threading.Thread.CurrentThread.Priority = ThreadPriority.AboveNormal;
+         System.Threading.Thread.CurrentThread.Priority = ThreadPriority.Normal;
          //System.Threading.Thread.Sleep(3000);
          var aBackgroundWorker = (BackgroundWorker)aSender;
          var aGaWorkerArgs = (CGaWorkerArgs)aArgs.Argument;
@@ -1246,13 +1246,13 @@ namespace CbVirtualMixerMatrix.GaAnimator
 
       private void RunAnimationThread(object aObj)
       {
-         System.Threading.Thread.CurrentThread.Priority = ThreadPriority.AboveNormal;
+         System.Threading.Thread.CurrentThread.Priority = ThreadPriority.Normal;
          this.AnimationThreadDispatcher = Dispatcher.CurrentDispatcher;
          this.AnimationThreadDispatcherFrame = new DispatcherFrame();
          this.AnimationThreadStartedEvent.Set();         
          Dispatcher.PushFrame(this.AnimationThreadDispatcherFrame);        
       }
-
+       
       private bool Animate(long aElapsedMilliseconds)
       {
          var aBusy = false;

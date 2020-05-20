@@ -1,4 +1,4 @@
-﻿/*
+﻿ /*
  * Bugs:
  * - Seit 202005180700: Max beendet sich nicht mehr.
  * 
@@ -9,12 +9,14 @@
  * 
  */
 using CbMaxClrAdapter;
+using CbMaxClrAdapter.Deploy;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace CbChannelStripTest
 {
@@ -36,21 +38,24 @@ namespace CbChannelStripTest
 
    class Program
    {
+      [STAThread]
       static void Main(string[] args)
       {
-         //Assembly.LoadFrom(@"C:\Program Files\Cycling '74\Max 8\packages\max-sdk-8.0.3\source\charly_beck\CbChannelStrip\bin\x64\Debug\CbChannelStrip.exe");
-
-
-         var aFiles = new string[]
+         CPackage.Install(aPackage =>
          {
-            "cb_clrobject.mxe64",
-            "CbVirtualMixerMatrix.exe",
-            "CbMaxClrAdapter.dll",
-            "RGiesecke.DllExport.dll"
-         };
-
-         //var aSubDir = ""
-
+            var aExternals = new Tuple<string, bool>[]
+            {
+               new Tuple<string, bool>("cb_clrobject.mxe64", false),
+               new Tuple<string, bool>("CbVirtualMixerMatrix.exe", false),
+               new Tuple<string, bool>("CbMaxClrAdapter.dll", false),
+               new Tuple<string, bool>("RGiesecke.DllExport.dll", false),
+               new Tuple<string, bool>("CbVirtualMixerMatrix.mxf", true)
+            }; 
+            foreach(var aExternal in aExternals)
+            {
+               aPackage.AddExternal(aExternal.Item1, @"packages\charly_beck\CbVirtualMixerMatrix\externals", aExternal.Item2);
+            }
+         });
       }
    }
 }

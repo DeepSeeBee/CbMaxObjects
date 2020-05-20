@@ -4,13 +4,13 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{8A0B4958-1C8B-4E6D-99EB-9DDB27D88BB6}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CbVirtualMixerMatrix</RootNamespace>
-    <AssemblyName>cbvirtualmixermatrix</AssemblyName>
+    <ProjectGuid>{C89F0F74-659F-4392-A08C-8E62FE69C329}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>CbClrAdapterTestLoader</RootNamespace>
+    <AssemblyName>CbClrAdapterTestLoader</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
@@ -22,6 +22,7 @@
     <LangVersion>7.3</LangVersion>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>bin\x64\Release\</OutputPath>
@@ -32,53 +33,24 @@
     <LangVersion>7.3</LangVersion>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject>
-    </StartupObject>
+    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="PresentationCore" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
-    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
-    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CVirtualMixerMatrix.cs" />
-    <Compile Include="GraphAnimator\ga.cs" />
-    <Compile Include="GraphWiz\gw.cs" />
-    <Compile Include="Graph\graph.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="m4l\CbChannelStrip.maxpat" />
-    <Content Include="m4l\CbChannelStripChannel.maxpat" />
-    <Content Include="m4l\CbChannelStripChannelMix.maxpat" />
-    <Content Include="m4l\CbChannelStripChannels.maxpat" />
-    <Content Include="m4l\CbChannelStripReceiveSymbol.maxpat" />
-    <Content Include="m4l\CbVirtualMixerMatrix.amxd" />
-    <Content Include="mfx\CbVirtualMixerMatrix.mxf">
-      <Link>CbVirtualMixerMatrix.mxf</Link>
-    </Content>
-    <Content Include="mfx\CbVirtualMixerMatrixMxfBuildScript.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\CbMaxClrAdapter\CbMaxClrAdapter.csproj">
-      <Project>{38033b7c-caf9-4a1a-8e4f-4750d59a79fa}</Project>
-      <Name>CbMaxClrAdapter</Name>
-    </ProjectReference>
+    <None Include="App.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>copy "$(TargetPath)" "../../../../../../externals/$(TargetFileName)"</PostBuildEvent>
-  </PropertyGroup>
 </Project>

@@ -14,15 +14,15 @@ extern "C" {
 	typedef struct _SClrObject_New
 	{
 		void* mObjectPtr;
-		const TCHAR* mAssemblyName;
-		const TCHAR* mTypeName;		
+		const char* mAssemblyName;
+		const char* mTypeName;		
 	} SClrObject_New;
 
 
 	CClrObjectVoidPtr ClrObject_New(const SClrObject_New* aArgsPtr);
 	void ClrObject_Init(CClrObjectVoidPtr aClrObjectVoidPtr);
 	void ClrObject_Free(CClrObjectVoidPtr aClrObjectVoidPtr);
-
+	 
 
 
 

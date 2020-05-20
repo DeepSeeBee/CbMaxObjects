@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Linq.Expressions;
 using System.IO;
 using RGiesecke.DllExport;
+using System.Windows.Forms;
 
 namespace CbMaxClrAdapter
 {
@@ -237,6 +238,7 @@ namespace CbMaxClrAdapter
          {
             var aAssemblyName = GetAssemblyName(aArgs.mAssemblyName);
             var aAssembly = Assembly.LoadFrom(aAssemblyName);
+            //var aAssembly = Assembly.LoadFile(aAssemblyName);
             var aType = aAssembly.GetType(aArgs.mTypeName);
             var aObject = Activator.CreateInstance(aType);
             GetObject<CMaxObject>(aObject).NewArgs = aArgs;

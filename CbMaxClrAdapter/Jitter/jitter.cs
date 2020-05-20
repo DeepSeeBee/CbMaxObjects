@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 namespace CbMaxClrAdapter.Jitter
 {
    using System.Collections;
+   using System.Diagnostics;
    using System.Drawing;
    using System.IO;
    using System.Runtime.InteropServices;
@@ -21,6 +22,7 @@ namespace CbMaxClrAdapter.Jitter
          this.DimensionSizes = aMatrixData.DimensionSizes;
          this.Pos = new int[this.DimensionCount];
          this.Bof = true;
+    
       }
 
       internal void CheckPos()
