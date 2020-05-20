@@ -59,13 +59,3 @@ void CClrObject::Init()
       this->mInitFunc(this->mHandle);
    }
 }
-
-//CClrObject::Size CClrObject::GetInletCount()
-//{
-//    return this->mGetInletCountFunc ? this->mGetInletCountFunc(this->mHandle) : 0;
-//}
-//
-//CClrObject::Size CClrObject::GetOutletCount()
-//{
-//    return this->mGetOutletCountFunc ? this->mGetOutletCountFunc(this->mHandle) : 0;
-//}

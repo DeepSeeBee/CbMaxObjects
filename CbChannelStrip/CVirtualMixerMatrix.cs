@@ -1604,7 +1604,6 @@ namespace CbVirtualMixerMatrix
       private void SendSignalMatrix(bool aRestOrSet)
       {
          var aIoCount = this.IoCount;
-         var aListData = this.SignalMatrixOut.Message.Value;
          for (var aInIdx = 0; aInIdx < aIoCount; ++aInIdx)
          { 
             for(var aOutIdx = 0; aOutIdx < aIoCount; ++aOutIdx)

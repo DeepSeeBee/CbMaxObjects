@@ -1285,6 +1285,8 @@ namespace CbVirtualMixerMatrix.GaAnimator
          var aExc = this.GraphException;
          if (aExc is object)
          {
+            // actually this wont be visible since we have no size.
+            // shall not occur atm.
             this.Paint(aOut, aExc);
          }
          else if(this.State.NewGraphWithExc.Item1 is object)
@@ -1482,15 +1484,6 @@ namespace CbVirtualMixerMatrix.GaAnimator
          {
             aMorph.Animate(this);
          }
-
-         //var aCount = this.State.GaTransition.Announcers.OfType<CGaNodeMorph>().Count();
-         ////this.State.GaAnimator.DebugPrint("CAnnounceAnimation.OnFinish.Announcers.OfType<CGaNode>().Count=" + aCount);
-         //if (aCount == 2)
-         //{
-         //   var aAnnouncer = this.State.GaTransition.Announcers.OfType<CGaNodeMorph>().First();
-         //   this.State.GaAnimator.DebugPrint("CAnnounceAnimation.OnFinish.MorphNode.TopLeftPos=" + aAnnouncer.MorphedNode.TopLeftPos.ToString());
-         //   this.State.GaAnimator.DebugPrint("CAnnounceAnimation.OnFinish.NewNode.TopLeftPos=" + aAnnouncer.NewNode.TopLeftPos.ToString());
-         //}
       }
    }
 

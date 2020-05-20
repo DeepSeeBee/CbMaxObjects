@@ -7,7 +7,7 @@
 
 typedef struct _SCbClrObject
 {
-   // Alwyay the first member of the struct. (Otherwise memoryaccessviolation!)
+   // Always the first member of the struct. (Otherwise memoryaccessviolation!)
    t_object mObject;
 
    SClrObject_New mClrObjectNewArgs;
@@ -253,7 +253,6 @@ void cb_clrobject_in_anything(SCbClrObject* aObjectPtr, t_symbol* s, long ac, t_
       }
    }
 }
-
 
 void cb_clrobject_in_bang(SCbClrObject* aObjectPtr)
 {
