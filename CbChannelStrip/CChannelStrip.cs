@@ -404,9 +404,7 @@ namespace CbChannelStrip
          if(this.NewNodeLatency.HasValue
          && this.NewNodeLatency.Value != this.NodeLatency)
          {
-            this.NodeLatency = this.NewNodeLatency.Value;
-            
-            
+            this.NodeLatency = this.NewNodeLatency.Value;                     
          }
       }
       internal void UpdateNodeLatency()
@@ -511,6 +509,7 @@ namespace CbChannelStrip
          var aDelays = (from aIoIdx in Enumerable.Range(0, this.IoCount)
                        select aChannel.InputIoIdxs.Contains(aIoIdx)
                             ? aChannel.LatencyCompensations[aChannel.GetInputIdxByIoIdx(aIoIdx)]
+                            + aChannel.DepthCompensations[aChannel.GetInputIdxByIoIdx(aIoIdx)]
                             : 0);
          var aValues = new object[] { "mix", "delays", }.Concat(aDelays.Cast<object>()).ToArray();
          this.SendToChannel(aValues);

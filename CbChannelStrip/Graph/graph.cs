@@ -648,8 +648,56 @@ namespace CbChannelStrip.Graph
             if (this.IsLinkedDirectlyToMainOut)
                yield return this.Channels.MainOut;
          }
-
       }
+
+      #region Depth
+      private int? InputDepthM;
+      internal int InputDepth
+      {
+         get
+         {
+            if (!this.InputDepthM.HasValue)
+            {
+               if (this.IoIdx == 0)
+               {
+                  this.InputDepthM = this.InternalInputDepth;
+               }
+               else if (!this.IsLinkedToOutput
+                    || !this.IsLinkedToInput)
+               {
+                  this.InputDepthM = 0;
+               }
+               else
+               {
+                  this.InputDepthM = this.InternalInputDepth;
+               }
+            }
+            return this.InputDepthM.Value;
+         }
+      }
+      internal int NodeDepth { get => 1; }
+      private int InternalOutDepth { get => this.InputDepth + this.NodeDepth; }
+      internal int? InternalInputDepthM;
+      internal int InternalInputDepth
+      {
+         get
+         {
+            if (!this.InternalInputDepthM.HasValue)
+            {
+               var aDepths = (from aInput in this.Inputs
+                                 where aInput.IoIdx != 0
+                                 where aInput.IsLinkedToInput
+                                 where aInput.IsLinkedToOutput
+                                 select aInput.InternalOutDepth);
+               var aDepth = aDepths.IsEmpty() ? 0 : aDepths.Max();
+               this.InternalInputDepthM = aDepth;
+            }
+            return this.InternalInputDepthM.Value;
+         }
+      }
+      internal int OutDepth { get => this.IoIdx == 0 ? this.Channels.MainOut.InternalOutDepth : this.InternalOutDepth; }
+      internal int[] DepthCompensations { get => (from aInput in this.Inputs select -((aInput.IoIdx == 0 ? 0 : aInput.OutDepth) - this.InputDepth)).ToArray(); }
+      #endregion
 
       internal bool IsLinkedDirectlyToMainOut { get => this.Channels.FlowMatrix.Actives[this.Channels.FlowMatrix.GetCellIdx(0, this.IoIdx)]; }
 
