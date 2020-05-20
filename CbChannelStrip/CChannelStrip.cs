@@ -570,10 +570,10 @@ namespace CbChannelStrip
                this.Connectors.GetConnector(aInput).SetOutputActive(aOutput.IoIdx, true);
             }
          }
-         var aNewFocus = !aInputs.IsEmpty()
-                       ? this.Connectors.GetConnector(aInputs.First())
-                       : !aOutputs.IsEmpty()
+         var aNewFocus = (!aOutputs.IsEmpty() && aOutputs.First().IoIdx != 0)
                        ? this.Connectors.GetConnector(aOutputs.First())
+                       : !aInputs.IsEmpty()
+                       ? this.Connectors.GetConnector(aInputs.First())
                        : this.Connectors.Connectors.First()
                        ;
          this.Connectors.FocusedConnector = aNewFocus;
@@ -1338,8 +1338,8 @@ namespace CbChannelStrip
                   this.GaAnimator.CursorPos = this.MousePos;
 
                   { // Announce
-                     var aDragNode = this.IsDragging
-                                   ? this.GetNodeNullable(this.GaAnimator.DragEdgeP1)
+                     var aDragNode = this.IsDragging && this.GaAnimator.DragEdgeP1.HasValue
+                                   ? this.GetNodeNullable(this.GaAnimator.DragEdgeP1.Value)
                                    : default(CGaNode)
                                    ;
                      var aHoverings = this.GetShapes(this.MousePos).OfType<CGaNode>();
@@ -1464,11 +1464,13 @@ namespace CbChannelStrip
                   else if (aButton == 0 && this.MouseButton == 1)
                   { // Drop/ButtonUp
                      bool aHandled;
-                     if (this.IsDragging)
+                     if (this.IsDragging
+                     && this.GaAnimator.DragEdgeP1.HasValue
+                     && this.GaAnimator.DragEdgeP2.HasValue)
                      {
                         this.IsDragging = false;
-                        var aDragNode = this.GetNodeNullable(this.GaAnimator.DragEdgeP1);
-                        var aDropNode = this.GetNodeNullable(this.GaAnimator.DragEdgeP2);
+                        var aDragNode = this.GetNodeNullable(this.GaAnimator.DragEdgeP1.Value);
+                        var aDropNode = this.GetNodeNullable(this.GaAnimator.DragEdgeP2.Value);
                         if (aDragNode is object
                         && aDropNode is object
                         && aDragNode.Name != aDropNode.Name)
@@ -1488,6 +1490,8 @@ namespace CbChannelStrip
                            var aConnectors = this.Connectors;
                            var aDropConnector = aConnectors.GetConnectorByName(aDropNode.Name);
                            this.Connectors.FocusedConnector = aDropConnector;
+
+                           
                            aHandled = true;
                         }
                         else
@@ -1499,15 +1503,19 @@ namespace CbChannelStrip
                      {
                         aHandled = false;
                      }
-                     if (!aHandled)
+                     if (!aHandled
+                     && this.GaAnimator.DragEdgeP1.HasValue)
                      {
-                        var aDragNode = this.GetNodeNullable(this.GaAnimator.DragEdgeP1);
+                        var aDragNode = this.GetNodeNullable(this.GaAnimator.DragEdgeP1.Value);
                         if (aDragNode is object
                         && this.FocusOnMouseUp)
                         {
                            this.Connectors.FocusedConnector = this.Connectors.GetConnectorByName(aDragNode.Name);
                         }
                      }
+                     this.GaAnimator.DragEdgeP1 = default(CPoint);
+                     this.GaAnimator.DragEdgeP2 = default(CPoint);
+                     this.IsDragging = false;
                      this.MouseButton = aButton;
                   }
                   if (!this.GaAnimator.NextGraphIsPending)

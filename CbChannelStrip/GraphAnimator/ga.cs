@@ -428,9 +428,9 @@ namespace CbChannelStrip.GaAnimator
          this.Color = FocusedColor;
       }
 
-      internal override CPoint P0 { get => this.GaAnimator.DragEdgeP1; }
-      internal override CPoint P1 { get => this.GaAnimator.DragEdgeP1; }
-      internal override CPoint P2 { get => this.GaAnimator.DragEdgeP2; }
+      internal override CPoint P0 { get => this.GaAnimator.DragEdgeP1.GetValueOrDefault(new CPoint()); }
+      internal override CPoint P1 { get => this.GaAnimator.DragEdgeP1.GetValueOrDefault(new CPoint()); }
+      internal override CPoint P2 { get => this.GaAnimator.DragEdgeP2.GetValueOrDefault(new CPoint()); }
       internal override CPoint[] Splines { get => new CPoint[] { this.P0, this.P0, this.P2 }; set => base.Splines = value; }
       internal override bool IsVisible { get => this.GaAnimator.DragEdgeVisible; }
       internal override bool P2TipIsVisible => false;
@@ -1034,8 +1034,8 @@ namespace CbChannelStrip.GaAnimator
       }
       #endregion
 
-      internal CPoint DragEdgeP1;
-      internal CPoint DragEdgeP2;
+      internal CPoint? DragEdgeP1;
+      internal CPoint? DragEdgeP2;
       internal volatile bool DragEdgeVisible;
       internal CPoint CursorPos;
 
