@@ -10,7 +10,7 @@
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 42.0, 85.0, 1852.0, 929.0 ],
+		"rect" : [ 34.0, 77.0, 1852.0, 929.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 1,
 		"default_fontsize" : 12.0,
@@ -38,6 +38,78 @@
 		"style" : "",
 		"subpatcher_template" : "",
 		"boxes" : [ 			{
+				"box" : 				{
+					"id" : "obj-15",
+					"maxclass" : "newobj",
+					"numinlets" : 2,
+					"numoutlets" : 1,
+					"outlettype" : [ "multichannelsignal" ],
+					"patching_rect" : [ 1447.5, 537.0, 77.0, 22.0 ],
+					"text" : "mc.selector~"
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"id" : "obj-10",
+					"maxclass" : "ezdac~",
+					"numinlets" : 2,
+					"numoutlets" : 0,
+					"patching_rect" : [ 1570.0, 809.0, 45.0, 45.0 ]
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"comment" : "",
+					"id" : "obj-60",
+					"index" : 3,
+					"maxclass" : "inlet",
+					"numinlets" : 0,
+					"numoutlets" : 1,
+					"outlettype" : [ "signal" ],
+					"patching_rect" : [ 1502.0, 11.0, 30.0, 30.0 ]
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"comment" : "",
+					"id" : "obj-49",
+					"index" : 2,
+					"maxclass" : "inlet",
+					"numinlets" : 0,
+					"numoutlets" : 1,
+					"outlettype" : [ "signal" ],
+					"patching_rect" : [ 1433.0, 11.0, 30.0, 30.0 ]
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"comment" : "",
+					"id" : "obj-58",
+					"index" : 2,
+					"maxclass" : "outlet",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 1528.0, 913.0, 30.0, 30.0 ]
+				}
+
+			}
+, 			{
+				"box" : 				{
+					"comment" : "",
+					"id" : "obj-18",
+					"index" : 1,
+					"maxclass" : "outlet",
+					"numinlets" : 1,
+					"numoutlets" : 0,
+					"patching_rect" : [ 1466.0, 913.0, 30.0, 30.0 ]
+				}
+
+			}
+, 			{
 				"box" : 				{
 					"id" : "obj-9",
 					"maxclass" : "newobj",
@@ -95,7 +167,7 @@
 					"numoutlets" : 0,
 					"patching_rect" : [ 43.0, 574.0, 185.0, 30.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 1672.15679538184304, 83.119955241680145, 118.688438758910706, 30.0 ],
+					"presentation_rect" : [ 1665.15679538184304, 83.119955241680145, 118.688438758910706, 30.0 ],
 					"text" : "Main",
 					"textcolor" : [ 0.847058823529412, 0.847058823529412, 0.847058823529412, 1.0 ],
 					"textjustification" : 1
@@ -111,7 +183,7 @@
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 43.0, 616.25, 185.0, 22.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 1672.15679538184304, 118.369955241680145, 118.688438758910706, 22.0 ],
+					"presentation_rect" : [ 1665.15679538184304, 118.369955241680145, 118.688438758910706, 22.0 ],
 					"text" : "open",
 					"textjustification" : 1
 				}
@@ -126,7 +198,7 @@
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 74.0, 655.0, 185.0, 22.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 1672.15679538184304, 148.5, 118.688438758910706, 22.0 ],
+					"presentation_rect" : [ 1665.15679538184304, 148.5, 118.688438758910706, 22.0 ],
 					"text" : "plug",
 					"textjustification" : 1
 				}
@@ -5302,42 +5374,7 @@
 									"saved_attribute_attributes" : 									{
 										"valueof" : 										{
 											"parameter_invisible" : 1,
-											"parameter_longname" : "vst~[22]",
-											"parameter_shortname" : "vst~",
-											"parameter_type" : 3
-										}
-
-									}
-,
-									"saved_object_attributes" : 									{
-										"parameter_enable" : 1,
-										"parameter_mappable" : 0
-									}
-,
-									"text" : "vst~",
-									"varname" : "Vst11",
-									"viewvisibility" : 0
-								}
-
-							}
-, 							{
-								"box" : 								{
-									"autosave" : 1,
-									"bgmode" : 0,
-									"border" : 0,
-									"clickthrough" : 0,
-									"id" : "obj-13",
-									"maxclass" : "newobj",
-									"numinlets" : 2,
-									"numoutlets" : 8,
-									"offset" : [ 0.0, 0.0 ],
-									"outlettype" : [ "signal", "signal", "", "list", "int", "", "", "" ],
-									"patching_rect" : [ 1139.5, 359.0, 92.5, 22.0 ],
-									"save" : [ "#N", "vst~", "loaduniqueid", 0, ";" ],
-									"saved_attribute_attributes" : 									{
-										"valueof" : 										{
-											"parameter_invisible" : 1,
-											"parameter_longname" : "vst~[21]",
+											"parameter_longname" : "vst~[26]",
 											"parameter_shortname" : "vst~",
 											"parameter_type" : 3
 										}
@@ -5400,13 +5437,31 @@
 													}
 
 												}
+, 												{
+													"filetype" : "C74Snapshot",
+													"version" : 2,
+													"minorversion" : 0,
+													"name" : "Blackhole",
+													"origin" : "FabFilter Pro-Q 3.dll",
+													"type" : "VST",
+													"subtype" : "MidiEffect",
+													"embed" : 0,
+													"fileref" : 													{
+														"name" : "Blackhole",
+														"filename" : "Blackhole.maxsnap",
+														"filepath" : "~/Documents/Max 8/Snapshots",
+														"filepos" : -1,
+														"snapshotfileid" : "b32d865f18df65ef3aebed88abd90532"
+													}
+
+												}
  ]
 										}
 
 									}
 ,
 									"text" : "vst~",
-									"varname" : "Vst10",
+									"varname" : "Vst11",
 									"viewvisibility" : 0
 								}
 
@@ -5417,18 +5472,18 @@
 									"bgmode" : 0,
 									"border" : 0,
 									"clickthrough" : 0,
-									"id" : "obj-12",
+									"id" : "obj-13",
 									"maxclass" : "newobj",
 									"numinlets" : 2,
 									"numoutlets" : 8,
 									"offset" : [ 0.0, 0.0 ],
 									"outlettype" : [ "signal", "signal", "", "list", "int", "", "", "" ],
-									"patching_rect" : [ 1036.5, 359.0, 92.5, 22.0 ],
+									"patching_rect" : [ 1139.5, 359.0, 92.5, 22.0 ],
 									"save" : [ "#N", "vst~", "loaduniqueid", 0, ";" ],
 									"saved_attribute_attributes" : 									{
 										"valueof" : 										{
 											"parameter_invisible" : 1,
-											"parameter_longname" : "vst~[20]",
+											"parameter_longname" : "vst~[34]",
 											"parameter_shortname" : "vst~",
 											"parameter_type" : 3
 										}
@@ -5491,13 +5546,31 @@
 													}
 
 												}
+, 												{
+													"filetype" : "C74Snapshot",
+													"version" : 2,
+													"minorversion" : 0,
+													"name" : "Blackhole",
+													"origin" : "FabFilter Pro-Q 3.dll",
+													"type" : "VST",
+													"subtype" : "MidiEffect",
+													"embed" : 0,
+													"fileref" : 													{
+														"name" : "Blackhole",
+														"filename" : "Blackhole.maxsnap",
+														"filepath" : "~/Documents/Max 8/Snapshots",
+														"filepos" : -1,
+														"snapshotfileid" : "b32d865f18df65ef3aebed88abd90532"
+													}
+
+												}
  ]
 										}
 
 									}
 ,
 									"text" : "vst~",
-									"varname" : "Vst9",
+									"varname" : "Vst10",
 									"viewvisibility" : 0
 								}
 
@@ -5508,18 +5581,18 @@
 									"bgmode" : 0,
 									"border" : 0,
 									"clickthrough" : 0,
-									"id" : "obj-11",
+									"id" : "obj-12",
 									"maxclass" : "newobj",
 									"numinlets" : 2,
 									"numoutlets" : 8,
 									"offset" : [ 0.0, 0.0 ],
 									"outlettype" : [ "signal", "signal", "", "list", "int", "", "", "" ],
-									"patching_rect" : [ 933.5, 359.0, 92.5, 22.0 ],
+									"patching_rect" : [ 1036.5, 359.0, 92.5, 22.0 ],
 									"save" : [ "#N", "vst~", "loaduniqueid", 0, ";" ],
 									"saved_attribute_attributes" : 									{
 										"valueof" : 										{
 											"parameter_invisible" : 1,
-											"parameter_longname" : "vst~[19]",
+											"parameter_longname" : "vst~[24]",
 											"parameter_shortname" : "vst~",
 											"parameter_type" : 3
 										}
@@ -5582,13 +5655,31 @@
 													}
 
 												}
+, 												{
+													"filetype" : "C74Snapshot",
+													"version" : 2,
+													"minorversion" : 0,
+													"name" : "Blackhole",
+													"origin" : "FabFilter Pro-Q 3.dll",
+													"type" : "VST",
+													"subtype" : "MidiEffect",
+													"embed" : 0,
+													"fileref" : 													{
+														"name" : "Blackhole",
+														"filename" : "Blackhole.maxsnap",
+														"filepath" : "~/Documents/Max 8/Snapshots",
+														"filepos" : -1,
+														"snapshotfileid" : "b32d865f18df65ef3aebed88abd90532"
+													}
+
+												}
  ]
 										}
 
 									}
 ,
 									"text" : "vst~",
-									"varname" : "Vst8",
+									"varname" : "Vst9",
 									"viewvisibility" : 0
 								}
 
@@ -5599,18 +5690,18 @@
 									"bgmode" : 0,
 									"border" : 0,
 									"clickthrough" : 0,
-									"id" : "obj-10",
+									"id" : "obj-11",
 									"maxclass" : "newobj",
 									"numinlets" : 2,
 									"numoutlets" : 8,
 									"offset" : [ 0.0, 0.0 ],
 									"outlettype" : [ "signal", "signal", "", "list", "int", "", "", "" ],
-									"patching_rect" : [ 830.5, 359.0, 92.5, 22.0 ],
+									"patching_rect" : [ 933.5, 359.0, 92.5, 22.0 ],
 									"save" : [ "#N", "vst~", "loaduniqueid", 0, ";" ],
 									"saved_attribute_attributes" : 									{
 										"valueof" : 										{
 											"parameter_invisible" : 1,
-											"parameter_longname" : "vst~[18]",
+											"parameter_longname" : "vst~[33]",
 											"parameter_shortname" : "vst~",
 											"parameter_type" : 3
 										}
@@ -5673,13 +5764,31 @@
 													}
 
 												}
+, 												{
+													"filetype" : "C74Snapshot",
+													"version" : 2,
+													"minorversion" : 0,
+													"name" : "Blackhole",
+													"origin" : "FabFilter Pro-Q 3.dll",
+													"type" : "VST",
+													"subtype" : "MidiEffect",
+													"embed" : 0,
+													"fileref" : 													{
+														"name" : "Blackhole",
+														"filename" : "Blackhole.maxsnap",
+														"filepath" : "~/Documents/Max 8/Snapshots",
+														"filepos" : -1,
+														"snapshotfileid" : "b32d865f18df65ef3aebed88abd90532"
+													}
+
+												}
  ]
 										}
 
 									}
 ,
 									"text" : "vst~",
-									"varname" : "Vst7",
+									"varname" : "Vst8",
 									"viewvisibility" : 0
 								}
 
@@ -5690,18 +5799,18 @@
 									"bgmode" : 0,
 									"border" : 0,
 									"clickthrough" : 0,
-									"id" : "obj-9",
+									"id" : "obj-10",
 									"maxclass" : "newobj",
 									"numinlets" : 2,
 									"numoutlets" : 8,
 									"offset" : [ 0.0, 0.0 ],
 									"outlettype" : [ "signal", "signal", "", "list", "int", "", "", "" ],
-									"patching_rect" : [ 727.5, 359.0, 92.5, 22.0 ],
+									"patching_rect" : [ 830.5, 359.0, 92.5, 22.0 ],
 									"save" : [ "#N", "vst~", "loaduniqueid", 0, ";" ],
 									"saved_attribute_attributes" : 									{
 										"valueof" : 										{
 											"parameter_invisible" : 1,
-											"parameter_longname" : "vst~[17]",
+											"parameter_longname" : "vst~[30]",
 											"parameter_shortname" : "vst~",
 											"parameter_type" : 3
 										}
@@ -5764,13 +5873,31 @@
 													}
 
 												}
+, 												{
+													"filetype" : "C74Snapshot",
+													"version" : 2,
+													"minorversion" : 0,
+													"name" : "Blackhole",
+													"origin" : "FabFilter Pro-Q 3.dll",
+													"type" : "VST",
+													"subtype" : "MidiEffect",
+													"embed" : 0,
+													"fileref" : 													{
+														"name" : "Blackhole",
+														"filename" : "Blackhole.maxsnap",
+														"filepath" : "~/Documents/Max 8/Snapshots",
+														"filepos" : -1,
+														"snapshotfileid" : "b32d865f18df65ef3aebed88abd90532"
+													}
+
+												}
  ]
 										}
 
 									}
 ,
 									"text" : "vst~",
-									"varname" : "Vst6",
+									"varname" : "Vst7",
 									"viewvisibility" : 0
 								}
 
@@ -5781,18 +5908,18 @@
 									"bgmode" : 0,
 									"border" : 0,
 									"clickthrough" : 0,
-									"id" : "obj-8",
+									"id" : "obj-9",
 									"maxclass" : "newobj",
 									"numinlets" : 2,
 									"numoutlets" : 8,
 									"offset" : [ 0.0, 0.0 ],
 									"outlettype" : [ "signal", "signal", "", "list", "int", "", "", "" ],
-									"patching_rect" : [ 624.5, 359.0, 92.5, 22.0 ],
+									"patching_rect" : [ 727.5, 359.0, 92.5, 22.0 ],
 									"save" : [ "#N", "vst~", "loaduniqueid", 0, ";" ],
 									"saved_attribute_attributes" : 									{
 										"valueof" : 										{
 											"parameter_invisible" : 1,
-											"parameter_longname" : "vst~[16]",
+											"parameter_longname" : "vst~[28]",
 											"parameter_shortname" : "vst~",
 											"parameter_type" : 3
 										}
@@ -5855,13 +5982,31 @@
 													}
 
 												}
+, 												{
+													"filetype" : "C74Snapshot",
+													"version" : 2,
+													"minorversion" : 0,
+													"name" : "Blackhole",
+													"origin" : "FabFilter Pro-Q 3.dll",
+													"type" : "VST",
+													"subtype" : "MidiEffect",
+													"embed" : 0,
+													"fileref" : 													{
+														"name" : "Blackhole",
+														"filename" : "Blackhole.maxsnap",
+														"filepath" : "~/Documents/Max 8/Snapshots",
+														"filepos" : -1,
+														"snapshotfileid" : "b32d865f18df65ef3aebed88abd90532"
+													}
+
+												}
  ]
 										}
 
 									}
 ,
 									"text" : "vst~",
-									"varname" : "Vst5",
+									"varname" : "Vst6",
 									"viewvisibility" : 0
 								}
 
@@ -5872,18 +6017,18 @@
 									"bgmode" : 0,
 									"border" : 0,
 									"clickthrough" : 0,
-									"id" : "obj-7",
+									"id" : "obj-8",
 									"maxclass" : "newobj",
 									"numinlets" : 2,
 									"numoutlets" : 8,
 									"offset" : [ 0.0, 0.0 ],
 									"outlettype" : [ "signal", "signal", "", "list", "int", "", "", "" ],
-									"patching_rect" : [ 521.5, 359.0, 92.5, 22.0 ],
+									"patching_rect" : [ 624.5, 359.0, 92.5, 22.0 ],
 									"save" : [ "#N", "vst~", "loaduniqueid", 0, ";" ],
 									"saved_attribute_attributes" : 									{
 										"valueof" : 										{
 											"parameter_invisible" : 1,
-											"parameter_longname" : "vst~[15]",
+											"parameter_longname" : "vst~[32]",
 											"parameter_shortname" : "vst~",
 											"parameter_type" : 3
 										}
@@ -5946,13 +6091,31 @@
 													}
 
 												}
+, 												{
+													"filetype" : "C74Snapshot",
+													"version" : 2,
+													"minorversion" : 0,
+													"name" : "Blackhole",
+													"origin" : "FabFilter Pro-Q 3.dll",
+													"type" : "VST",
+													"subtype" : "MidiEffect",
+													"embed" : 0,
+													"fileref" : 													{
+														"name" : "Blackhole",
+														"filename" : "Blackhole.maxsnap",
+														"filepath" : "~/Documents/Max 8/Snapshots",
+														"filepos" : -1,
+														"snapshotfileid" : "b32d865f18df65ef3aebed88abd90532"
+													}
+
+												}
  ]
 										}
 
 									}
 ,
 									"text" : "vst~",
-									"varname" : "Vst4",
+									"varname" : "Vst5",
 									"viewvisibility" : 0
 								}
 
@@ -5963,18 +6126,18 @@
 									"bgmode" : 0,
 									"border" : 0,
 									"clickthrough" : 0,
-									"id" : "obj-6",
+									"id" : "obj-7",
 									"maxclass" : "newobj",
 									"numinlets" : 2,
 									"numoutlets" : 8,
 									"offset" : [ 0.0, 0.0 ],
 									"outlettype" : [ "signal", "signal", "", "list", "int", "", "", "" ],
-									"patching_rect" : [ 418.5, 359.0, 92.5, 22.0 ],
+									"patching_rect" : [ 521.5, 359.0, 92.5, 22.0 ],
 									"save" : [ "#N", "vst~", "loaduniqueid", 0, ";" ],
 									"saved_attribute_attributes" : 									{
 										"valueof" : 										{
 											"parameter_invisible" : 1,
-											"parameter_longname" : "vst~[14]",
+											"parameter_longname" : "vst~[29]",
 											"parameter_shortname" : "vst~",
 											"parameter_type" : 3
 										}
@@ -6037,13 +6200,31 @@
 													}
 
 												}
+, 												{
+													"filetype" : "C74Snapshot",
+													"version" : 2,
+													"minorversion" : 0,
+													"name" : "Blackhole",
+													"origin" : "FabFilter Pro-Q 3.dll",
+													"type" : "VST",
+													"subtype" : "MidiEffect",
+													"embed" : 0,
+													"fileref" : 													{
+														"name" : "Blackhole",
+														"filename" : "Blackhole.maxsnap",
+														"filepath" : "~/Documents/Max 8/Snapshots",
+														"filepos" : -1,
+														"snapshotfileid" : "b32d865f18df65ef3aebed88abd90532"
+													}
+
+												}
  ]
 										}
 
 									}
 ,
 									"text" : "vst~",
-									"varname" : "Vst3",
+									"varname" : "Vst4",
 									"viewvisibility" : 0
 								}
 
@@ -6054,18 +6235,18 @@
 									"bgmode" : 0,
 									"border" : 0,
 									"clickthrough" : 0,
-									"id" : "obj-5",
+									"id" : "obj-6",
 									"maxclass" : "newobj",
 									"numinlets" : 2,
 									"numoutlets" : 8,
 									"offset" : [ 0.0, 0.0 ],
 									"outlettype" : [ "signal", "signal", "", "list", "int", "", "", "" ],
-									"patching_rect" : [ 315.5, 359.0, 92.5, 22.0 ],
+									"patching_rect" : [ 418.5, 359.0, 92.5, 22.0 ],
 									"save" : [ "#N", "vst~", "loaduniqueid", 0, ";" ],
 									"saved_attribute_attributes" : 									{
 										"valueof" : 										{
 											"parameter_invisible" : 1,
-											"parameter_longname" : "vst~[13]",
+											"parameter_longname" : "vst~[27]",
 											"parameter_shortname" : "vst~",
 											"parameter_type" : 3
 										}
@@ -6107,7 +6288,7 @@
 													"origin" : "Blackhole.dll",
 													"type" : "VST",
 													"subtype" : "AudioEffect",
-													"embed" : 1,
+													"embed" : 0,
 													"snapshot" : 													{
 														"pluginname" : "Blackhole.dll",
 														"plugindisplayname" : "Blackhole",
@@ -6134,7 +6315,7 @@
 									}
 ,
 									"text" : "vst~",
-									"varname" : "Vst2",
+									"varname" : "Vst3",
 									"viewvisibility" : 0
 								}
 
@@ -6145,18 +6326,18 @@
 									"bgmode" : 0,
 									"border" : 0,
 									"clickthrough" : 0,
-									"id" : "obj-4",
+									"id" : "obj-5",
 									"maxclass" : "newobj",
 									"numinlets" : 2,
 									"numoutlets" : 8,
 									"offset" : [ 0.0, 0.0 ],
 									"outlettype" : [ "signal", "signal", "", "list", "int", "", "", "" ],
-									"patching_rect" : [ 212.5, 359.0, 92.5, 22.0 ],
+									"patching_rect" : [ 315.5, 359.0, 92.5, 22.0 ],
 									"save" : [ "#N", "vst~", "loaduniqueid", 0, ";" ],
 									"saved_attribute_attributes" : 									{
 										"valueof" : 										{
 											"parameter_invisible" : 1,
-											"parameter_longname" : "vst~[12]",
+											"parameter_longname" : "vst~[31]",
 											"parameter_shortname" : "vst~",
 											"parameter_type" : 3
 										}
@@ -6194,11 +6375,11 @@
 													"filetype" : "C74Snapshot",
 													"version" : 2,
 													"minorversion" : 0,
-													"name" : "FabFilter Pro-Q 3",
+													"name" : "Blackhole",
 													"origin" : "FabFilter Pro-Q 3.dll",
 													"type" : "VST",
 													"subtype" : "MidiEffect",
-													"embed" : 0,
+													"embed" : 1,
 													"snapshot" : 													{
 														"pluginname" : "FabFilter Pro-Q 3.dll",
 														"plugindisplayname" : "FabFilter Pro-Q 3",
@@ -6210,6 +6391,24 @@
 														"blob" : "1552.CMlaKA....fQPMDZ....AXTTy.G...P.....APTYlEVcrQGHSUFczklamA...................T.0FYjPSE....fYA............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9C...3O...................................f+....9C...3u...f+.....D....P...P.A........3O...f+.....D..........................................................................................................................................XTTy.W.....O....PTYlEVcrQGHSUFczklam8++++e.....I.....kbu0RTffRNo."
 													}
 ,
+													"fileref" : 													{
+														"name" : "Blackhole",
+														"filename" : "Blackhole.maxsnap",
+														"filepath" : "~/Documents/Max 8/Snapshots",
+														"filepos" : -1,
+														"snapshotfileid" : "b32d865f18df65ef3aebed88abd90532"
+													}
+
+												}
+, 												{
+													"filetype" : "C74Snapshot",
+													"version" : 2,
+													"minorversion" : 0,
+													"name" : "FabFilter Pro-Q 3",
+													"origin" : "FabFilter Pro-Q 3.dll",
+													"type" : "VST",
+													"subtype" : "MidiEffect",
+													"embed" : 0,
 													"fileref" : 													{
 														"name" : "FabFilter Pro-Q 3",
 														"filename" : "FabFilter Pro-Q 3.maxsnap",
@@ -6225,7 +6424,7 @@
 									}
 ,
 									"text" : "vst~",
-									"varname" : "Vst1",
+									"varname" : "Vst2",
 									"viewvisibility" : 0
 								}
 
@@ -6236,18 +6435,18 @@
 									"bgmode" : 0,
 									"border" : 0,
 									"clickthrough" : 0,
-									"id" : "obj-3",
+									"id" : "obj-4",
 									"maxclass" : "newobj",
 									"numinlets" : 2,
 									"numoutlets" : 8,
 									"offset" : [ 0.0, 0.0 ],
 									"outlettype" : [ "signal", "signal", "", "list", "int", "", "", "" ],
-									"patching_rect" : [ 109.5, 359.0, 92.5, 22.0 ],
+									"patching_rect" : [ 212.5, 359.0, 92.5, 22.0 ],
 									"save" : [ "#N", "vst~", "loaduniqueid", 0, ";" ],
 									"saved_attribute_attributes" : 									{
 										"valueof" : 										{
 											"parameter_invisible" : 1,
-											"parameter_longname" : "vst~",
+											"parameter_longname" : "vst~[23]",
 											"parameter_shortname" : "vst~",
 											"parameter_type" : 3
 										}
@@ -6307,6 +6506,133 @@
 														"filepath" : "~/Documents/Max 8/Snapshots",
 														"filepos" : -1,
 														"snapshotfileid" : "1e471974cb285c941e41b508c82dbb43"
+													}
+
+												}
+, 												{
+													"filetype" : "C74Snapshot",
+													"version" : 2,
+													"minorversion" : 0,
+													"name" : "Blackhole",
+													"origin" : "FabFilter Pro-Q 3.dll",
+													"type" : "VST",
+													"subtype" : "MidiEffect",
+													"embed" : 0,
+													"fileref" : 													{
+														"name" : "Blackhole",
+														"filename" : "Blackhole.maxsnap",
+														"filepath" : "~/Documents/Max 8/Snapshots",
+														"filepos" : -1,
+														"snapshotfileid" : "b32d865f18df65ef3aebed88abd90532"
+													}
+
+												}
+ ]
+										}
+
+									}
+,
+									"text" : "vst~",
+									"varname" : "Vst1",
+									"viewvisibility" : 0
+								}
+
+							}
+, 							{
+								"box" : 								{
+									"autosave" : 1,
+									"bgmode" : 0,
+									"border" : 0,
+									"clickthrough" : 0,
+									"id" : "obj-3",
+									"maxclass" : "newobj",
+									"numinlets" : 2,
+									"numoutlets" : 8,
+									"offset" : [ 0.0, 0.0 ],
+									"outlettype" : [ "signal", "signal", "", "list", "int", "", "", "" ],
+									"patching_rect" : [ 109.5, 359.0, 92.5, 22.0 ],
+									"save" : [ "#N", "vst~", "loaduniqueid", 0, ";" ],
+									"saved_attribute_attributes" : 									{
+										"valueof" : 										{
+											"parameter_invisible" : 1,
+											"parameter_longname" : "vst~[25]",
+											"parameter_shortname" : "vst~",
+											"parameter_type" : 3
+										}
+
+									}
+,
+									"saved_object_attributes" : 									{
+										"parameter_enable" : 1,
+										"parameter_mappable" : 0
+									}
+,
+									"snapshot" : 									{
+										"filetype" : "C74Snapshot",
+										"version" : 2,
+										"minorversion" : 0,
+										"name" : "snapshotlist",
+										"origin" : "vst~",
+										"type" : "list",
+										"subtype" : "Undefined",
+										"embed" : 1,
+										"snapshot" : 										{
+											"pluginname" : "FabFilter Pro-Q 3.dll",
+											"plugindisplayname" : "FabFilter Pro-Q 3",
+											"pluginsavedname" : "C:/VstPlugins/64bit/FabFilter/FabFilter Pro-Q 3.dll",
+											"pluginsaveduniqueid" : 0,
+											"version" : 1,
+											"isbank" : 0,
+											"isbase64" : 1,
+											"blob" : "1553.CMlaKA....fQPMDZ....AXTTy.G...P.....APTYlEVcrQGHSUFczklamA...................TP0FYjPSE....fYA............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9C...3O...................................f+....9C...3u...f+.....D....P...P.A........3O...f+.....D..........................................................................................................................................XTTy.W.....O....PTYlEVcrQGHSUFczklam8++++e.....J.....kbu0RTffRLwjB"
+										}
+,
+										"snapshotlist" : 										{
+											"current_snapshot" : 0,
+											"entries" : [ 												{
+													"filetype" : "C74Snapshot",
+													"version" : 2,
+													"minorversion" : 0,
+													"name" : "FabFilter Pro-Q 3",
+													"origin" : "FabFilter Pro-Q 3.dll",
+													"type" : "VST",
+													"subtype" : "MidiEffect",
+													"embed" : 0,
+													"snapshot" : 													{
+														"pluginname" : "FabFilter Pro-Q 3.dll",
+														"plugindisplayname" : "FabFilter Pro-Q 3",
+														"pluginsavedname" : "C:/VstPlugins/64bit/FabFilter/FabFilter Pro-Q 3.dll",
+														"pluginsaveduniqueid" : 0,
+														"version" : 1,
+														"isbank" : 0,
+														"isbase64" : 1,
+														"blob" : "1553.CMlaKA....fQPMDZ....AXTTy.G...P.....APTYlEVcrQGHSUFczklamA...................TP0FYjPSE....fYA............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9i1y8QP..............3O...f+....7C........f+.....D...3O..............3OZO2GAA.............f+....9C...vO.........9C....P...f+..............f+n8beDD..............9C...3O....+.........3O.....A...9C..............9C...3O...................................f+....9C...3u...f+.....D....P...P.A........3O...f+.....D..........................................................................................................................................XTTy.W.....O....PTYlEVcrQGHSUFczklam8++++e.....J.....kbu0RTffRLwjB"
+													}
+,
+													"fileref" : 													{
+														"name" : "FabFilter Pro-Q 3",
+														"filename" : "FabFilter Pro-Q 3.maxsnap",
+														"filepath" : "~/Documents/Max 8/Snapshots",
+														"filepos" : -1,
+														"snapshotfileid" : "1e471974cb285c941e41b508c82dbb43"
+													}
+
+												}
+, 												{
+													"filetype" : "C74Snapshot",
+													"version" : 2,
+													"minorversion" : 0,
+													"name" : "Blackhole",
+													"origin" : "FabFilter Pro-Q 3.dll",
+													"type" : "VST",
+													"subtype" : "MidiEffect",
+													"embed" : 0,
+													"fileref" : 													{
+														"name" : "Blackhole",
+														"filename" : "Blackhole.maxsnap",
+														"filepath" : "~/Documents/Max 8/Snapshots",
+														"filepos" : -1,
+														"snapshotfileid" : "b32d865f18df65ef3aebed88abd90532"
 													}
 
 												}
@@ -7145,7 +7471,7 @@
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
 							"parameter_type" : 2,
-							"parameter_longname" : "live.text[4]",
+							"parameter_longname" : "live.text[11]",
 							"parameter_mmax" : 1,
 							"parameter_shortname" : "live.text[4]",
 							"parameter_enum" : [ "val1", "val2" ]
@@ -7610,20 +7936,20 @@
 								"selection" : [ 0.0, 1.0 ],
 								"loop" : 1,
 								"content_state" : 								{
-									"speed" : [ 1.0 ],
+									"formantcorrection" : [ 0 ],
+									"pitchshift" : [ 1.0 ],
+									"originallength" : [ 0.0, "ticks" ],
+									"quality" : [ "basic" ],
 									"originallengthms" : [ 0.0 ],
 									"originaltempo" : [ 120.0 ],
 									"basictuning" : [ 440 ],
+									"speed" : [ 1.0 ],
 									"formant" : [ 1.0 ],
 									"pitchcorrection" : [ 0 ],
 									"followglobaltempo" : [ 0 ],
-									"quality" : [ "basic" ],
-									"slurtime" : [ 0.0 ],
-									"timestretch" : [ 0 ],
-									"formantcorrection" : [ 0 ],
-									"pitchshift" : [ 1.0 ],
 									"mode" : [ "basic" ],
-									"originallength" : [ 0.0, "ticks" ]
+									"timestretch" : [ 0 ],
+									"slurtime" : [ 0.0 ]
 								}
 
 							}
@@ -7635,9 +7961,9 @@
 					"numinlets" : 1,
 					"numoutlets" : 5,
 					"outlettype" : [ "signal", "signal", "signal", "", "dictionary" ],
-					"patching_rect" : [ 1630.0, 27.0, 255.0, 36.0 ],
+					"patching_rect" : [ 1630.0, 20.0, 255.0, 36.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 1041.0, 874.5, 515.0, 36.0 ]
+					"presentation_rect" : [ 1041.0, 924.5, 515.0, 36.0 ]
 				}
 
 			}
@@ -7668,92 +7994,12 @@
 				"box" : 				{
 					"comment" : "",
 					"id" : "obj-37",
-					"index" : 0,
+					"index" : 1,
 					"maxclass" : "inlet",
 					"numinlets" : 0,
 					"numoutlets" : 1,
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 340.0, 36.0, 30.0, 30.0 ]
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-51",
-					"maxclass" : "message",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 1929.5, 43.0, 29.5, 22.0 ],
-					"text" : "0"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"automation" : "Stop",
-					"fontsize" : 20.0,
-					"id" : "obj-48",
-					"maxclass" : "live.text",
-					"mode" : 0,
-					"numinlets" : 1,
-					"numoutlets" : 2,
-					"outlettype" : [ "", "" ],
-					"parameter_enable" : 1,
-					"patching_rect" : [ 1987.5, 75.0, 128.0, 44.0 ],
-					"saved_attribute_attributes" : 					{
-						"valueof" : 						{
-							"parameter_type" : 2,
-							"parameter_longname" : "live.text[11]",
-							"parameter_mmax" : 1,
-							"parameter_shortname" : "live.text[1]",
-							"parameter_enum" : [ "Stop", "val2" ]
-						}
-
-					}
-,
-					"text" : "Stop",
-					"varname" : "live.text[3]"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"automation" : "Start",
-					"fontsize" : 20.0,
-					"id" : "obj-42",
-					"maxclass" : "live.text",
-					"mode" : 0,
-					"numinlets" : 1,
-					"numoutlets" : 2,
-					"outlettype" : [ "", "" ],
-					"parameter_enable" : 1,
-					"patching_rect" : [ 1987.5, 27.0, 128.0, 44.0 ],
-					"saved_attribute_attributes" : 					{
-						"valueof" : 						{
-							"parameter_type" : 2,
-							"parameter_longname" : "live.text[13]",
-							"parameter_mmax" : 1,
-							"parameter_shortname" : "live.text[1]",
-							"parameter_enum" : [ "Start", "val2" ]
-						}
-
-					}
-,
-					"text" : "Start",
-					"varname" : "live.text[2]"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-32",
-					"maxclass" : "message",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "" ],
-					"patching_rect" : [ 1892.0, 43.0, 29.5, 22.0 ],
-					"text" : "1"
 				}
 
 			}
@@ -7765,7 +8011,7 @@
 					"numoutlets" : 0,
 					"patching_rect" : [ 1642.0, 572.0, 150.0, 20.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 1638.82839769092152, 544.0, 194.0, 20.0 ],
+					"presentation_rect" : [ 1631.82839769092152, 587.0, 194.0, 20.0 ],
 					"text" : "www.graphviz.org",
 					"textcolor" : [ 0.847058823529412, 0.847058823529412, 0.847058823529412, 1.0 ]
 				}
@@ -7802,7 +8048,7 @@
 					"parameter_enable" : 1,
 					"patching_rect" : [ 34.0, 4.25, 76.0, 44.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 1638.82839769092152, 658.0, 194.0, 29.0 ],
+					"presentation_rect" : [ 1631.82839769092152, 707.0, 194.0, 29.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
 							"parameter_type" : 2,
@@ -7821,18 +8067,6 @@
 			}
 , 			{
 				"box" : 				{
-					"id" : "obj-49",
-					"maxclass" : "newobj",
-					"numinlets" : 2,
-					"numoutlets" : 2,
-					"outlettype" : [ "signal", "signal" ],
-					"patching_rect" : [ 1636.0, 748.5, 55.0, 22.0 ],
-					"text" : "plugout~"
-				}
-
-			}
-, 			{
-				"box" : 				{
 					"id" : "obj-46",
 					"maxclass" : "newobj",
 					"numinlets" : 2,
@@ -7840,30 +8074,6 @@
 					"outlettype" : [ "multichannelsignal" ],
 					"patching_rect" : [ 1458.0, 81.0, 60.0, 22.0 ],
 					"text" : "mc.pack~"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-45",
-					"maxclass" : "newobj",
-					"numinlets" : 2,
-					"numoutlets" : 2,
-					"outlettype" : [ "signal", "signal" ],
-					"patching_rect" : [ 1470.0, 20.0, 48.0, 22.0 ],
-					"text" : "plugin~"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-44",
-					"maxclass" : "newobj",
-					"numinlets" : 2,
-					"numoutlets" : 1,
-					"outlettype" : [ "multichannelsignal" ],
-					"patching_rect" : [ 1457.0, 527.0, 77.0, 22.0 ],
-					"text" : "mc.selector~"
 				}
 
 			}
@@ -7894,7 +8104,7 @@
 					"parameter_enable" : 1,
 					"patching_rect" : [ 1630.0, 107.0, 96.0, 38.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 1638.82839769092152, 614.5, 194.0, 38.0 ],
+					"presentation_rect" : [ 1631.82839769092152, 663.5, 194.0, 38.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
 							"parameter_type" : 2,
@@ -8115,7 +8325,7 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "multichannelsignal" ],
-					"patching_rect" : [ 1457.0, 358.0, 60.0, 22.0 ],
+					"patching_rect" : [ 1445.0, 407.0, 60.0, 22.0 ],
 					"text" : "mc.pack~"
 				}
 
@@ -8129,9 +8339,9 @@
 					"numoutlets" : 5,
 					"outlettype" : [ "signal", "signal", "", "float", "list" ],
 					"parameter_enable" : 1,
-					"patching_rect" : [ 1458.0, 271.25, 54.0, 52.0 ],
+					"patching_rect" : [ 1458.0, 238.25, 56.0, 143.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 1632.15679538184304, 66.0, 38.0, 194.0 ],
+					"presentation_rect" : [ 1625.15679538184304, 66.0, 38.0, 231.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
 							"parameter_type" : 0,
@@ -8173,17 +8383,6 @@
 			}
 , 			{
 				"box" : 				{
-					"id" : "obj-10",
-					"maxclass" : "meter~",
-					"numinlets" : 1,
-					"numoutlets" : 1,
-					"outlettype" : [ "float" ],
-					"patching_rect" : [ 1879.0, 85.0, 80.0, 13.0 ]
-				}
-
-			}
-, 			{
-				"box" : 				{
 					"id" : "obj-8",
 					"maxclass" : "message",
 					"numinlets" : 2,
@@ -8218,7 +8417,7 @@
 					"outlettype" : [ "" ],
 					"patching_rect" : [ 780.5, 10.75, 217.0, 31.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 1638.82839769092152, 569.0, 194.0, 31.0 ],
+					"presentation_rect" : [ 1631.82839769092152, 612.0, 194.0, 31.0 ],
 					"text" : "OpenDirectory",
 					"textjustification" : 1
 				}
@@ -8233,7 +8432,7 @@
 					"numoutlets" : 0,
 					"patching_rect" : [ 871.0, 289.25, 153.0, 16.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 1638.82839769092152, 508.0, 194.0, 16.0 ],
+					"presentation_rect" : [ 1631.82839769092152, 551.0, 194.0, 16.0 ],
 					"text" : "C:\\Program Files (x86)\\Graphviz2.38\\",
 					"textcolor" : [ 0.847058823529412, 0.847058823529412, 0.847058823529412, 1.0 ]
 				}
@@ -8248,7 +8447,7 @@
 					"numoutlets" : 0,
 					"patching_rect" : [ 1627.0, 557.0, 161.0, 20.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 1638.82839769092152, 486.0, 208.0, 20.0 ],
+					"presentation_rect" : [ 1631.82839769092152, 529.0, 208.0, 20.0 ],
 					"text" : "GraphWiz directory",
 					"textcolor" : [ 0.847058823529412, 0.847058823529412, 0.847058823529412, 1.0 ]
 				}
@@ -8260,9 +8459,9 @@
 					"maxclass" : "panel",
 					"numinlets" : 1,
 					"numoutlets" : 0,
-					"patching_rect" : [ 1086.0, 617.0, 128.0, 128.0 ],
+					"patching_rect" : [ 1216.0, 621.0, 128.0, 128.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 1632.15679538184304, 480.0, 207.34320461815696, 130.0 ]
+					"presentation_rect" : [ 1625.15679538184304, 523.0, 207.34320461815696, 130.0 ]
 				}
 
 			}
@@ -8276,7 +8475,7 @@
 					"patching_rect" : [ 1642.0, 281.0, 153.0, 213.0 ],
 					"presentation" : 1,
 					"presentation_linecount" : 14,
-					"presentation_rect" : [ 1638.82839769092152, 269.0, 194.0, 200.0 ],
+					"presentation_rect" : [ 1631.82839769092152, 312.0, 194.0, 200.0 ],
 					"text" : "Keyboard:\n0..9: Focus Channels\n\nGraph-View Mouse:\nConnect/Disconnect Channels\n\nKeyboard/Mouse+ Shift: \n(Dis)connect Channels\n\nDoubleClick Background:\nCreate node\n\nDrag Node on node:\nCreate/Delete connection",
 					"textcolor" : [ 0.847058823529412, 0.847058823529412, 0.847058823529412, 1.0 ]
 				}
@@ -8457,361 +8656,6 @@
 					}
 ,
 					"text" : "p IdleMouse"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-15",
-					"maxclass" : "newobj",
-					"numinlets" : 1,
-					"numoutlets" : 1,
-					"outlettype" : [ "multichannelsignal" ],
-					"patcher" : 					{
-						"fileversion" : 1,
-						"appversion" : 						{
-							"major" : 8,
-							"minor" : 1,
-							"revision" : 3,
-							"architecture" : "x64",
-							"modernui" : 1
-						}
-,
-						"classnamespace" : "box",
-						"rect" : [ 34.0, 77.0, 1852.0, 929.0 ],
-						"bglocked" : 0,
-						"openinpresentation" : 0,
-						"default_fontsize" : 12.0,
-						"default_fontface" : 0,
-						"default_fontname" : "Arial",
-						"gridonopen" : 1,
-						"gridsize" : [ 15.0, 15.0 ],
-						"gridsnaponopen" : 1,
-						"objectsnaponopen" : 1,
-						"statusbarvisible" : 2,
-						"toolbarvisible" : 1,
-						"lefttoolbarpinned" : 0,
-						"toptoolbarpinned" : 0,
-						"righttoolbarpinned" : 0,
-						"bottomtoolbarpinned" : 0,
-						"toolbars_unpinned_last_save" : 0,
-						"tallnewobj" : 0,
-						"boxanimatetime" : 200,
-						"enablehscroll" : 1,
-						"enablevscroll" : 1,
-						"devicewidth" : 0.0,
-						"description" : "",
-						"digest" : "",
-						"tags" : "",
-						"style" : "",
-						"subpatcher_template" : "",
-						"boxes" : [ 							{
-								"box" : 								{
-									"comment" : "",
-									"id" : "obj-1",
-									"index" : 1,
-									"maxclass" : "inlet",
-									"numinlets" : 0,
-									"numoutlets" : 1,
-									"outlettype" : [ "" ],
-									"patching_rect" : [ 18.0, 45.0, 30.0, 30.0 ]
-								}
-
-							}
-, 							{
-								"box" : 								{
-									"clipheight" : 47.0,
-									"data" : 									{
-										"clips" : [ 											{
-												"absolutepath" : "C:\\Cloud\\GoogleDrive\\mp3\\20200413 - Charly Beck - EasterTrash 0.3.0.1.mp3",
-												"filename" : "20200413 - Charly Beck - EasterTrash 0.3.0.1.mp3",
-												"filekind" : "audiofile",
-												"selection" : [ 0.0, 1.0 ],
-												"loop" : 0,
-												"content_state" : 												{
-													"speed" : [ 1.0 ],
-													"originallengthms" : [ 0.0 ],
-													"originaltempo" : [ 120.0 ],
-													"basictuning" : [ 440 ],
-													"formant" : [ 1.0 ],
-													"pitchcorrection" : [ 0 ],
-													"followglobaltempo" : [ 0 ],
-													"quality" : [ "basic" ],
-													"slurtime" : [ 0.0 ],
-													"timestretch" : [ 0 ],
-													"formantcorrection" : [ 0 ],
-													"pitchshift" : [ 1.0 ],
-													"mode" : [ "basic" ],
-													"originallength" : [ 0.0, "ticks" ]
-												}
-
-											}
- ]
-									}
-,
-									"id" : "obj-2",
-									"maxclass" : "playlist~",
-									"numinlets" : 1,
-									"numoutlets" : 5,
-									"outlettype" : [ "signal", "signal", "signal", "", "dictionary" ],
-									"patching_rect" : [ 18.0, 113.5, 378.0, 48.0 ]
-								}
-
-							}
-, 							{
-								"box" : 								{
-									"id" : "obj-12",
-									"maxclass" : "newobj",
-									"numinlets" : 2,
-									"numoutlets" : 1,
-									"outlettype" : [ "multichannelsignal" ],
-									"patching_rect" : [ 157.0, 209.0, 60.0, 22.0 ],
-									"text" : "mc.pack~"
-								}
-
-							}
-, 							{
-								"box" : 								{
-									"id" : "obj-81",
-									"maxclass" : "newobj",
-									"numinlets" : 2,
-									"numoutlets" : 1,
-									"outlettype" : [ "multichannelsignal" ],
-									"patching_rect" : [ 658.0, 194.0, 60.0, 22.0 ],
-									"text" : "mc.pack~"
-								}
-
-							}
-, 							{
-								"box" : 								{
-									"fontname" : "Arial",
-									"fontsize" : 13.0,
-									"id" : "obj-58",
-									"maxclass" : "message",
-									"numinlets" : 2,
-									"numoutlets" : 1,
-									"outlettype" : [ "" ],
-									"patching_rect" : [ 668.0, 90.5, 45.0, 23.0 ],
-									"text" : "$1 20"
-								}
-
-							}
-, 							{
-								"box" : 								{
-									"fontname" : "Arial",
-									"fontsize" : 13.0,
-									"id" : "obj-59",
-									"maxclass" : "newobj",
-									"numinlets" : 2,
-									"numoutlets" : 2,
-									"outlettype" : [ "signal", "bang" ],
-									"patching_rect" : [ 668.0, 119.5, 40.0, 23.0 ],
-									"text" : "line~"
-								}
-
-							}
-, 							{
-								"box" : 								{
-									"fontname" : "Arial",
-									"fontsize" : 13.0,
-									"format" : 6,
-									"id" : "obj-60",
-									"maxclass" : "flonum",
-									"maximum" : 10000.0,
-									"minimum" : 10.0,
-									"numinlets" : 1,
-									"numoutlets" : 2,
-									"outlettype" : [ "", "bang" ],
-									"parameter_enable" : 1,
-									"patching_rect" : [ 668.0, 56.5, 54.0, 23.0 ],
-									"saved_attribute_attributes" : 									{
-										"valueof" : 										{
-											"parameter_type" : 3,
-											"parameter_mmin" : 10.0,
-											"parameter_longname" : "flonum[1]",
-											"parameter_initial_enable" : 1,
-											"parameter_invisible" : 1,
-											"parameter_mmax" : 10000.0,
-											"parameter_initial" : [ 440 ],
-											"parameter_shortname" : "flonum"
-										}
-
-									}
-,
-									"triscale" : 0.9,
-									"varname" : "flonum"
-								}
-
-							}
-, 							{
-								"box" : 								{
-									"fontname" : "Arial",
-									"fontsize" : 13.0,
-									"id" : "obj-61",
-									"maxclass" : "newobj",
-									"numinlets" : 2,
-									"numoutlets" : 1,
-									"outlettype" : [ "signal" ],
-									"patching_rect" : [ 668.0, 154.0, 157.0, 23.0 ],
-									"text" : "cycle~ 440."
-								}
-
-							}
-, 							{
-								"box" : 								{
-									"comment" : "",
-									"id" : "obj-10",
-									"index" : 1,
-									"maxclass" : "outlet",
-									"numinlets" : 1,
-									"numoutlets" : 0,
-									"patching_rect" : [ 131.0, 391.0, 30.0, 30.0 ]
-								}
-
-							}
-, 							{
-								"box" : 								{
-									"args" : [ 1 ],
-									"bgmode" : 0,
-									"border" : 0,
-									"clickthrough" : 0,
-									"enablehscroll" : 0,
-									"enablevscroll" : 0,
-									"id" : "obj-4",
-									"lockeddragscroll" : 0,
-									"maxclass" : "bpatcher",
-									"name" : "demosound.maxpat",
-									"numinlets" : 0,
-									"numoutlets" : 1,
-									"offset" : [ 0.0, 0.0 ],
-									"outlettype" : [ "signal" ],
-									"patching_rect" : [ 426.0, 391.0, 427.0, 139.0 ],
-									"varname" : "channel1",
-									"viewvisibility" : 1
-								}
-
-							}
- ],
-						"lines" : [ 							{
-								"patchline" : 								{
-									"destination" : [ "obj-2", 0 ],
-									"source" : [ "obj-1", 0 ]
-								}
-
-							}
-, 							{
-								"patchline" : 								{
-									"destination" : [ "obj-10", 0 ],
-									"source" : [ "obj-12", 0 ]
-								}
-
-							}
-, 							{
-								"patchline" : 								{
-									"destination" : [ "obj-12", 1 ],
-									"source" : [ "obj-2", 1 ]
-								}
-
-							}
-, 							{
-								"patchline" : 								{
-									"destination" : [ "obj-12", 0 ],
-									"source" : [ "obj-2", 0 ]
-								}
-
-							}
-, 							{
-								"patchline" : 								{
-									"destination" : [ "obj-12", 1 ],
-									"order" : 0,
-									"source" : [ "obj-4", 0 ]
-								}
-
-							}
-, 							{
-								"patchline" : 								{
-									"destination" : [ "obj-12", 0 ],
-									"order" : 1,
-									"source" : [ "obj-4", 0 ]
-								}
-
-							}
-, 							{
-								"patchline" : 								{
-									"destination" : [ "obj-59", 0 ],
-									"source" : [ "obj-58", 0 ]
-								}
-
-							}
-, 							{
-								"patchline" : 								{
-									"destination" : [ "obj-61", 0 ],
-									"source" : [ "obj-59", 0 ]
-								}
-
-							}
-, 							{
-								"patchline" : 								{
-									"destination" : [ "obj-58", 0 ],
-									"source" : [ "obj-60", 0 ]
-								}
-
-							}
-, 							{
-								"patchline" : 								{
-									"destination" : [ "obj-81", 1 ],
-									"order" : 0,
-									"source" : [ "obj-61", 0 ]
-								}
-
-							}
-, 							{
-								"patchline" : 								{
-									"destination" : [ "obj-81", 0 ],
-									"order" : 1,
-									"source" : [ "obj-61", 0 ]
-								}
-
-							}
-, 							{
-								"patchline" : 								{
-									"destination" : [ "obj-10", 0 ],
-									"disabled" : 1,
-									"source" : [ "obj-81", 0 ]
-								}
-
-							}
- ],
-						"styles" : [ 							{
-								"name" : "AudioStatus_Menu",
-								"default" : 								{
-									"bgfillcolor" : 									{
-										"type" : "color",
-										"color" : [ 0.294118, 0.313726, 0.337255, 1 ],
-										"color1" : [ 0.454902, 0.462745, 0.482353, 0 ],
-										"color2" : [ 0.290196, 0.309804, 0.301961, 1 ],
-										"angle" : 270,
-										"proportion" : 0.39,
-										"autogradient" : 0
-									}
-
-								}
-,
-								"parentstyle" : "",
-								"multi" : 0
-							}
- ]
-					}
-,
-					"patching_rect" : [ 1539.0, 20.0, 53.0, 22.0 ],
-					"saved_object_attributes" : 					{
-						"description" : "",
-						"digest" : "",
-						"globalpatchername" : "",
-						"tags" : ""
-					}
-,
-					"text" : "p Player"
 				}
 
 			}
@@ -9031,7 +8875,6 @@
 						"boxes" : [ 							{
 								"box" : 								{
 									"id" : "obj-8",
-									"int" : 1,
 									"maxclass" : "gswitch2",
 									"numinlets" : 2,
 									"numoutlets" : 2,
@@ -9240,7 +9083,7 @@
 					"parameter_enable" : 1,
 					"patching_rect" : [ 1457.0, 613.0, 48.0, 136.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 1791.5, 66.0, 48.0, 194.0 ],
+					"presentation_rect" : [ 1784.5, 66.0, 48.0, 231.0 ],
 					"saved_attribute_attributes" : 					{
 						"valueof" : 						{
 							"parameter_type" : 0,
@@ -9248,7 +9091,7 @@
 							"parameter_mmin" : -70.0,
 							"parameter_longname" : "live.gain~[52]",
 							"parameter_mmax" : 6.0,
-							"parameter_shortname" : "Output"
+							"parameter_shortname" : "live.gain~[1]"
 						}
 
 					}
@@ -9266,19 +9109,6 @@
 					"outlettype" : [ "signal", "signal" ],
 					"patching_rect" : [ 1457.0, 574.25, 74.0, 22.0 ],
 					"text" : "mc.unpack~"
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-75",
-					"local" : 1,
-					"maxclass" : "ezdac~",
-					"numinlets" : 2,
-					"numoutlets" : 0,
-					"patching_rect" : [ 1478.5, 793.0, 45.0, 45.0 ],
-					"presentation" : 1,
-					"presentation_rect" : [ 1559.5, 873.0, 45.0, 45.0 ]
 				}
 
 			}
@@ -9316,7 +9146,7 @@
 					"numinlets" : 1,
 					"numoutlets" : 2,
 					"outlettype" : [ "jit_matrix", "" ],
-					"patching_rect" : [ 334.0, 225.0, 1610.0, 840.0 ],
+					"patching_rect" : [ 224.0, 215.0, 1610.0, 840.0 ],
 					"presentation" : 1,
 					"presentation_rect" : [ 3.156795381843216, 73.0, 1610.0, 840.0 ]
 				}
@@ -9345,7 +9175,7 @@
 					"parameter_enable" : 0,
 					"patching_rect" : [ 34.0, 205.0, 213.0, 224.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 1632.15679538184304, 697.5, 207.34320461815696, 213.0 ],
+					"presentation_rect" : [ 1624.485193072764559, 747.5, 207.34320461815696, 213.0 ],
 					"rows" : 11
 				}
 
@@ -9358,7 +9188,7 @@
 					"numoutlets" : 0,
 					"patching_rect" : [ 1071.0, 602.0, 128.0, 128.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 1632.15679538184304, 262.0, 207.34320461815696, 215.0 ]
+					"presentation_rect" : [ 1625.15679538184304, 305.0, 207.34320461815696, 215.0 ]
 				}
 
 			}
@@ -9370,7 +9200,7 @@
 					"numoutlets" : 0,
 					"patching_rect" : [ 1101.0, 632.0, 128.0, 128.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 1632.15679538184304, 611.0, 207.34320461815696, 84.0 ]
+					"presentation_rect" : [ 1625.15679538184304, 660.0, 207.34320461815696, 84.0 ]
 				}
 
 			}
@@ -9382,19 +9212,7 @@
 					"numoutlets" : 0,
 					"patching_rect" : [ 1086.0, 617.0, 128.0, 128.0 ],
 					"presentation" : 1,
-					"presentation_rect" : [ 1632.15679538184304, 66.0, 207.34320461815696, 194.0 ]
-				}
-
-			}
-, 			{
-				"box" : 				{
-					"id" : "obj-25",
-					"maxclass" : "panel",
-					"numinlets" : 1,
-					"numoutlets" : 0,
-					"patching_rect" : [ 1977.0, 7.0, 128.0, 128.0 ],
-					"presentation" : 1,
-					"presentation_rect" : [ 1033.999999999999773, 870.5, 579.156795381843267, 50.0 ]
+					"presentation_rect" : [ 1625.15679538184304, 66.0, 207.34320461815696, 235.0 ]
 				}
 
 			}
@@ -9453,7 +9271,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-7", 0 ],
-					"midpoints" : [ 717.299999999999955, 240.375, 343.5, 240.375 ],
+					"midpoints" : [ 717.299999999999955, 240.375, 233.5, 240.375 ],
 					"source" : [ "obj-1", 3 ]
 				}
 
@@ -9481,16 +9299,7 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-10", 0 ],
-					"order" : 0,
-					"source" : [ "obj-15", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-12", 0 ],
-					"order" : 1,
+					"destination" : [ "obj-82", 0 ],
 					"source" : [ "obj-15", 0 ]
 				}
 
@@ -9535,7 +9344,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-7", 0 ],
-					"midpoints" : [ 339.5, 220.875, 343.5, 220.875 ],
+					"midpoints" : [ 339.5, 220.875, 233.5, 220.875 ],
 					"source" : [ "obj-20", 0 ]
 				}
 
@@ -9587,13 +9396,6 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-47", 0 ],
-					"source" : [ "obj-32", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
 					"destination" : [ "obj-41", 0 ],
 					"source" : [ "obj-36", 0 ]
 				}
@@ -9624,7 +9426,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-7", 0 ],
-					"midpoints" : [ 417.0, 227.375, 343.5, 227.375 ],
+					"midpoints" : [ 417.0, 227.375, 233.5, 227.375 ],
 					"source" : [ "obj-4", 0 ]
 				}
 
@@ -9646,44 +9448,15 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-44", 1 ],
+					"destination" : [ "obj-15", 1 ],
 					"source" : [ "obj-41", 0 ]
 				}
 
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-32", 0 ],
-					"source" : [ "obj-42", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-44", 0 ],
-					"midpoints" : [ 1639.5, 508.5, 1466.5, 508.5 ],
+					"destination" : [ "obj-15", 0 ],
 					"source" : [ "obj-43", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-82", 0 ],
-					"source" : [ "obj-44", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-46", 1 ],
-					"source" : [ "obj-45", 1 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-46", 0 ],
-					"source" : [ "obj-45", 0 ]
 				}
 
 			}
@@ -9710,8 +9483,8 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-51", 0 ],
-					"source" : [ "obj-48", 0 ]
+					"destination" : [ "obj-46", 0 ],
+					"source" : [ "obj-49", 0 ]
 				}
 
 			}
@@ -9726,13 +9499,6 @@
 				"patchline" : 				{
 					"destination" : [ "obj-5", 0 ],
 					"source" : [ "obj-50", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-47", 0 ],
-					"source" : [ "obj-51", 0 ]
 				}
 
 			}
@@ -9754,6 +9520,13 @@
 				"patchline" : 				{
 					"destination" : [ "obj-1", 5 ],
 					"source" : [ "obj-6", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-46", 1 ],
+					"source" : [ "obj-60", 0 ]
 				}
 
 			}
@@ -9795,7 +9568,7 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-17", 0 ],
-					"midpoints" : [ 1934.5, 494.75, 1189.25, 494.75, 1189.25, 74.0, 1229.5, 74.0 ],
+					"midpoints" : [ 1824.5, 494.75, 1189.25, 494.75, 1189.25, 74.0, 1229.5, 74.0 ],
 					"source" : [ "obj-7", 1 ]
 				}
 
@@ -9809,24 +9582,7 @@
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-49", 1 ],
-					"order" : 0,
-					"source" : [ "obj-82", 1 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
-					"destination" : [ "obj-49", 0 ],
-					"order" : 0,
-					"source" : [ "obj-82", 0 ]
-				}
-
-			}
-, 			{
-				"patchline" : 				{
 					"destination" : [ "obj-83", 1 ],
-					"order" : 1,
 					"source" : [ "obj-82", 1 ]
 				}
 
@@ -9834,22 +9590,39 @@
 , 			{
 				"patchline" : 				{
 					"destination" : [ "obj-83", 0 ],
-					"order" : 1,
 					"source" : [ "obj-82", 0 ]
 				}
 
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-75", 1 ],
+					"destination" : [ "obj-10", 1 ],
+					"order" : 0,
 					"source" : [ "obj-83", 1 ]
 				}
 
 			}
 , 			{
 				"patchline" : 				{
-					"destination" : [ "obj-75", 0 ],
+					"destination" : [ "obj-10", 0 ],
+					"order" : 0,
 					"source" : [ "obj-83", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-18", 0 ],
+					"order" : 1,
+					"source" : [ "obj-83", 0 ]
+				}
+
+			}
+, 			{
+				"patchline" : 				{
+					"destination" : [ "obj-58", 0 ],
+					"order" : 1,
+					"source" : [ "obj-83", 1 ]
 				}
 
 			}
@@ -9864,98 +9637,6 @@
 
 			}
  ],
-		"parameters" : 		{
-			"obj-41::obj-3" : [ "vst~", "vst~", 0 ],
-			"obj-41::obj-5" : [ "vst~[13]", "vst~", 0 ],
-			"obj-57" : [ "live.text[4]", "live.text[4]", 0 ],
-			"obj-16" : [ "live.gain~[51]", "Input", 0 ],
-			"obj-24" : [ "live.text[14]", "live.text", 0 ],
-			"obj-41::obj-9" : [ "vst~[17]", "vst~", 0 ],
-			"obj-41::obj-12" : [ "vst~[20]", "vst~", 0 ],
-			"obj-41::obj-11" : [ "vst~[19]", "vst~", 0 ],
-			"obj-42" : [ "live.text[13]", "live.text[1]", 0 ],
-			"obj-15::obj-60" : [ "flonum[1]", "flonum", 0 ],
-			"obj-15::obj-4::obj-21::obj-6" : [ "live.tab[3]", "live.tab[1]", 0 ],
-			"obj-48" : [ "live.text[11]", "live.text[1]", 0 ],
-			"obj-15::obj-4::obj-35" : [ "[5]", "Level", 0 ],
-			"obj-41::obj-8" : [ "vst~[16]", "vst~", 0 ],
-			"obj-41::obj-13" : [ "vst~[21]", "vst~", 0 ],
-			"obj-41::obj-7" : [ "vst~[15]", "vst~", 0 ],
-			"obj-41::obj-4" : [ "vst~[12]", "vst~", 0 ],
-			"obj-41::obj-14" : [ "vst~[22]", "vst~", 0 ],
-			"obj-41::obj-10" : [ "vst~[18]", "vst~", 0 ],
-			"obj-41::obj-6" : [ "vst~[14]", "vst~", 0 ],
-			"obj-50" : [ "live.text[12]", "live.text[1]", 0 ],
-			"obj-83" : [ "live.gain~[52]", "Output", 0 ],
-			"parameterbanks" : 			{
-
-			}
-
-		}
-,
-		"dependency_cache" : [ 			{
-				"name" : "demosound.maxpat",
-				"bootpath" : "C74:/help/msp",
-				"type" : "JSON",
-				"implicit" : 1
-			}
-, 			{
-				"name" : "sine.svg",
-				"bootpath" : "C74:/media/max/picts/m4l-picts",
-				"type" : "svg",
-				"implicit" : 1
-			}
-, 			{
-				"name" : "saw.svg",
-				"bootpath" : "C74:/media/max/picts/m4l-picts",
-				"type" : "svg",
-				"implicit" : 1
-			}
-, 			{
-				"name" : "square.svg",
-				"bootpath" : "C74:/media/max/picts/m4l-picts",
-				"type" : "svg",
-				"implicit" : 1
-			}
-, 			{
-				"name" : "random.svg",
-				"bootpath" : "C74:/media/max/picts/m4l-picts",
-				"type" : "svg",
-				"implicit" : 1
-			}
-, 			{
-				"name" : "interfacecolor.js",
-				"bootpath" : "C74:/interfaces",
-				"type" : "TEXT",
-				"implicit" : 1
-			}
-, 			{
-				"name" : "20200413 - Charly Beck - EasterTrash 0.3.0.1.mp3",
-				"bootpath" : "C:/Cloud/GoogleDrive/mp3",
-				"patcherrelativepath" : "../../../../../../../../../Cloud/GoogleDrive/mp3",
-				"type" : "Mp3",
-				"implicit" : 1
-			}
-, 			{
-				"name" : "FabFilter Pro-Q 3.maxsnap",
-				"bootpath" : "~/Documents/Max 8/Snapshots",
-				"patcherrelativepath" : "../../../../../../../../../Users/Audioworkstation/Documents/Max 8/Snapshots",
-				"type" : "mx@s",
-				"implicit" : 1
-			}
-, 			{
-				"name" : "Blackhole.maxsnap",
-				"bootpath" : "~/Documents/Max 8/Snapshots",
-				"patcherrelativepath" : "../../../../../../../../../Users/Audioworkstation/Documents/Max 8/Snapshots",
-				"type" : "mx@s",
-				"implicit" : 1
-			}
-, 			{
-				"name" : "cb_clrobject.mxe64",
-				"type" : "mx64"
-			}
- ],
-		"autosave" : 0,
 		"styles" : [ 			{
 				"name" : "AudioStatus_Menu",
 				"default" : 				{
