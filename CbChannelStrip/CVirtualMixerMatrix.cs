@@ -36,8 +36,7 @@ namespace CbVirtualMixerMatrix
       private DirectoryInfo GraphWizInstallDirM = GraphWizInstallDirDefault;
       internal DirectoryInfo GraphWizInstallDir { get => this.GraphWizInstallDirM; set => this.GraphWizInstallDirM = value; }
       internal virtual bool GetIncludeInDiagram(CChannel aChannel) => aChannel.IsLinkedToSomething;
-      internal virtual CPoint DiagramSize { get => new CPoint(1600, 600); }
-
+      internal virtual CPoint DiagramSize { get => new CPoint(1600, 830); }
    }
 
    internal sealed class CCsWorkerResult : CGaNewStateWorkerResult
@@ -398,6 +397,7 @@ namespace CbVirtualMixerMatrix
          }
       }
       internal bool IsMainOut { get => this.Number == 0; } // TODO
+      public string Title { get=>this.IsMainOut ? "Main" : this.Number.ToString(); }
 
       internal int? NewNodeLatency;
       internal void CommitNewNodeLatency()
@@ -711,25 +711,40 @@ namespace CbVirtualMixerMatrix
          {
             if (!object.ReferenceEquals(this.FocusedConnectorM, value))
             {
-               bool aNextGraph = false;
+               bool aChanged = false;
                if(this.FocusedConnectorM is object)
                {                 
-                  aNextGraph = true;
+                  aChanged = true;
                   this.FocusedConnectorM.Unfocus();
                }
                if(value is object)
                {
                   this.FocusedConnectorM = value;
                   this.FocusedConnectorM.Focus();
-                  aNextGraph = true;
+                  aChanged = true;                  
                }
-               if(aNextGraph)
+               if(aChanged)
                {
+                  this.UpdateFocusedConnector();
                   this.ChannelStrip.NextGraph();
                }
             }
          }
       }     
+      private void SendToFocusedConnector(params object[] aValues)
+      {
+         var aValues2 = new object[] { "focused_channel" }.Concat(aValues).ToArray();
+         this.ChannelStrip.ControlOut.SendValuesO(aValues2);
+      }
+      private void UpdateFocusedConnector()
+      {
+         var aFocusedConnector = this.FocusedConnector;
+         var aFocusedNr = aFocusedConnector is object
+                        ? aFocusedConnector.Title
+                        : string.Empty;
+                        ;
+         this.SendToFocusedConnector("title", aFocusedNr);
+      }
       internal void UpdateChannels()
       {
          foreach(var aChannel in this.Connectors)
@@ -840,6 +855,7 @@ namespace CbVirtualMixerMatrix
          this.ControlIn.SetPrefixedListAction("key", this.OnKeyIn);
          this.ControlIn.SetPrefixedListAction("samplerate", this.OnSampleRate);
          this.ControlIn.SetPrefixedListAction("graph_wiz_folder", this.OnGraphWizFolder);
+         this.ControlIn.SetPrefixedListAction("focused_channel", this.OnFocusedChannelControlIn);
          this.TimerThread = new CTimerThread(this);
          { // InitLatencyUpdateTimer
             var aRunInMainThread = true;
@@ -916,6 +932,27 @@ namespace CbVirtualMixerMatrix
       #endregion
       #region Control 
       private readonly CListInlet ControlIn;
+      private void OnFocusedChannelControlIn(CInlet aInlet, string aPrefix, CReadonlyListData aRemainingItems)
+      {
+         if(!aRemainingItems.IsEmpty())
+         {
+            var aCmd = aRemainingItems.First();
+            switch(aCmd)
+            {
+               case "plug":
+               case "open":
+                  {
+                     var aConnectors = this.Connectors;
+                     var aFocusedConnector = aConnectors.FocusedConnector;
+                     if(aFocusedConnector is object)
+                     {
+                        aFocusedConnector.SendToChannel("vst", aCmd);
+                     }
+                  }
+                  break;
+            }
+         }
+      }
       #endregion
       #region Connectors
       private CCsConnectors ConnectorsM;
@@ -1738,7 +1775,6 @@ namespace CbVirtualMixerMatrix
             var aChannels = aFlowMatrix.Channels;
             var aIoCount = this.IoCount;
             var aMainIn = aMixerMatrixPatcher.GetBox("MainIn");
-            var aMainOut = aMixerMatrixPatcher.GetBox("MainOut");
             var aOutputs = new CPatBox[aIoCount];
             for(var aOuputIdx = 0; aOuputIdx < aIoCount; ++aOuputIdx)
             {
