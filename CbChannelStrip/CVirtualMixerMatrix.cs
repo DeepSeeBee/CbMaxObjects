@@ -28,6 +28,7 @@ namespace CbVirtualMixerMatrix
    using System.Windows.Forms;
    using CbMaxClrAdapter.Timer;
    using System.Windows.Input;
+   using CbMaxClrAdapter.Patcher;
 
    internal abstract class CGwDiagramLayout
    {
@@ -182,7 +183,7 @@ namespace CbVirtualMixerMatrix
                               if (aValues.Length == 7)
                               {
                                  var aIo = Convert.ToInt32(aValues[4]);
-                                 var aActive = CVirtualMixerMatrix.GetBool(aValues[6]);
+                                 var aActive = CConvert.GetBool(aValues[6]);
                                  if(aIsInput)
                                  {
                                     bool aOk = !aActive || this.GetInputEnabled(aIo);
@@ -578,7 +579,6 @@ namespace CbVirtualMixerMatrix
          this.Connectors.FocusedConnector = aNewFocus;
       }
       #endregion
-
    }
 
    internal sealed class CCsChannel : CCsConnector
@@ -940,7 +940,8 @@ namespace CbVirtualMixerMatrix
 
             // RefreshChangedState:
             this.UpdateFlowMatrixSampleRate();
-            this.Connectors.UpdateNodeLatencies();            
+            this.Connectors.UpdateNodeLatencies();
+            this.UpdateMixerMatrixPatcher();
          });
       }
       private volatile CCsState CsState;
@@ -1579,6 +1580,7 @@ namespace CbVirtualMixerMatrix
             {
                this.Connectors.CommitNewNodeLatencies(); 
                this.SendLatenciesOnDemand();
+               this.UpdateMixerMatrixPatcher();
             }
          }
          finally
@@ -1692,6 +1694,103 @@ namespace CbVirtualMixerMatrix
          this.SendGraphWizFolder();
       }
       #endregion
+      #region MixerMatrixPatcher
+      private void UpdateMixerMatrixPatcher()
+      {
+         var aParentPatcher = this.ParentPatcher;
+         var aMixerMatrixPatcher = aParentPatcher.GetSubPatcher("MixerMatrixPatcher");
+         var aObjPrefix = "MixerMatrixObj";
+         var aGetDynObjName = new Func<string, int, string>(delegate (string aPrefix, int aNamedObjIdx)
+         {
+            return aPrefix + "[" + aNamedObjIdx + "]";
+         });
+         var aGetStaticObjName = new Func<string, int, string>(delegate (string aPrefix, int aNamedObjIdx)
+         {
+            return aGetDynObjName(aPrefix, aNamedObjIdx);
+         });
+         { // DeleteOldObjects
+            var aDone = false;
+            for (var aObjIdx = 0; !aDone;++aObjIdx)
+            {
+               var aName = aGetDynObjName(aObjPrefix, aObjIdx);
+               if (aMixerMatrixPatcher.GetContainsObject(aName))
+               {
+                  var aObj = aMixerMatrixPatcher.GetBox(aName);
+                  aObj.Delete();
+               }
+               else
+               {
+                  aDone = true;
+               }
+            }
+         }
+
+         { // AddNewObjects
+            var aObjIdx = 0;
+            var aGenObjectName = new Func<string>(() =>
+            {
+               var aName = aGetDynObjName(aObjPrefix, aObjIdx);
+               ++aObjIdx;
+               return aName;
+            });
+            var aCsState = this.CsState;
+            var aFlowMatrix = aCsState.FlowMatrix;
+            var aChannels = aFlowMatrix.Channels;
+            var aIoCount = this.IoCount;
+            var aMainIn = aMixerMatrixPatcher.GetBox("MainIn");
+            var aMainOut = aMixerMatrixPatcher.GetBox("MainOut");
+            var aOutputs = new CPatBox[aIoCount];
+            for(var aOuputIdx = 0; aOuputIdx < aIoCount; ++aOuputIdx)
+            {
+               var aVstOutName = aGetStaticObjName("VstOut", aOuputIdx);
+               var aVstOutObj = aMixerMatrixPatcher.GetBox(aVstOutName);
+               aOutputs[aOuputIdx] = aVstOutObj;
+            }
+            var aInputs = new CPatBox[aIoCount];
+            for (var aInputIdx = 0; aInputIdx < aIoCount; ++aInputIdx)
+            {
+               var aVstInName = aGetStaticObjName("VstIn", aInputIdx);
+               var aVstInObj = aMixerMatrixPatcher.GetBox(aVstInName);
+               aInputs[aInputIdx] = aVstInObj;
+            }
+            var aAddDelay = new Func<int, int, CPatBox>(delegate(int aDelayChannelIdx, int aDelayTime)
+            {
+               var aInput = aInputs[aDelayChannelIdx]; 
+               var aSkipDelayIsAllowed = false; // can not delete cable 0->0 atm...
+               if (aDelayTime == 0
+               && aSkipDelayIsAllowed)
+               {                  
+                  return aInput;
+               }
+               else
+               {
+                  var aArgs = "" + aDelayTime + " " + aDelayTime;
+                  var aObjectName = aGenObjectName();
+                  var aBoxText = "mc.delay~ " + aDelayTime + " " + aDelayTime;
+                  var aDelay = aMixerMatrixPatcher.Add(aBoxText, aObjectName);
+                  aDelay.Outlets[0].ConnectTo(aInput.Inlets[0]);
+                  return aDelay;
+               }
+            });
+
+            for(var aChannelIdx = 0; aChannelIdx < aIoCount; ++aChannelIdx)
+            {
+               var aChannel = aChannels.Channels[aChannelIdx];
+               var aInputObj = aChannelIdx == 0
+                             ? aMainIn
+                             : aOutputs[aChannelIdx];
+               foreach (var aOutputChannel in aChannel.OutputsWithoutMainOut)
+               {
+                  var aInputChannelIdx = aOutputChannel.Inputs.IndexOf(aChannel);
+                  var aLatencyCompensation = aOutputChannel.LatencyCompensations[aInputChannelIdx];
+                  var aTargetInput = aAddDelay(aOutputChannel.IoIdx, aLatencyCompensation);
+                  aInputObj.Outlets[0].ConnectTo(aTargetInput.Inlets[0]);
+               }
+            }
+         }
+      }
+      #endregion
+
    }
 
    public sealed class CTestObject : CMaxObject

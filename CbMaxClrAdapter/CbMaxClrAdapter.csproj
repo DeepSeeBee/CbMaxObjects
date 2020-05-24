@@ -72,6 +72,7 @@
     <Compile Include="DllFuncs.cs" />
     <Compile Include="Jitter\jitter.cs" />
     <Compile Include="MGraphics\mgraphics.cs" />
+    <Compile Include="Patcher\patcher.cs" />
     <Compile Include="Peristency\pers.cs" />
     <Compile Include="Reflection\rfl.cs" />
     <Compile Include="Timer\tim.cs" />

@@ -1,4 +1,5 @@
 ﻿using CbMaxClrAdapter.Jitter;
+using CbMaxClrAdapter.Patcher;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -464,5 +465,66 @@ namespace CbMaxClrAdapter
       internal void Object_MainTask_Request() => DllImports.Object_MainTask_Request(this.MaxObject.NewArgs.mObjectPtr);
       private void Object_MainTask() => this.WithCatch(delegate () { this.MaxObject.OnMainTask(); });
       private void Object_Shutdown() => this.WithCatch(this.MaxObject.Shutdown);
+      private void CheckPtr(IntPtr aPtr, Func<Exception> aNewExc)
+      {
+         if(aPtr == IntPtr.Zero)
+         {
+            throw aNewExc();
+         }
+      }
+      internal IntPtr Object_GetParentPatcherPtr(CMaxObject aMaxObject)
+      {
+         var aPtr = DllImports.Object_GetParentPatcherPtr(this.MaxObject.Ptr);
+         this.CheckPtr(aPtr, () => new Exception("Object_GetParentPatcherPtr failed."));
+         return aPtr;
+      }
+
+      internal IntPtr Patcher_GetBoxPtr(CPatPatcher aPatcher, string aName)
+      {
+         var aPtr = DllImports.Patcher_GetBoxPtr(aPatcher.Ptr, aName);
+         this.CheckPtr(aPtr, () => new Exception("Patcher_GetObjectPtr failed for Name='" + aName + "'."));
+         return aPtr;
+      }
+
+  //    internal IntPtr Box_GetObjectPtr()
+//
+      internal IntPtr Patcher_Add(CPatPatcher aPatcher, string aBoxText, string aObjectName)
+      {
+         var aPtr = DllImports.Patcher_Add(aPatcher.Ptr, aBoxText, aObjectName);
+         this.CheckPtr(aPtr, () => new Exception("Patcher_Add failed for BoxText='" + aBoxText + "' ObjectName='" + aObjectName + "'."));
+         return aPtr;
+      }
+
+      internal bool Patcher_GetContainsObject(CPatPatcher aPatcher, string aObjectName) => DllImports.Patcher_GetContainsObject(aPatcher.Ptr, aObjectName) != 0;
+
+      internal void PatBase_Delete(CPatBase aObjectPtr) => DllImports.PatBase_Delete(aObjectPtr.Ptr);
+
+      private void CheckNoError(Int64 aErrorCode)
+      {
+         if(0 != aErrorCode)
+         {
+            throw new Exception("Error #" + aErrorCode.ToString());
+         }
+      }
+
+      internal void PatOutlet_ConnectTo(CPatOutlet aOutlet, CPatInlet aInlet)=> this.CheckNoError(DllImports.PatBase_ConnectTo(aOutlet.PatBase.Ptr, aOutlet.Index, aInlet.PatBase.Ptr, aInlet.Index));
+
+      private string GetString(IntPtr aPtr)
+      {
+         var aStringBuilder = new StringBuilder();
+         var aIdx = 0;
+         while(true)
+         {
+            var aChar = (char)Marshal.ReadByte(aPtr, aIdx);
+            if (aChar == '\0')
+               return aStringBuilder.ToString();
+            aStringBuilder.Append(aChar);
+            ++aIdx;
+         }
+      }
+
+      internal string Obj_GetClassName(IntPtr aObjPtr) => this.GetString(DllImports.Obj_GetClassName(aObjPtr));
+
+      internal IntPtr Box_GetObjectPtr(IntPtr aBoxPtr) => DllImports.Box_GetObjectPtr(aBoxPtr);
    }
 }

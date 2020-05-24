@@ -695,7 +695,6 @@ void __stdcall Object_MainTask_Func_Set(SCbClrObject* aSCbClrObjectPtr, CObject_
 
 void __stdcall Object_MainTask_Request(SCbClrObject* aSCbClrObjectPtr)
 {
-   //Max_Log_Write(aSCbClrObjectPtr, "Object_MainTask_Request", 0);
    if(aSCbClrObjectPtr
    && aSCbClrObjectPtr->mQelemPtr)
    {
@@ -710,7 +709,116 @@ void __stdcall Object_Shutdown_Func_Set(SCbClrObject* aSCbClrObjectPtr, CObject_
       aSCbClrObjectPtr->mObjectShutdownFuncPtr = aFuncPtr;
    }
 }
+
+CPatcherVoidPtr __stdcall Object_GetParentPatcherPtr(SCbClrObject* aSCbClrObjectPtr)
+{
+   t_object* aPatcherPtr;
+   object_obex_lookup(aSCbClrObjectPtr, gensym("#P"), &aPatcherPtr);
+   return aPatcherPtr;
+}
  
+void* __stdcall Patcher_GetBoxPtr(t_object* aPatcherPtr, const TCHAR* aNamePtr)
+{
+   t_symbol* aNameSymPtr = gensym(aNamePtr);
+   t_object* aBoxPtr = 0;
+   t_object* aObjectPtr = 0;
+   t_symbol* aVarNameSymPtr = gensym("varname");
+
+   for (aBoxPtr = jpatcher_get_firstobject(aPatcherPtr);
+        aBoxPtr;
+        aBoxPtr = jbox_get_nextobject(aBoxPtr))
+   {
+      aObjectPtr = jbox_get_object(aBoxPtr);
+      t_symbol* aVarNameValue1SymPtr = aObjectPtr ? object_attr_getsym(aObjectPtr, aVarNameSymPtr) : 0;
+      t_symbol* aVarNameValue2SymPtr = aBoxPtr ? object_attr_getsym(aBoxPtr, aVarNameSymPtr) : 0;
+      if((aVarNameValue1SymPtr && aVarNameValue1SymPtr == aNameSymPtr)
+      || (aVarNameValue2SymPtr && aVarNameValue2SymPtr == aNameSymPtr) )
+      {
+         return aBoxPtr;
+      }
+   }
+   return 0;
+}
+
+void* __stdcall Box_GetObjectPtr(t_object* aBoxPtr)
+{
+   return jbox_get_object(aBoxPtr);
+}
+
+CPatcherObjectVoidPtr __stdcall Patcher_Add(CPatcherVoidPtr aPatcherPtr, 
+                                            const TCHAR* aBoxTextPtr, 
+                                            const TCHAR* aObjectNamePtr)
+{
+   t_object* aExistingPtr = 0;
+   object_obex_lookup(aPatcherPtr, gensym(aObjectNamePtr), &aExistingPtr);
+   if (0 == aExistingPtr)
+   {
+      // newobject_fromboxtext
+      t_object* aObjectPtr = newobject_fromboxtext(aPatcherPtr, aBoxTextPtr);
+
+      t_symbol* aClassNamePtr = object_classname(aObjectPtr);
+
+      if (aObjectPtr)
+      {
+         t_symbol* aVarNameSymPtr = gensym("varname");
+         t_symbol* aVarNameValSymPtr = gensym(aObjectNamePtr);
+         t_max_err aSetNameErr = object_attr_setsym(aObjectPtr, aVarNameSymPtr, aVarNameValSymPtr);
+         if (0 != aSetNameErr)
+         {
+            Max_Log_Write(0, "Error setting object varname.", 1);
+            object_free(aObjectPtr);
+            aObjectPtr = 0;
+         }
+         return aObjectPtr;
+      }
+      else
+      {
+         return 0;
+      }
+   }
+   return 0;
+}
+
+long __stdcall Patcher_GetContainsObject(CPatcherVoidPtr aPatcherPtr, const TCHAR* aObjectNamePtr)
+{
+   t_object* aBoxPtr = Patcher_GetBoxPtr(aPatcherPtr, aObjectNamePtr);
+   return aBoxPtr != 0;
+}
+
+void __stdcall PatBase_Delete(t_object* aPatBasePtr)
+{
+   object_free(aPatBasePtr);
+}
+
+Int64 __stdcall PatBase_ConnectTo(t_object* aFromPtr, long aOutletIdx, t_object* aToPtr, long aInletIdx)
+{
+   t_object* aPatcherPtr;
+   object_obex_lookup(aFromPtr, gensym("#P"), &aPatcherPtr);
+   if (aPatcherPtr)
+   {
+      t_atom aMsg[4];
+      t_atom aResult;
+      atom_setobj(&aMsg[0], aFromPtr);
+      atom_setlong(&aMsg[1], aOutletIdx);
+      atom_setobj(&aMsg[2], aToPtr);
+      atom_setlong(&aMsg[3], aInletIdx);
+      t_max_err aErr1 = object_method_typed(aPatcherPtr, gensym("connect"), 4, aMsg, &aResult);
+      t_atom_long aErr2 = aErr1 == 0 ? atom_getlong(&aResult) : aErr1;
+      return aErr2;
+   }
+   else
+   {
+      return -1;
+   }
+}
+
+const TCHAR* __stdcall Obj_GetClassName(t_object* aObjPtr)
+{
+   t_symbol* aClassSymPtr = object_classname(aObjPtr);
+   const TCHAR* aClassNamePtr = aClassSymPtr ? aClassSymPtr->s_name : "";
+   return aClassNamePtr;
+}
+
 void ext_main(void* r)
 {
    t_class* aClassPtr = 0;

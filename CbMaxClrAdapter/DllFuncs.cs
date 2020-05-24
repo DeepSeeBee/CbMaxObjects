@@ -178,9 +178,30 @@ namespace CbMaxClrAdapter
       [DllImport(mDllName)]
       public static extern void Object_Shutdown_Func_Set(IntPtr aSbClrObjectPtr, CObject_Shutdown_Func aFunc);
 
+      [DllImport(mDllName)]
+      public static extern IntPtr Object_GetParentPatcherPtr(IntPtr aSbClrObjectPtr);
+
+      [DllImport(mDllName, CharSet = mCharset)]
+      public static extern IntPtr Patcher_GetBoxPtr(IntPtr aPatcherPtr, string aName);
+
+      [DllImport(mDllName, CharSet = mCharset)]
+      public static extern IntPtr Patcher_Add(IntPtr aPatcherPtr, string aBoxText, string aObjectName);
+
+      [DllImport(mDllName, CharSet = mCharset)]
+      public static extern Int32 Patcher_GetContainsObject(IntPtr aPatcherPtr, string aObjectName);
+
+      [DllImport(mDllName)]
+      public static extern IntPtr PatBase_Delete(IntPtr aSbClrObjectPtr);
+
+      [DllImport(mDllName)]
+      public static extern Int64 PatBase_ConnectTo(IntPtr aFromObjectPtr, Int32 aOutletIdx, IntPtr aToObjectPtr, Int32 aInletIdx);
+
+      [DllImport(mDllName, CharSet = mCharset)]
+      public static extern IntPtr Obj_GetClassName(IntPtr aObjPtr);
+
+      [DllImport(mDllName)]
+      public static extern IntPtr Box_GetObjectPtr(IntPtr aBoxPtr);
    }
-
-
 
 
    public static class DllExports

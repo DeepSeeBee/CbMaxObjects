@@ -702,7 +702,7 @@ namespace CbVirtualMixerMatrix.Graph
       internal bool IsLinkedDirectlyToMainOut { get => this.Channels.FlowMatrix.Actives[this.Channels.FlowMatrix.GetCellIdx(0, this.IoIdx)]; }
 
       private CChannel[] OutputsM;
-      private CChannel[] OutputsWithoutMainOut
+      internal CChannel[] OutputsWithoutMainOut
       {
          get
          {

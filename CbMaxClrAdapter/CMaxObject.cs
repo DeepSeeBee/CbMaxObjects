@@ -1,4 +1,5 @@
 ﻿using CbMaxClrAdapter.Jitter;
+using CbMaxClrAdapter.Patcher;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -659,6 +660,13 @@ namespace CbMaxClrAdapter
          return !aEnumerable.GetEnumerator().MoveNext();
       }
 
+      public static int IndexOf<T>(this IEnumerable<T> aEnumererable, T aObj)
+      {
+         return (from aIdx in Enumerable.Range(0, aEnumererable.Cast<object>().Count())
+                 where object.Equals(aEnumererable.ElementAt(aIdx), aObj)
+                 select aIdx).Single();
+      }
+
       public static bool ContainsManyElements(this IEnumerable aEnumerable)
       {
          var aEn = aEnumerable.GetEnumerator();
@@ -1100,7 +1108,25 @@ namespace CbMaxClrAdapter
          this.OnShutdown();
       }
       #endregion
+      #region ParentPatcher
+      private CPatPatcher ParentPatcherM;
+      public CPatPatcher ParentPatcher
+      {
+         get
+         {
+            if (object.ReferenceEquals(null, this.ParentPatcherM))
+            {
+               this.ParentPatcherM = new CPatPatcher(this.Marshal, this.Marshal.Object_GetParentPatcherPtr(this));
+            }
+            return this.ParentPatcherM;
+         }
+      }
+      #endregion
 
+   }
+
+   public static class CConvert
+   {
       public static bool GetBool(object aNr)
       {
          var aInt = Convert.ToInt32(aNr);
@@ -1111,7 +1137,6 @@ namespace CbMaxClrAdapter
          else
             throw new ArgumentException("Does not understand '" + aInt.ToString() + "' as boolean.");
       }
-
    }
 
    public static class CStringExtensions
