@@ -36,3 +36,7 @@ Trust me, you don't wanna use the project in this state. It's the beta of all be
 ## Feature requests
 Are welcome.
 
+## Beware
+
+- The stuff is not yet thread protected. Thus receiving messages from overdrive thread could cause runtime errors or unpredictable results. switch overdrive off or don't receive timecritical messages from from metro or other such objects on the same inlet. don't send messages from different threads to the same outlet. Sync the stuff on your own but you prefer using a new System.object for sync(obj) {} sections. if you deal with multithreading be sure to understand the handling of the field CbMaxClrAdapter.CConnector.Messages for inlets and outlets.
+
